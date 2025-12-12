@@ -1,1 +1,7 @@
-print ("In progress...")
+from fastapi import FastAPI
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"status": "backend running"}
