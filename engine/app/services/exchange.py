@@ -1,49 +1,41 @@
-# app/services/exchange.py
 import os
 from dotenv import load_dotenv
 import ccxt
 import time
+import datetime
 
 load_dotenv()
 
-def create_binance_client(testnet=True):
+def create_binance_testnet_client():
     api_key = os.getenv("BINANCE_API_KEY")
     api_secret = os.getenv("BINANCE_API_SECRET")
 
-    base_params = {
+    client = ccxt.binance({
         "apiKey": api_key,
         "secret": api_secret,
         "enableRateLimit": True,
-    }
-
-    # Enable testnet mode
-    if testnet:
-        base_params["options"] = {
+        "options": {
             "defaultType": "spot",
         }
-        base_params["urls"] = {
-            "api": {
-                "public": "https://testnet.binance.vision/api",
-                "private": "https://testnet.binance.vision/api",
-            }
-        }
-    else:
-        base_params["options"] = { "defaultType": "spot" }
+    })
 
-    return ccxt.binance(base_params)
+    # Use this instead of set_sandbox_mode=True and manual URL overrides
+    client.enable_demo_trading(True) 
 
-# Use testnet by default.
-exchange = create_binance_client(testnet=True)
+    # You may still want these options:
+    client.options["warnOnFetchBalanceWithoutAddress"] = False
+    client.options["recvWindow"] = 5000 
+
+    return client
+
+exchange = create_binance_testnet_client()
+
+
+def get_OHLCV(symbol="BTC/USDT", timeframe="5m", limit=20):
+    """Fetch a 20 OHLCV."""
+    return exchange.fetchOHLCV(symbol, timeframe, limit = limit)
 
 def get_ticker(symbol="BTC/USDT"):
-    """
-    Fetches ticker from testnet.
-    Testnet supports fewer symbols; BTC/USDT works.
-    """
-    for attempt in range(3):
-        try:
-            return exchange.fetch_ticker(symbol)
-        except ccxt.BaseError as e:
-            last_err = e
-            time.sleep(0.5 * (attempt + 1))
-    raise last_err
+    """Fetch a ticker."""
+    return exchange.fetch_ticker(symbol)
+
