@@ -1,0 +1,8 @@
+Required dependencies for the Quantt engine.
+
+ccxt
+dotenv
+numpy
+pandas
+uvicorn
+fastapi
