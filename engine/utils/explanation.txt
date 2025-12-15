@@ -1,0 +1,2 @@
+This module holds logging, shared math formulas, time simulation and expectation.
+Used by: strategy, execution, data.

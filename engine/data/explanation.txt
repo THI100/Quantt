@@ -1,0 +1,3 @@
+Get the data from binance using ccxt, requires your API key and API secret. On a .env file.
+This uses the markets chosen on the UI to get the informations.
+Data of the market are harnested by here.

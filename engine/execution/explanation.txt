@@ -1,0 +1,1 @@
+This module sets the orders thourgh the client, based on the balence and strategies given.

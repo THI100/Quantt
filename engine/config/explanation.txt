@@ -1,0 +1,9 @@
+Gets the settings from the UI, through fastAPI.
+List of configurations:
+ - R:R ratio
+ - Markets and tickers
+ - Maximum loss per day
+ - % of balance by trade (Conservative, moderate, aggresive)
+ - Enable demo
+ - Type of profile
+ - 

@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv # pyright: ignore[reportMissingImports]
 import ccxt # pyright: ignore[reportMissingImports]
+from config.settings import is_demo_enabled as enable_demo
 
 load_dotenv()
 
@@ -18,7 +19,7 @@ def create_binance_testnet_client():
     })
 
 
-    client.enableDemoTrading(True) 
+    client.enableDemoTrading(enable_demo) 
 
     # You may still want these options:
     client.options["warnOnFetchBalanceWithoutAddress"] = False
