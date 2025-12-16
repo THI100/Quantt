@@ -1,3 +1,6 @@
-from data.fetch import get_OHLCV
+import data.fetch as fetch
+import strategy.indicators as indicators
 
-print(get_OHLCV())  # [(ts, open, high, low, close), ...] length = 20
+print (indicators.detect_candlestick_patterns())
+
+# print (fetch.get_OHLCV("SOL/USDT", "1h", 5))

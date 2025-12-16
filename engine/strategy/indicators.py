@@ -1,5 +1,5 @@
 import numpy as np
-from data import cache  # [(ts, open, high, low, close), ...] length = 42
+import data.cache as cache
 from typing import Dict, List
 
 #----------------------------------------------------------------------#

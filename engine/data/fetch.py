@@ -11,3 +11,8 @@ def get_tickers(symbols: list):
 def get_OHLCV(symbol: str, timeframe: str, limit: int):
     """Fetch a x amount of OHLCV from x market wih x timeframe."""
     return c_client.fetchOHLCV(symbol, timeframe, limit = limit)
+
+def get_currencies():
+    """Fetch all available currencies."""
+    print("Fetching currencies...")
+    return c_client.fetch_currencies()

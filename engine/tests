@@ -1,0 +1,36 @@
+Test v1 detect_candlestick_patterns function in indicators.py:
+
+[
+    {'type': 'bullish_doji_star', 'index': 1, 'volume_strength': np.float64(0.855523802435689)}, 
+    {'type': 'bearish_engulfing', 'multiplier': np.float64(-6.604316546760916), 'index': 6, 'volume_strength': np.float64(0.5832898512668424)}, 
+    {'type': 'bearish_engulfing', 'multiplier': np.float64(-2.781249999999952), 'index': 11, 'volume_strength': np.float64(5.797243428974647)}, 
+    {'type': 'hammer', 'index': 13, 'volume_strength': np.float64(4.813293370379288)}, 
+    {'type': 'bullish_doji_star', 'index': 15, 'volume_strength': np.float64(2.562503364843619)}, 
+    {'type': 'bullish_doji_star', 'index': 22, 'volume_strength': np.float64(1.5526888913967984)}, 
+    {'type': 'bearish_engulfing', 'multiplier': np.float64(-21.90140845070336), 'index': 23, 'volume_strength': np.float64(1.5340131651446143)}, 
+    {'type': 'bullish_engulfing', 'multiplier': np.float64(14.076433121017583), 'index': 31, 'volume_strength': np.float64(1.2211647311289777)}, 
+    {'type': 'bearish_engulfing', 'multiplier': np.float64(-49.20370370370732), 'index': 33, 'volume_strength': np.float64(1.511912709710884)}, 
+    {'type': 'bullish_doji_star', 'index': 36, 'volume_strength': np.float64(2.2789066697627747)}
+    ]
+
+#########################################################################################################################################################
+
+[
+    {'type': 'bullish_fvg', 'index': 14, 'gap': (np.float64(2933.22), np.float64(2940.59)), 'volume_strength': np.float64(2.1105959051383554)}, 
+    {'type': 'bullish_fvg', 'index': 16, 'gap': (np.float64(2947.08), np.float64(2950.01)), 'volume_strength': np.float64(1.00013268142347)}, 
+    {'type': 'bullish_fvg', 'index': 17, 'gap': (np.float64(2953.2), np.float64(2954.68)), 'volume_strength': np.float64(1.1618699489468467)}, 
+    {'type': 'bearish_fvg', 'index': 19, 'gap': (np.float64(2952.35), np.float64(2954.68)), 'volume_strength': np.float64(1.6020401168736826)}, 
+    {'type': 'bearish_fvg', 'index': 20, 'gap': (np.float64(2942.48), np.float64(2950.55)), 'volume_strength': np.float64(3.40625609648131)}, 
+    {'type': 'bearish_fvg', 'index': 21, 'gap': (np.float64(2935.15), np.float64(2938.88)), 'volume_strength': np.float64(0.4793233134792086)}, 
+    {'type': 'bearish_fvg', 'index': 22, 'gap': (np.float64(2925.6), np.float64(2935.43)), 'volume_strength': np.float64(1.0424756432139552)}, 
+    {'type': 'bullish_fvg', 'index': 26, 'gap': (np.float64(2932.35), np.float64(2933.99)), 'volume_strength': np.float64(0.8134067761906367)}, 
+    {'type': 'bullish_fvg', 'index': 29, 'gap': (np.float64(2947.26), np.float64(2948.75)), 'volume_strength': np.float64(5.624935467603018)}, 
+    {'type': 'bullish_fvg', 'index': 39, 'gap': (np.float64(2956.0), np.float64(2957.4)), 'volume_strength': np.float64(0.9082633313984495)}, 
+    {'type': 'bearish_fvg', 'index': 41, 'gap': (np.float64(2955.78), np.float64(2957.4)), 'volume_strength': np.float64(1.0845455012624776)}, 
+    {'type': 'choch_bullish', 'index': 13, 'level': np.float64(2933.88), 'volume_strength': np.float64(2.1105959051383554)}, 
+    {'type': 'bos_bullish', 'index': 14, 'level': np.float64(2933.88), 'volume_strength': np.float64(0.8696381273005085)}, 
+    {'type': 'bos_bullish', 'index': 15, 'level': np.float64(2933.88), 'volume_strength': np.float64(1.00013268142347)}, 
+    {'type': 'bos_bullish', 'index': 16, 'level': np.float64(2933.88), 'volume_strength': np.float64(1.1618699489468467)}, 
+    {'type': 'bos_bullish', 'index': 38, 'level': np.float64(2954.79), 'volume_strength': np.float64(0.9082633313984495)}, 
+    {'type': 'bos_bullish', 'index': 39, 'level': np.float64(2954.79), 'volume_strength': np.float64(0.5564097707598669)}
+]
