@@ -1,10 +1,13 @@
-from exchange import c_client
-from config import settings
+from exchange.binance import c_client
 
-def get_OHLCV(symbol="BTC/USDT", timeframe="5m", limit=20):
-    """Fetch a 20 OHLCV."""
-    return c_client.fetchOHLCV(symbol, timeframe, limit = limit)
-
-def get_ticker(symbol="BTC/USDT"):
+def get_ticker(symbol: str):
     """Fetch a ticker."""
     return c_client.fetch_tickers(symbol)
+
+def get_tickers(symbols: list):
+    """Fetch multiple tickers."""
+    return c_client.fetch_tickers(symbols)
+
+def get_OHLCV(symbol: str, timeframe: str, limit: int):
+    """Fetch a x amount of OHLCV from x market wih x timeframe."""
+    return c_client.fetchOHLCV(symbol, timeframe, limit = limit)
