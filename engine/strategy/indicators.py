@@ -1,10 +1,15 @@
 import numpy as np
-from data.cache import cached_p42  # [(ts, open, high, low, close), ...] length = 42
+from data import cache  # [(ts, open, high, low, close), ...] length = 42
+from typing import Dict, List
 
 #----------------------------------------------------------------------#
 
+#---------------- TECHNICAL INDICATORS ----------------#
+
+#----------RSI-indicator----------#
+
 def rsi(
-    candles=cached_p42,
+    candles=cache.cached_p42,
     period: int = 14,
     mode: str = "close-close",  # "close-close" (standard) | "open-close"
 ):
@@ -58,10 +63,10 @@ def rsi(
 
     return rsi_value, rsi_mean
 
-#----------------------------------------------------------------------#
+#----------TnK-indicator----------#
 
 def tenkan_and_kijun(
-    candles=cached_p42,
+    candles=cache.cached_p42,
     conversion_period: int = 9,   # Tenkan-sen
     base_period: int = 26,        # Kijun-sen
 ):
@@ -95,120 +100,240 @@ def tenkan_and_kijun(
 
 #---------------- CANDLESTICK PATTERNS ----------------#
 
-def _body(o, c):
-    return abs(c - o)
-
-def _upper_wick(o, h, c):
-    return h - max(o, c)
-
-def _lower_wick(o, l, c):
-    return min(o, c) - l
+# ---------- helpers ----------
+def average_volume(candles: np.ndarray, period: int = 20) -> float:
+    vols = candles[-period:, 5]
+    return float(vols.mean())
 
 
-# ---------------- ENGULFING ----------------
-def engulfing(candles):
-    if len(candles) < 2:
-        return None
+def candle_parts(c):
+    o, h, l, c_ = c[1], c[2], c[3], c[4]
+    body = abs(c_ - o)
+    upper_wick = h - max(o, c_)
+    lower_wick = min(o, c_) - l
+    return body, upper_wick, lower_wick
 
-    _, o1, _, _, c1 = candles[-2]
-    _, o2, _, _, c2 = candles[-1]
 
-    body1 = _body(o1, c1)
-    body2 = _body(o2, c2)
+# ---------- pattern checks ----------
+def engulfing(prev, curr):
+    prev_body, _, _ = candle_parts(prev)
+    curr_body, _, _ = candle_parts(curr)
 
-    if body1 == 0:
-        return None
-
-    if body2 >= 2 * body1:
-        direction = 1 if c2 > o2 else -1
-        multiplier = body2 / body1
-        return direction * multiplier
-
+    if curr_body >= 2 * prev_body:
+        # bullish
+        if curr[4] > curr[1] and prev[4] < prev[1]:
+            return {"type": "bullish_engulfing", "multiplier": curr_body / prev_body}
+        # bearish
+        if curr[4] < curr[1] and prev[4] > prev[1]:
+            return {"type": "bearish_engulfing", "multiplier": -(curr_body / prev_body)}
     return None
 
 
-# ---------------- DOJI TYPES ----------------
-def dragonfly_doji(candle, tol=0.1):
-    _, o, h, l, c = candle
-    body = _body(o, c)
-    return body <= tol * (h - l) and _upper_wick(o, h, c) <= body
+def dragonfly_gravestone(c):
+    body, uw, lw = candle_parts(c)
+    if body == 0:
+        body = 1e-9
 
-def gravestone_doji(candle, tol=0.1):
-    _, o, h, l, c = candle
-    body = _body(o, c)
-    return body <= tol * (h - l) and _lower_wick(o, l, c) <= body
-
-
-# ---------------- HAMMER / SHOOTING STAR ----------------
-def hammer(candle):
-    _, o, h, l, c = candle
-    body = _body(o, c)
-    return _lower_wick(o, l, c) >= 2 * body and _upper_wick(o, h, c) <= body
-
-def shooting_star(candle):
-    _, o, h, l, c = candle
-    body = _body(o, c)
-    return _upper_wick(o, h, c) >= 2 * body and _lower_wick(o, l, c) <= body
+    if lw >= 2 * body and uw <= body * 0.2:
+        return "dragonfly_doji"
+    if uw >= 2 * body and lw <= body * 0.2:
+        return "gravestone_doji"
+    return None
 
 
-# ---------------- DOJI STARS ----------------
-def bullish_doji_star(candles):
-    if len(candles) < 2:
-        return False
+def hammer_shooting_star(c):
+    body, uw, lw = candle_parts(c)
+    if body == 0:
+        return None
 
-    prev = candles[-2]
-    curr = candles[-1]
-
-    prev_body = _body(prev[1], prev[4])
-    curr_body = _body(curr[1], curr[4])
-
-    wick_sum = (
-        _upper_wick(curr[1], curr[2], curr[4]) +
-        _lower_wick(curr[1], curr[3], curr[4])
-    )
-
-    return curr_body < prev_body and wick_sum > prev_body and curr[4] > curr[1]
-
-def bearish_doji_star(candles):
-    if len(candles) < 2:
-        return False
-
-    prev = candles[-2]
-    curr = candles[-1]
-
-    prev_body = _body(prev[1], prev[4])
-    curr_body = _body(curr[1], curr[4])
-
-    wick_sum = (
-        _upper_wick(curr[1], curr[2], curr[4]) +
-        _lower_wick(curr[1], curr[3], curr[4])
-    )
-
-    return curr_body < prev_body and wick_sum > prev_body and curr[4] < curr[1]
+    if lw >= 2 * body and uw <= body:
+        return "hammer"
+    if uw >= 2 * body and lw <= body:
+        return "shooting_star"
+    return None
 
 
-# ---------------- HANGING MAN / INVERTED HAMMER ----------------
-def hanging_man(candle):
-    # same geometry as hammer, context-dependent (uptrend)
-    return hammer(candle)
+def hanging_man_inverted_hammer(c, trend="up"):
+    body, uw, lw = candle_parts(c)
+    if body == 0:
+        return None
 
-def inverted_hammer(candle):
-    # same geometry as shooting star, context-dependent (downtrend)
-    return shooting_star(candle)
+    if trend == "up" and lw >= 2 * body:
+        return "hanging_man"
+    if trend == "down" and uw >= 2 * body:
+        return "inverted_hammer"
+    return None
 
 
-# ---------------- AGGREGATOR ----------------
-def candlestick_patterns(candles):
-    last = candles[-1]
+def doji_star(prev, curr):
+    prev_body, _, _ = candle_parts(prev)
+    body, uw, lw = candle_parts(curr)
 
-    return {
-        "engulfing": engulfing(candles),
-        "dragonfly_doji": dragonfly_doji(last),
-        "gravestone_doji": gravestone_doji(last),
-        "hammer": hammer(last),
-        "shooting_star": shooting_star(last),
-        "bullish_doji_star": bullish_doji_star(candles),
-        "bearish_doji_star": bearish_doji_star(candles),
-        "hanging_man": hanging_man(last),
-        "inverted_hammer": inverted_hammer(last),
-    }
+    if body < prev_body * 0.3 and (uw + lw) > prev_body:
+        if curr[4] > curr[1]:
+            return "bullish_doji_star"
+        else:
+            return "bearish_doji_star"
+    return None
+
+
+# ---------- rolling detector ----------
+def detect_candlestick_patterns(
+    candles=cache.cached_p42,
+    volume_period: int = 20,
+) -> List[Dict]:
+
+    candles = np.asarray(candles, dtype=float)
+    avg_vol = average_volume(candles, volume_period)
+
+    patterns = []
+
+    for i in range(1, len(candles)):
+        prev = candles[i - 1]
+        curr = candles[i]
+
+        strength = curr[5] / avg_vol if avg_vol > 0 else 1.0
+
+        e = engulfing(prev, curr)
+        if e:
+            patterns.append({**e, "index": i, "volume_strength": strength})
+
+        d = dragonfly_gravestone(curr)
+        if d:
+            patterns.append({"type": d, "index": i, "volume_strength": strength})
+
+        h = hammer_shooting_star(curr)
+        if h:
+            patterns.append({"type": h, "index": i, "volume_strength": strength})
+
+        s = doji_star(prev, curr)
+        if s:
+            patterns.append({"type": s, "index": i, "volume_strength": strength})
+
+    return patterns
+
+#----------------------------------------------------------------------#
+
+# ---------- helpers ----------
+def swing_points(candles: np.ndarray, left: int = 2, right: int = 2):
+    highs = candles[:, 2]
+    lows = candles[:, 3]
+
+    swing_highs = []
+    swing_lows = []
+
+    for i in range(left, len(candles) - right):
+        if highs[i] == np.max(highs[i - left:i + right + 1]):
+            swing_highs.append((i, highs[i]))
+        if lows[i] == np.min(lows[i - left:i + right + 1]):
+            swing_lows.append((i, lows[i]))
+
+    return swing_highs, swing_lows
+
+
+def average_volume(candles: np.ndarray, period: int = 20) -> float:
+    return float(candles[-period:, 5].mean())
+
+
+# ---------- SMC core ----------
+def smc_reader(
+    candles=cache.cached_p42,
+    swing_left: int = 2,
+    swing_right: int = 2,
+    volume_period: int = 20,
+) -> List[Dict]:
+    """
+    Detects:
+        - FVG (Fair Value Gap)
+        - BoS (Break of Structure)
+        - CHoCH (Change of Character)
+
+    Returns list of events.
+    """
+
+    candles = np.asarray(candles, dtype=float)
+    avg_vol = average_volume(candles, volume_period)
+
+    swing_highs, swing_lows = swing_points(candles, swing_left, swing_right)
+
+    events = []
+
+    # ---------- FVG ----------
+    for i in range(2, len(candles)):
+        c1, c2, c3 = candles[i - 2], candles[i - 1], candles[i]
+
+        # Bullish FVG
+        if c3[3] > c1[2]:
+            events.append({
+                "type": "bullish_fvg",
+                "index": i,
+                "gap": (c1[2], c3[3]),
+                "volume_strength": c2[5] / avg_vol
+            })
+
+        # Bearish FVG
+        if c3[2] < c1[3]:
+            events.append({
+                "type": "bearish_fvg",
+                "index": i,
+                "gap": (c3[2], c1[3]),
+                "volume_strength": c2[5] / avg_vol
+            })
+
+    # ---------- BoS & CHoCH ----------
+    last_high = None
+    last_low = None
+    trend = None  # "up" | "down"
+
+    for i in range(len(candles)):
+        high = candles[i][2]
+        low = candles[i][3]
+        close = candles[i][4]
+        vol_strength = candles[i][5] / avg_vol
+
+        # update structure levels
+        for idx, price in swing_highs:
+            if idx == i:
+                last_high = price
+
+        for idx, price in swing_lows:
+            if idx == i:
+                last_low = price
+
+        # BoS up
+        if last_high and close > last_high:
+            if trend == "up":
+                events.append({
+                    "type": "bos_bullish",
+                    "index": i,
+                    "level": last_high,
+                    "volume_strength": vol_strength
+                })
+            else:
+                events.append({
+                    "type": "choch_bullish",
+                    "index": i,
+                    "level": last_high,
+                    "volume_strength": vol_strength
+                })
+                trend = "up"
+
+        # BoS down
+        if last_low and close < last_low:
+            if trend == "down":
+                events.append({
+                    "type": "bos_bearish",
+                    "index": i,
+                    "level": last_low,
+                    "volume_strength": vol_strength
+                })
+            else:
+                events.append({
+                    "type": "choch_bearish",
+                    "index": i,
+                    "level": last_low,
+                    "volume_strength": vol_strength
+                })
+                trend = "down"
+
+    return events
