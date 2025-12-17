@@ -21,9 +21,9 @@ def ttl_cache(ttl_seconds: int):
 
 
 @ttl_cache(ttl_seconds=900)  # Cache for 15 minutes
-def cached_p42():
+def cached_p42(market: str):
     return fetch.get_OHLCV(
-        symbol="BTC/USDT",
+        symbol=market,
         timeframe=settings.timeframe,
         limit=42
     )
