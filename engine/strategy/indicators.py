@@ -10,7 +10,7 @@ import utils.math as smath
 #----------RSI-indicator----------#
 
 def rsi(
-    candles=cache.cached_p42,
+    candles=cache.cached_p42(),
     period: int = 14,
     mode: str = "close-close",  # "close-close" (standard) | "open-close"
 ):
@@ -62,12 +62,12 @@ def rsi(
     rsi_value = rsi_series[-1]
     rsi_mean = float(np.mean(rsi_series))
 
-    return rsi_value, rsi_mean
+    return rsi_value, rsi_mean, rsi_series
 
 #----------TnK-indicator----------#
 
 def tenkan_and_kijun(
-    candles=cache.cached_p42,
+    candles=cache.cached_p42(),
     conversion_period: int = 9,   # Tenkan-sen
     base_period: int = 26,        # Kijun-sen
 ):
@@ -104,7 +104,7 @@ def tenkan_and_kijun(
 # ============================================================
 
 def detect_candlestick_patterns(
-    candles=cache.cached_p42,
+    candles=cache.cached_p42(),
     volume_period: int = 20,
     min_volume_strength: float = 1.24,
 ) -> List[Dict]:
@@ -223,7 +223,7 @@ def detect_candlestick_patterns(
 # ============================================================
 
 def smc_reader(
-    candles=cache.cached_p42,
+    candles=cache.cached_p42(),
     swing_left: int = 2,
     swing_right: int = 2,
     volume_period: int = 20,
