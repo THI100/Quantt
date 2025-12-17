@@ -1,6 +1,7 @@
 import numpy as np
 import data.cache as cache
 from typing import Dict, List
+import utils.math as smath
 
 #----------------------------------------------------------------------#
 
@@ -98,93 +99,18 @@ def tenkan_and_kijun(
 
 #----------------------------------------------------------------------#
 
-#---------------- CANDLESTICK PATTERNS ----------------#
+# ============================================================
+# Candlestick Pattern Reader (STRICT VERSION)
+# ============================================================
 
-# ---------- helpers ----------
-def average_volume(candles: np.ndarray, period: int = 20) -> float:
-    vols = candles[-period:, 5]
-    return float(vols.mean())
-
-
-def candle_parts(c):
-    o, h, l, c_ = c[1], c[2], c[3], c[4]
-    body = abs(c_ - o)
-    upper_wick = h - max(o, c_)
-    lower_wick = min(o, c_) - l
-    return body, upper_wick, lower_wick
-
-
-# ---------- pattern checks ----------
-def engulfing(prev, curr):
-    prev_body, _, _ = candle_parts(prev)
-    curr_body, _, _ = candle_parts(curr)
-
-    if curr_body >= 2 * prev_body:
-        # bullish
-        if curr[4] > curr[1] and prev[4] < prev[1]:
-            return {"type": "bullish_engulfing", "multiplier": curr_body / prev_body}
-        # bearish
-        if curr[4] < curr[1] and prev[4] > prev[1]:
-            return {"type": "bearish_engulfing", "multiplier": -(curr_body / prev_body)}
-    return None
-
-
-def dragonfly_gravestone(c):
-    body, uw, lw = candle_parts(c)
-    if body == 0:
-        body = 1e-9
-
-    if lw >= 2 * body and uw <= body * 0.2:
-        return "dragonfly_doji"
-    if uw >= 2 * body and lw <= body * 0.2:
-        return "gravestone_doji"
-    return None
-
-
-def hammer_shooting_star(c):
-    body, uw, lw = candle_parts(c)
-    if body == 0:
-        return None
-
-    if lw >= 2 * body and uw <= body:
-        return "hammer"
-    if uw >= 2 * body and lw <= body:
-        return "shooting_star"
-    return None
-
-
-def hanging_man_inverted_hammer(c, trend="up"):
-    body, uw, lw = candle_parts(c)
-    if body == 0:
-        return None
-
-    if trend == "up" and lw >= 2 * body:
-        return "hanging_man"
-    if trend == "down" and uw >= 2 * body:
-        return "inverted_hammer"
-    return None
-
-
-def doji_star(prev, curr):
-    prev_body, _, _ = candle_parts(prev)
-    body, uw, lw = candle_parts(curr)
-
-    if body < prev_body * 0.3 and (uw + lw) > prev_body:
-        if curr[4] > curr[1]:
-            return "bullish_doji_star"
-        else:
-            return "bearish_doji_star"
-    return None
-
-
-# ---------- rolling detector ----------
 def detect_candlestick_patterns(
     candles=cache.cached_p42,
     volume_period: int = 20,
+    min_volume_strength: float = 1.24,
 ) -> List[Dict]:
 
     candles = np.asarray(candles, dtype=float)
-    avg_vol = average_volume(candles, volume_period)
+    avg_vol = smath.average_volume(candles, volume_period)
 
     patterns = []
 
@@ -192,106 +118,146 @@ def detect_candlestick_patterns(
         prev = candles[i - 1]
         curr = candles[i]
 
-        strength = curr[5] / avg_vol if avg_vol > 0 else 1.0
+        body_p, _, _ = smath.candle_parts(prev)
+        body_c, uw, lw = smath.candle_parts(curr)
 
-        e = engulfing(prev, curr)
-        if e:
-            patterns.append({**e, "index": i, "volume_strength": strength})
+        if body_p == 0:
+            continue  # avoid doji-engulfed noise
 
-        d = dragonfly_gravestone(curr)
-        if d:
-            patterns.append({"type": d, "index": i, "volume_strength": strength})
+        volume_strength = curr[5] / avg_vol if avg_vol > 0 else 0.0
+        if volume_strength < min_volume_strength:
+            continue
 
-        h = hammer_shooting_star(curr)
-        if h:
-            patterns.append({"type": h, "index": i, "volume_strength": strength})
+        # ----------------------------------------------------
+        # Engulfing (strict, body-based)
+        # ----------------------------------------------------
+        multiplier = body_c / body_p
 
-        s = doji_star(prev, curr)
-        if s:
-            patterns.append({"type": s, "index": i, "volume_strength": strength})
+        if multiplier >= 2:
+            if curr[4] > curr[1] and prev[4] < prev[1]:
+                patterns.append({
+                    "type": "bullish_engulfing",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(multiplier),
+                    "volume_strength": volume_strength,
+                })
+                continue
+
+            if curr[4] < curr[1] and prev[4] > prev[1]:
+                patterns.append({
+                    "type": "bearish_engulfing",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(-multiplier),
+                    "volume_strength": volume_strength,
+                })
+                continue
+
+        # ----------------------------------------------------
+        # Hammer / Shooting Star / Hanging Man / Inverted Hammer
+        # ----------------------------------------------------
+        if body_c > 0:
+            # Hammer / Hanging Man (long lower wick)
+            if lw >= 2 * body_c and uw <= body_c:
+                mult = lw / body_c
+                patterns.append({
+                    "type": "hammer_like",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                })
+                continue
+
+            # Shooting Star / Inverted Hammer (long upper wick)
+            if uw >= 2 * body_c and lw <= body_c:
+                mult = uw / body_c
+                patterns.append({
+                    "type": "shooting_star_like",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(-mult),
+                    "volume_strength": volume_strength,
+                })
+                continue
+
+        # ----------------------------------------------------
+        # Dragonfly / Gravestone Doji (wick dominance)
+        # ----------------------------------------------------
+        if body_c > 0:
+            if lw >= 3 * body_c and uw <= body_c * 0.2:
+                mult = lw / body_c
+                patterns.append({
+                    "type": "dragonfly_doji",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                })
+                continue
+
+            if uw >= 3 * body_c and lw <= body_c * 0.2:
+                mult = uw / body_c
+                patterns.append({
+                    "type": "gravestone_doji",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(-mult),
+                    "volume_strength": volume_strength,
+                })
+                continue
+
+        # ----------------------------------------------------
+        # Doji Star (relative to previous body)
+        # ----------------------------------------------------
+        if body_c < body_p * 0.3 and (uw + lw) > body_p:
+            mult = (uw + lw) / body_p
+            sign = 1 if curr[4] > curr[1] else -1
+            patterns.append({
+                "type": "doji_star",
+                "index": i,
+                "multiplicator": smath.clamp_multiplier(sign * mult),
+                "volume_strength": volume_strength,
+            })
 
     return patterns
 
-#----------------------------------------------------------------------#
 
-# ---------- helpers ----------
-def swing_points(candles: np.ndarray, left: int = 2, right: int = 2):
+# ============================================================
+# Smart Money Concept Reader (STRICT VERSION)
+# ============================================================
+
+def smc_reader(
+    candles=cache.cached_p42,
+    swing_left: int = 2,
+    swing_right: int = 2,
+    volume_period: int = 20,
+    min_volume_strength: float = 1.24,
+) -> List[Dict]:
+
+    candles = np.asarray(candles, dtype=float)
+    avg_vol = smath.average_volume(candles, volume_period)
+
+    events = []
+
     highs = candles[:, 2]
     lows = candles[:, 3]
 
     swing_highs = []
     swing_lows = []
 
-    for i in range(left, len(candles) - right):
-        if highs[i] == np.max(highs[i - left:i + right + 1]):
+    for i in range(swing_left, len(candles) - swing_right):
+        if highs[i] == np.max(highs[i - swing_left:i + swing_right + 1]):
             swing_highs.append((i, highs[i]))
-        if lows[i] == np.min(lows[i - left:i + right + 1]):
+        if lows[i] == np.min(lows[i - swing_left:i + swing_right + 1]):
             swing_lows.append((i, lows[i]))
 
-    return swing_highs, swing_lows
-
-
-def average_volume(candles: np.ndarray, period: int = 20) -> float:
-    return float(candles[-period:, 5].mean())
-
-
-# ---------- SMC core ----------
-def smc_reader(
-    candles=cache.cached_p42,
-    swing_left: int = 2,
-    swing_right: int = 2,
-    volume_period: int = 20,
-) -> List[Dict]:
-    """
-    Detects:
-        - FVG (Fair Value Gap)
-        - BoS (Break of Structure)
-        - CHoCH (Change of Character)
-
-    Returns list of events.
-    """
-
-    candles = np.asarray(candles, dtype=float)
-    avg_vol = average_volume(candles, volume_period)
-
-    swing_highs, swing_lows = swing_points(candles, swing_left, swing_right)
-
-    events = []
-
-    # ---------- FVG ----------
-    for i in range(2, len(candles)):
-        c1, c2, c3 = candles[i - 2], candles[i - 1], candles[i]
-
-        # Bullish FVG
-        if c3[3] > c1[2]:
-            events.append({
-                "type": "bullish_fvg",
-                "index": i,
-                "gap": (c1[2], c3[3]),
-                "volume_strength": c2[5] / avg_vol
-            })
-
-        # Bearish FVG
-        if c3[2] < c1[3]:
-            events.append({
-                "type": "bearish_fvg",
-                "index": i,
-                "gap": (c3[2], c1[3]),
-                "volume_strength": c2[5] / avg_vol
-            })
-
-    # ---------- BoS & CHoCH ----------
     last_high = None
     last_low = None
-    trend = None  # "up" | "down"
+    trend = None
 
     for i in range(len(candles)):
-        high = candles[i][2]
-        low = candles[i][3]
         close = candles[i][4]
-        vol_strength = candles[i][5] / avg_vol
+        volume_strength = candles[i][5] / avg_vol if avg_vol > 0 else 0.0
 
-        # update structure levels
+        if volume_strength < min_volume_strength:
+            continue
+
         for idx, price in swing_highs:
             if idx == i:
                 last_high = price
@@ -300,39 +266,40 @@ def smc_reader(
             if idx == i:
                 last_low = price
 
-        # BoS up
+        # ---------------- BoS / CHoCH ----------------
         if last_high and close > last_high:
+            mult = (close - last_high) / last_high * 100
             if trend == "up":
                 events.append({
                     "type": "bos_bullish",
                     "index": i,
-                    "level": last_high,
-                    "volume_strength": vol_strength
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
                 })
             else:
                 events.append({
                     "type": "choch_bullish",
                     "index": i,
-                    "level": last_high,
-                    "volume_strength": vol_strength
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
                 })
                 trend = "up"
 
-        # BoS down
         if last_low and close < last_low:
+            mult = (last_low - close) / last_low * 100
             if trend == "down":
                 events.append({
                     "type": "bos_bearish",
                     "index": i,
-                    "level": last_low,
-                    "volume_strength": vol_strength
+                    "multiplicator": smath.clamp_multiplier(-mult),
+                    "volume_strength": volume_strength,
                 })
             else:
                 events.append({
                     "type": "choch_bearish",
                     "index": i,
-                    "level": last_low,
-                    "volume_strength": vol_strength
+                    "multiplicator": smath.clamp_multiplier(-mult),
+                    "volume_strength": volume_strength,
                 })
                 trend = "down"
 

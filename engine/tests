@@ -34,3 +34,15 @@ Test v1 detect_candlestick_patterns function in indicators.py:
     {'type': 'bos_bullish', 'index': 38, 'level': np.float64(2954.79), 'volume_strength': np.float64(0.9082633313984495)}, 
     {'type': 'bos_bullish', 'index': 39, 'level': np.float64(2954.79), 'volume_strength': np.float64(0.5564097707598669)}
 ]
+
+##########################################################################################################################################################
+
+[
+{'type': 'hammer_like', 'index': 1, 'multiplicator': 2.2138420585625833, 'volume_strength': np.float64(9.157596344557206)}, 
+{'type': 'doji_star', 'index': 3, 'multiplicator': 2.2748091603053533, 'volume_strength': np.float64(4.875325404268536)}, 
+{'type': 'doji_star', 'index': 10, 'multiplicator': 1.2506775067750902, 'volume_strength': np.float64(2.9540892320406082)}, 
+{'type': 'bearish_engulfing', 'index': 11, 'multiplicator': -21.90140845070336, 'volume_strength': np.float64(2.918557476691676)}, 
+{'type': 'bullish_engulfing', 'index': 19, 'multiplicator': 14.076433121017583, 'volume_strength': np.float64(2.32334346098827)}, 
+{'type': 'bearish_engulfing', 'index': 21, 'multiplicator': -25.0, 'volume_strength': np.float64(2.876509956559524)}, 
+{'type': 'doji_star', 'index': 24, 'multiplicator': 1.5249999999999928, 'volume_strength': np.float64(4.335764679758574)}
+]
