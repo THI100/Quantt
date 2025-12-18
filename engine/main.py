@@ -1,6 +1,7 @@
 import data.fetch as fetch
 import strategy.indicators as indicators
-from strategy.signal_generator import get_signal_indicators, get_signal_candlestick_patterns
+import data.cache as cache
+from strategy.signal_generator import get_signal_indicators, get_signal_candlestick_patterns, get_signal_smc
 
 mb1, mbear1 = get_signal_candlestick_patterns()
 mb2, mbear2, movement, rsi_cv = get_signal_indicators()
@@ -11,3 +12,5 @@ print(f"Total Bullish Force: {total_bullish}")
 print(f"Total Bearish Force: {total_bearish}")
 print(f"Actual Market Movement: {movement}")
 print(f"Current RSI Value: {rsi_cv}")
+
+print(get_signal_smc(market="ETH/USDT"))

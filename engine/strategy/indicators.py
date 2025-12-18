@@ -235,74 +235,122 @@ def smc_reader(
     events = []
 
     highs = candles[:, 2]
-    lows = candles[:, 3]
+    lows  = candles[:, 3]
+    closes = candles[:, 4]
 
-    swing_highs = []
-    swing_lows = []
+    # ---------------- Swing detection ----------------
+    swing_highs = {}
+    swing_lows = {}
 
     for i in range(swing_left, len(candles) - swing_right):
         if highs[i] == np.max(highs[i - swing_left:i + swing_right + 1]):
-            swing_highs.append((i, highs[i]))
+            swing_highs[i] = highs[i]
         if lows[i] == np.min(lows[i - swing_left:i + swing_right + 1]):
-            swing_lows.append((i, lows[i]))
+            swing_lows[i] = lows[i]
 
     last_high = None
     last_low = None
-    trend = None
+    trend = None  # "up" | "down"
+    broken_highs = set()
+    broken_lows = set()
 
+    # ---------------- Main loop ----------------
     for i in range(len(candles)):
-        close = candles[i][4]
+        close = closes[i]
         volume_strength = candles[i][5] / avg_vol if avg_vol > 0 else 0.0
 
         if volume_strength < min_volume_strength:
             continue
 
-        for idx, price in swing_highs:
-            if idx == i:
-                last_high = price
+        # Update active structure levels
+        for idx in sorted(swing_highs):
+            if idx < i:
+                last_high = swing_highs[idx]
 
-        for idx, price in swing_lows:
-            if idx == i:
-                last_low = price
+        for idx in sorted(swing_lows):
+            if idx < i:
+                last_low = swing_lows[idx]
 
-        # ---------------- BoS / CHoCH ----------------
-        if last_high and close > last_high:
+        # ---------------- Bullish break ----------------
+        if last_high and close > last_high and last_high not in broken_highs:
             mult = (close - last_high) / last_high * 100
-            if trend == "up":
-                events.append({
-                    "type": "bos_bullish",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                })
-            else:
-                events.append({
-                    "type": "choch_bullish",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                })
-                trend = "up"
+            event_type = "bos_bullish" if trend == "up" else "choch_bullish"
 
-        if last_low and close < last_low:
+            # if smath.clamp_multiplier(mult) > 0 and smath.clamp_multiplier(mult) < 2:
+            #     continue  # ignore negligible breaks
+            # elif smath.clamp_multiplier(mult) < 0 and smath.clamp_multiplier(mult) > -2:
+            #     continue  # ignore negligible breaks
+            # else:
+
+            events.append({
+                "type": event_type,
+                "index": i,
+                "multiplicator": smath.clamp_multiplier(mult),
+                "volume_strength": volume_strength,
+            })
+            
+            trend = "up"
+            broken_highs.add(last_high)
+
+        # ---------------- Bearish break ----------------
+        if last_low and close < last_low and last_low not in broken_lows:
             mult = (last_low - close) / last_low * 100
-            if trend == "down":
-                events.append({
-                    "type": "bos_bearish",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(-mult),
-                    "volume_strength": volume_strength,
-                })
-            else:
-                events.append({
-                    "type": "choch_bearish",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(-mult),
-                    "volume_strength": volume_strength,
-                })
-                trend = "down"
+            event_type = "bos_bearish" if trend == "down" else "choch_bearish"
+
+            # if smath.clamp_multiplier(mult) > 0 and smath.clamp_multiplier(mult) < 2:
+            #     continue  # ignore negligible breaks
+            # elif smath.clamp_multiplier(mult) < 0 and smath.clamp_multiplier(mult) > -2:
+            #     continue  # ignore negligible breaks
+            # else:
+
+            events.append({
+                "type": event_type,
+                "index": i,
+                "multiplicator": smath.clamp_multiplier(mult),
+                "volume_strength": volume_strength,
+            })
+            trend = "down"
+            broken_lows.add(last_low)
+
+        # ---------------- FVG detection ----------------
+        if i >= 2:
+            c1 = candles[i - 2]
+            c3 = candles[i]
+
+            # Bullish FVG
+            if c3[3] > c1[2]:
+                gap_size = (c3[3] - c1[2]) / c1[2] * 100
+
+                if gap_size < 0 and gap_size > 0.4:
+                    continue  # ignore negligible gaps
+                elif gap_size > 0 and gap_size < 0.4:
+                    continue  # ignore negligible gaps
+                else:
+                    events.append({
+                        "type": "bullish_fvg",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(gap_size),
+                        "volume_strength": volume_strength,
+                    })
+
+            # Bearish FVG
+            if c3[2] < c1[3]:
+                gap_size = (c1[3] - c3[2]) / c1[3] * 100
+
+                if gap_size < 0 and gap_size > 0.4:
+                    continue  # ignore negligible gaps
+                elif gap_size > 0 and gap_size < 0.4:
+                    continue  # ignore negligible gaps
+                else:
+                    events.append({
+                        "type": "bullish_fvg",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(gap_size),
+                        "volume_strength": volume_strength,
+                    })
 
     return events
+
 
 #----------ATR-indicator----------#
 
