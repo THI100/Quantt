@@ -6,7 +6,6 @@ def get_signal_indicators (market: str):
 
     market_force_bullish = 0
     market_force_bearish = 0
-    confidence = 0
 
     candles42 = cache.cached_p42(market=market)
 
@@ -46,108 +45,108 @@ def get_signal_indicators (market: str):
     if diff > buffer:
         market_force_bullish += 1
         actual_movement = "bullish"
-        confidence = abs(diff) / buffer
 
     elif diff < -buffer:
         market_force_bearish += 1
         actual_movement = "bearish"
-        confidence = abs(diff) / buffer
 
     else:
         actual_movement = "neutral"
-        confidence = 0
 
-
-    return market_force_bullish, market_force_bearish, actual_movement, confidence
+    return market_force_bullish, market_force_bearish, actual_movement
 
 def get_signal_candlestick_patterns(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
+    bullish_confidence = 0
+    bearish_confidence = 0
 
-    # shared cached snapshot
     candles = cache.cached_p14(market=market)
-
     patterns = indicators.detect_candlestick_patterns(candles=candles)
+
+    print(patterns)
 
     for p in patterns:
         mult = p["multiplicator"]
         strength = p["volume_strength"]
 
-        # normalize multiplicator impact
         impact = abs(mult) * min(strength, 2.0)
 
         if mult > 0:
             market_force_bullish += impact
+            bullish_confidence += 1
         elif mult < 0:
             market_force_bearish += impact
+            bearish_confidence += 1
 
-    return market_force_bullish, market_force_bearish
+    return (
+        market_force_bullish,
+        market_force_bearish,
+        bullish_confidence,
+        bearish_confidence,
+    )
+
 
 def get_signal_smc(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
+    bullish_confidence = 0
+    bearish_confidence = 0
 
     candles = cache.cached_p14(market=market)
-
-    smc_events = indicators.smc_reader(
-        candles=candles,
-    )
+    smc_events = indicators.smc_reader(candles=candles)
 
     for e in smc_events:
         etype = e["type"]
-        mult = abs(e["multiplicator"])
+        mult = e["multiplicator"]
         strength = min(e["volume_strength"], 2.0)
 
-        impact = mult * strength
+        impact = abs(mult) * strength
 
         # ---------------- Bullish events ----------------
-        if etype == "bos_bullish":
-            market_force_bullish += impact * 1.5
+        if etype in ("bos_bullish", "choch_bullish", "bullish_fvg"):
+            bullish_confidence += 1
 
-        elif etype == "choch_bullish":
-            market_force_bullish += impact * 2.0
-            market_force_bearish *= 0.5
-
-        elif etype == "bullish_fvg":
-            market_force_bullish += impact * 0.7
+            if etype == "bos_bullish":
+                market_force_bullish += impact * 1.5
+            elif etype == "choch_bullish":
+                market_force_bullish += impact * 2.0
+                market_force_bearish *= 0.5
+            elif etype == "bullish_fvg":
+                market_force_bullish += impact * 0.7
 
         # ---------------- Bearish events ----------------
-        elif etype == "bos_bearish":
-            market_force_bearish += impact * 1.5
+        elif etype in ("bos_bearish", "choch_bearish", "bearish_fvg"):
+            bearish_confidence += 1
 
-        elif etype == "choch_bearish":
-            market_force_bearish += impact * 2.0
-            market_force_bullish *= 0.5
+            if etype == "bos_bearish":
+                market_force_bearish += impact * 1.5
+            elif etype == "choch_bearish":
+                market_force_bearish += impact * 2.0
+                market_force_bullish *= 0.5
+            elif etype == "bearish_fvg":
+                market_force_bearish += impact * 0.7
 
-        elif etype == "bearish_fvg":
-            market_force_bearish += impact * 0.7
+    return (
+        market_force_bullish,
+        market_force_bearish,
+        bullish_confidence,
+        bearish_confidence,
+    )
 
-    return market_force_bullish, market_force_bearish
 
 def get_overall_market_signal(market: str):
-    mb1, mbear1 = get_signal_candlestick_patterns(market=market)
-    mb2, mbear2, movement, confidence = get_signal_indicators(market=market)
-    mb3, mbear3 = get_signal_smc(market=market)
+    mbull2, mbear2, actual_movement = get_signal_indicators(market=market)
+    mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market=market)
+    mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market=market)
 
-    total_bullish = round(mb1 + mb2 + mb3, 2)
+    total_bullish = round(mbull1 + mbull2 + mbull3, 2)
     total_bearish = round(mbear1 + mbear2 + mbear3, 2)
 
-    print(f"[{market}] Market Signal - Bullish: {total_bullish} | Bearish: {total_bearish} | Movement: {movement} | Confidence: {confidence:.2f}")
-    
-    original_market_balance = total_bullish / total_bearish
+    total_confidence_bullish = cbull1 + cbull3
+    total_confidence_bearish = cbear1 + cbear3
 
-    if movement == "bullish":
-        new_bullish = total_bullish * confidence
-        total_bullish = round(new_bullish, 2)
-    elif movement == "bearish":
-        new_bearish = total_bearish * confidence
-        total_bearish = round(new_bearish, 2)
-    else:
-        pass
+    real_strength = round(abs(total_bullish - total_bearish), 2)
+    real_confidence = abs(total_confidence_bullish - total_confidence_bearish)
 
-    strength = abs(total_bullish / total_bearish)
-    if strength < 1.0:
-        movement = "neutral"
-    
-
-    return total_bullish, total_bearish, movement, original_market_balance
+    return real_confidence, real_strength, actual_movement

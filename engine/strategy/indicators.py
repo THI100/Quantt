@@ -1,8 +1,8 @@
-import numpy as np
+import numpy as np # type: ignore
 from typing import Dict, List
 import utils.math as smath
 
-#----------------------------------------------------------------------#
+##CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED##
 
 #---------------- TECHNICAL INDICATORS ----------------#
 
@@ -99,13 +99,13 @@ def tenkan_and_kijun(
 #----------------------------------------------------------------------#
 
 # ============================================================
-# Candlestick Pattern Reader (STRICT VERSION)
+# Candlestick Pattern Reader
 # ============================================================
 
 def detect_candlestick_patterns(
     candles: List[List[float]],
     volume_period: int = 20,
-    min_volume_strength: float = 1.24,
+    min_volume_strength: float = 1.2,
 ) -> List[Dict]:
 
     candles = np.asarray(candles, dtype=float)
@@ -228,7 +228,7 @@ def detect_candlestick_patterns(
             if prev_body_sum > 0 and body_c >= 2 * prev_body_sum:
 
                 # stricter volume requirement
-                if volume_strength >= min_volume_strength * 1.35:
+                if volume_strength >= min_volume_strength:
                     mult = body_c / prev_body_sum
                     sign = 1 if curr[4] > curr[1] else -1
 

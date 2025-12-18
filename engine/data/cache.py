@@ -1,6 +1,5 @@
 import data.fetch as fetch
 from config import settings
-from config.markets import markets as tickers
 import time
 from functools import wraps
 

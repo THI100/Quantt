@@ -1,3 +1,6 @@
-from strategy.signal_generator import get_overall_market_signal
-from data import cache, fetch
-from config import settings
+from exchange.binance import c_client
+import data.fetch as fetch
+
+balance = fetch.get_balance()
+print(balance)
+
