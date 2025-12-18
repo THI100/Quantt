@@ -214,6 +214,31 @@ def detect_candlestick_patterns(
                 "volume_strength": volume_strength,
             })
 
+        # ----------------------------------------------------
+        # Momentum Candle (body dominance + volume)
+        # ----------------------------------------------------
+        if i >= 3:
+            body_1, _, _ = smath.candle_parts(candles[i - 1])
+            body_2, _, _ = smath.candle_parts(candles[i - 2])
+            body_3, _, _ = smath.candle_parts(candles[i - 3])
+
+            prev_body_sum = body_1 + body_2 + body_3
+
+            # avoid division noise
+            if prev_body_sum > 0 and body_c >= 2 * prev_body_sum:
+
+                # stricter volume requirement
+                if volume_strength >= min_volume_strength * 1.35:
+                    mult = body_c / prev_body_sum
+                    sign = 1 if curr[4] > curr[1] else -1
+
+                    patterns.append({
+                        "type": "momentum_candle",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(sign * mult),
+                        "volume_strength": volume_strength,
+                    })
+
     return patterns
 
 

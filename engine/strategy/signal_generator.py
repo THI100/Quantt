@@ -1,6 +1,5 @@
 import strategy.indicators as indicators
-from data import cache, fetch
-from execution.order_manager import market
+from data import cache
 from config import settings
 
 def get_signal_indicators (market: str):
@@ -61,7 +60,7 @@ def get_signal_indicators (market: str):
 
     return market_force_bullish, market_force_bearish, actual_movement, confidence
 
-def get_signal_candlestick_patterns(market: str = market):
+def get_signal_candlestick_patterns(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
 
@@ -88,7 +87,7 @@ def get_signal_smc(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
 
-    candles = cache.cached_p42(market=market)
+    candles = cache.cached_p14(market=market)
 
     smc_events = indicators.smc_reader(
         candles=candles,
@@ -145,5 +144,10 @@ def get_overall_market_signal(market: str):
         total_bearish = round(new_bearish, 2)
     else:
         pass
+
+    strength = abs(total_bullish / total_bearish)
+    if strength < 1.0:
+        movement = "neutral"
+    
 
     return total_bullish, total_bearish, movement, original_market_balance
