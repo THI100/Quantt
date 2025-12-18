@@ -3,12 +3,12 @@ from data import cache, fetch
 from execution.order_manager import market
 from config import settings
 
-def get_signal_indicators ():
+def get_signal_indicators (market: str):
 
     market_force_bullish = 0
     market_force_bearish = 0
+    confidence = 0
 
-    candles14 = cache.cached_p14(market=market)
     candles42 = cache.cached_p42(market=market)
 
     rsi_values = indicators.rsi(candles=candles42)
@@ -47,20 +47,21 @@ def get_signal_indicators ():
     if diff > buffer:
         market_force_bullish += 1
         actual_movement = "bullish"
+        confidence = abs(diff) / buffer
 
     elif diff < -buffer:
         market_force_bearish += 1
         actual_movement = "bearish"
+        confidence = abs(diff) / buffer
 
     else:
         actual_movement = "neutral"
+        confidence = 0
 
 
-    return market_force_bullish, market_force_bearish, actual_movement
+    return market_force_bullish, market_force_bearish, actual_movement, confidence
 
-def get_signal_candlestick_patterns(
-    market: str = market,
-):
+def get_signal_candlestick_patterns(market: str = market):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
 
@@ -83,9 +84,7 @@ def get_signal_candlestick_patterns(
 
     return market_force_bullish, market_force_bearish
 
-def get_signal_smc(
-    market: str = market,
-):
+def get_signal_smc(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
 
@@ -126,12 +125,25 @@ def get_signal_smc(
 
     return market_force_bullish, market_force_bearish
 
-def get_overall_market_signal():
-    mb1, mbear1 = get_signal_candlestick_patterns()
-    mb2, mbear2, movement = get_signal_indicators()
-    mb3, mbear3 = get_signal_smc()
+def get_overall_market_signal(market: str):
+    mb1, mbear1 = get_signal_candlestick_patterns(market=market)
+    mb2, mbear2, movement, confidence = get_signal_indicators(market=market)
+    mb3, mbear3 = get_signal_smc(market=market)
 
     total_bullish = round(mb1 + mb2 + mb3, 2)
     total_bearish = round(mbear1 + mbear2 + mbear3, 2)
 
-    return total_bullish, total_bearish, movement
+    print(f"[{market}] Market Signal - Bullish: {total_bullish} | Bearish: {total_bearish} | Movement: {movement} | Confidence: {confidence:.2f}")
+    
+    original_market_balance = total_bullish / total_bearish
+
+    if movement == "bullish":
+        new_bullish = total_bullish * confidence
+        total_bullish = round(new_bullish, 2)
+    elif movement == "bearish":
+        new_bearish = total_bearish * confidence
+        total_bearish = round(new_bearish, 2)
+    else:
+        pass
+
+    return total_bullish, total_bearish, movement, original_market_balance
