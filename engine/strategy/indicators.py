@@ -2,8 +2,6 @@ import numpy as np # type: ignore
 from typing import Dict, List
 import utils.math as smath
 
-##CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED-CONCLUDED##
-
 #---------------- TECHNICAL INDICATORS ----------------#
 
 #----------RSI-indicator----------#
@@ -251,7 +249,7 @@ def smc_reader(
     swing_left: int = 2,
     swing_right: int = 2,
     volume_period: int = 20,
-    min_volume_strength: float = 1.24,
+    min_volume_strength: float = 1.05,  # menos agressivo
 ) -> List[Dict]:
 
     candles = np.asarray(candles, dtype=float)
@@ -263,7 +261,6 @@ def smc_reader(
     lows  = candles[:, 3]
     closes = candles[:, 4]
 
-    # ---------------- Swing detection ----------------
     swing_highs = {}
     swing_lows = {}
 
@@ -275,19 +272,17 @@ def smc_reader(
 
     last_high = None
     last_low = None
-    trend = None  # "up" | "down"
+    trend = None
     broken_highs = set()
     broken_lows = set()
 
-    # ---------------- Main loop ----------------
     for i in range(len(candles)):
         close = closes[i]
-        volume_strength = candles[i][5] / avg_vol if avg_vol > 0 else 0.0
+        volume_strength = candles[i][5] / avg_vol if avg_vol > 0 else 1.0
 
         if volume_strength < min_volume_strength:
             continue
 
-        # Update active structure levels
         for idx in sorted(swing_highs):
             if idx < i:
                 last_high = swing_highs[idx]
@@ -296,88 +291,72 @@ def smc_reader(
             if idx < i:
                 last_low = swing_lows[idx]
 
-        # ---------------- Bullish break ----------------
+        # -------- Inicialização da tendência --------
+        if trend is None and last_high and last_low:
+            trend = "up" if close > last_high else "down"
+            continue
+
+        # -------- Bullish break --------
         if last_high and close > last_high and last_high not in broken_highs:
             mult = (close - last_high) / last_high * 100
             event_type = "bos_bullish" if trend == "up" else "choch_bullish"
 
-            # if smath.clamp_multiplier(mult) > 0 and smath.clamp_multiplier(mult) < 2:
-            #     continue  # ignore negligible breaks
-            # elif smath.clamp_multiplier(mult) < 0 and smath.clamp_multiplier(mult) > -2:
-            #     continue  # ignore negligible breaks
-            # else:
-
             events.append({
                 "type": event_type,
                 "index": i,
                 "multiplicator": smath.clamp_multiplier(mult),
                 "volume_strength": volume_strength,
             })
-            
+
             trend = "up"
             broken_highs.add(last_high)
 
-        # ---------------- Bearish break ----------------
+        # -------- Bearish break --------
         if last_low and close < last_low and last_low not in broken_lows:
             mult = (last_low - close) / last_low * 100
             event_type = "bos_bearish" if trend == "down" else "choch_bearish"
 
-            # if smath.clamp_multiplier(mult) > 0 and smath.clamp_multiplier(mult) < 2:
-            #     continue  # ignore negligible breaks
-            # elif smath.clamp_multiplier(mult) < 0 and smath.clamp_multiplier(mult) > -2:
-            #     continue  # ignore negligible breaks
-            # else:
-
             events.append({
                 "type": event_type,
                 "index": i,
                 "multiplicator": smath.clamp_multiplier(mult),
                 "volume_strength": volume_strength,
             })
+
             trend = "down"
             broken_lows.add(last_low)
 
-        # ---------------- FVG detection ----------------
+        # -------- FVG --------
         if i >= 2:
             c1 = candles[i - 2]
             c3 = candles[i]
 
             # Bullish FVG
             if c3[3] > c1[2]:
-                gap_size = (c3[3] - c1[2]) / c1[2] * 100
-
-                if gap_size < 0 and gap_size > 0.4:
-                    continue  # ignore negligible gaps
-                elif gap_size > 0 and gap_size < 0.4:
-                    continue  # ignore negligible gaps
-                else:
+                gap = (c3[3] - c1[2]) / c1[2] * 100
+                if abs(gap) >= 0.4:
                     events.append({
                         "type": "bullish_fvg",
                         "index": i,
-                        "multiplicator": smath.clamp_multiplier(gap_size),
+                        "multiplicator": smath.clamp_multiplier(gap),
                         "volume_strength": volume_strength,
                     })
 
-            # Bearish FVG
+            # Bearish FVG (BUG CORRIGIDO)
             if c3[2] < c1[3]:
-                gap_size = (c1[3] - c3[2]) / c1[3] * 100
-
-                if gap_size < 0 and gap_size > 0.4:
-                    continue  # ignore negligible gaps
-                elif gap_size > 0 and gap_size < 0.4:
-                    continue  # ignore negligible gaps
-                else:
+                gap = (c1[3] - c3[2]) / c1[3] * 100
+                if abs(gap) >= 0.4:
                     events.append({
-                        "type": "bullish_fvg",
+                        "type": "bearish_fvg",
                         "index": i,
-                        "multiplicator": smath.clamp_multiplier(gap_size),
+                        "multiplicator": smath.clamp_multiplier(-gap),
                         "volume_strength": volume_strength,
                     })
 
     return events
 
 
-#----------ATR-indicator----------#
+#---------- ATR-indicator ----------#
 
 def atr(candles, period=14):
     trs = []
@@ -397,5 +376,3 @@ def atr(candles, period=14):
 
 
 #----------------------------------------------------------------------#
-
-#---------------- END OF FILE ----------------#

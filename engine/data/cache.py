@@ -34,3 +34,11 @@ def cached_p14(market: str):
         timeframe=settings.timeframe,
         limit=14
     )
+
+@ttl_cache(ttl_seconds=900)  # Cache for 15 minutes
+def cached_p28(market: str):
+    return fetch.get_OHLCV(
+        symbol=market,
+        timeframe=settings.timeframe,
+        limit=28
+    )

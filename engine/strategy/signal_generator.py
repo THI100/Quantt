@@ -64,8 +64,6 @@ def get_signal_candlestick_patterns(market: str):
     candles = cache.cached_p14(market=market)
     patterns = indicators.detect_candlestick_patterns(candles=candles)
 
-    print(patterns)
-
     for p in patterns:
         mult = p["multiplicator"]
         strength = p["volume_strength"]
@@ -140,13 +138,29 @@ def get_overall_market_signal(market: str):
     mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market=market)
     mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market=market)
 
+    movement = ""
     total_bullish = round(mbull1 + mbull2 + mbull3, 2)
     total_bearish = round(mbear1 + mbear2 + mbear3, 2)
 
     total_confidence_bullish = cbull1 + cbull3
     total_confidence_bearish = cbear1 + cbear3
 
-    real_strength = round(abs(total_bullish - total_bearish), 2)
-    real_confidence = abs(total_confidence_bullish - total_confidence_bearish)
+    real_strength = round(total_bullish - total_bearish, 2)
 
-    return real_confidence, real_strength, actual_movement
+    if real_strength > 0:
+        real_confidence = total_confidence_bullish
+    elif real_strength < 0:
+        real_confidence = total_confidence_bearish
+    else:
+        real_confidence = 0
+
+    if real_confidence == 0:
+        movement = "neutral"
+    elif real_strength > 0 and real_confidence > 0:
+        movement = "bullish"
+    elif real_strength < 0 and real_confidence > 0:
+        movement = "bearish"
+    else:
+        movement = "neutral"
+
+    return real_confidence, real_strength, actual_movement, movement
