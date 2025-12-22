@@ -135,37 +135,39 @@ def get_signal_smc(market: str):
 
 
 def get_overall_market_signal(market: str):
-    mbull2, mbear2, actual_movement = get_signal_indicators(market=market)
-    mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market=market)
-    mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market=market)
+    mbull2, mbear2, actual_movement = get_signal_indicators(market)
+    mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market)
+    mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market)
 
-    MAX_STRENGTH = 25.0
-    MAX_CONFIDENCE = 10.0
-    total_bullish = mbull1 + mbull2 + mbull3
-    total_bearish = mbear1 + mbear2 + mbear3
+    bullish = mbull1 + mbull2 + mbull3
+    bearish = mbear1 + mbear2 + mbear3
 
-    total_confidence_bullish = cbull1 + cbull3
-    total_confidence_bearish = cbear1 + cbear3
+    conf_bull = cbull1 + cbull3
+    conf_bear = cbear1 + cbear3
 
-    real_strength_raw = total_bullish - total_bearish
+    real_strength_raw = bullish - bearish
 
-    if real_strength_raw > 0:
-        real_confidence_raw = total_confidence_bullish
-    elif real_strength_raw < 0:
-        real_confidence_raw = total_confidence_bearish
-    else:
-        real_confidence_raw = 0
+    direction = (
+        "bullish" if real_strength_raw > 0
+        else "bearish" if real_strength_raw < 0
+        else "neutral"
+    )
 
-    if real_confidence_raw == 0:
-        movement = "neutral"
-    elif real_strength_raw > 0:
-        movement = "bullish"
-    elif real_strength_raw < 0:
-        movement = "bearish"
-    else:
-        movement = "neutral"
+    real_confidence_raw = (
+        conf_bull if real_strength_raw > 0
+        else conf_bear if real_strength_raw < 0
+        else 0
+    )
 
-    real_strength = scale_0_100(real_strength_raw, MAX_STRENGTH)
-    real_confidence = scale_0_100(real_confidence_raw, MAX_CONFIDENCE)
+    print(bullish, bearish, conf_bull, conf_bear)
 
-    return real_confidence, real_strength, actual_movement, movement
+    max_strength = bullish + bearish
+    max_confidence = conf_bull + conf_bear
+
+    real_strength = scale_0_100(real_strength_raw, max_strength)
+    real_confidence = scale_0_100(real_confidence_raw, max_confidence)
+
+    if real_confidence == 0:
+        direction = "neutral"
+
+    return real_confidence, real_strength, actual_movement, direction
