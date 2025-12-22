@@ -159,8 +159,6 @@ def get_overall_market_signal(market: str):
         else 0
     )
 
-    print(bullish, bearish, conf_bull, conf_bear)
-
     max_strength = bullish + bearish
     max_confidence = conf_bull + conf_bear
 
