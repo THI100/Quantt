@@ -2,6 +2,8 @@ import data.fetch as fetch
 from config import settings
 import time
 from functools import wraps
+from utils import math
+
 
 def ttl_cache(ttl_seconds: int):
     def decorator(func):
@@ -19,7 +21,7 @@ def ttl_cache(ttl_seconds: int):
     return decorator
 
 
-@ttl_cache(ttl_seconds=900)  # Cache for 15 minutes
+@ttl_cache(ttl_seconds=math.get_cache_timing(settings.timeframe))  # Cache for the specified timeframe
 def cached_p42(market: str):
     return fetch.get_OHLCV(
         symbol=market,
@@ -27,7 +29,7 @@ def cached_p42(market: str):
         limit=42
     )
 
-@ttl_cache(ttl_seconds=900)  # Cache for 15 minutes
+@ttl_cache(ttl_seconds=math.get_cache_timing(settings.timeframe))  # Cache for the specified timeframe
 def cached_p14(market: str):
     return fetch.get_OHLCV(
         symbol=market,
@@ -35,7 +37,7 @@ def cached_p14(market: str):
         limit=14
     )
 
-@ttl_cache(ttl_seconds=900)  # Cache for 15 minutes
+@ttl_cache(ttl_seconds=math.get_cache_timing(settings.timeframe))  # Cache for the specified timeframe
 def cached_p28(market: str):
     return fetch.get_OHLCV(
         symbol=market,

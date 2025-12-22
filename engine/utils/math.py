@@ -34,3 +34,17 @@ def clamp_multiplier(value: float, min_v: float = -25.0, max_v: float = 25.0) ->
 
 def scale_0_100(value: float, max_value: float) -> float:
     return round(min(abs(value) / max_value, 1.0) * 100, 2)
+
+def get_cache_timing(tm:str) -> int:
+    if tm == "1m":
+        return 60
+    elif tm == "5m":
+        return 300
+    elif tm == "15m" or tm == "30m" or tm == "1h":
+        return 900
+    elif tm == "4h" or tm == "6h" or tm == "12h":
+        return 3600
+    elif tm == "1d":
+        return 86400 / 3
+    else:
+        return 900  # Default to 15m
