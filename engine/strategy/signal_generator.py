@@ -1,6 +1,7 @@
 import strategy.indicators as indicators
 from data import cache
 from config import settings
+from utils.math import scale_0_100
 
 def get_signal_indicators (market: str):
 
@@ -91,7 +92,7 @@ def get_signal_smc(market: str):
     bullish_confidence = 0
     bearish_confidence = 0
 
-    candles = cache.cached_p14(market=market)
+    candles = cache.cached_p28(market=market)
     smc_events = indicators.smc_reader(candles=candles)
 
     for e in smc_events:
@@ -138,29 +139,33 @@ def get_overall_market_signal(market: str):
     mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market=market)
     mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market=market)
 
-    movement = ""
-    total_bullish = round(mbull1 + mbull2 + mbull3, 2)
-    total_bearish = round(mbear1 + mbear2 + mbear3, 2)
+    MAX_STRENGTH = 25.0
+    MAX_CONFIDENCE = 10.0
+    total_bullish = mbull1 + mbull2 + mbull3
+    total_bearish = mbear1 + mbear2 + mbear3
 
     total_confidence_bullish = cbull1 + cbull3
     total_confidence_bearish = cbear1 + cbear3
 
-    real_strength = round(total_bullish - total_bearish, 2)
+    real_strength_raw = total_bullish - total_bearish
 
-    if real_strength > 0:
-        real_confidence = total_confidence_bullish
-    elif real_strength < 0:
-        real_confidence = total_confidence_bearish
+    if real_strength_raw > 0:
+        real_confidence_raw = total_confidence_bullish
+    elif real_strength_raw < 0:
+        real_confidence_raw = total_confidence_bearish
     else:
-        real_confidence = 0
+        real_confidence_raw = 0
 
-    if real_confidence == 0:
+    if real_confidence_raw == 0:
         movement = "neutral"
-    elif real_strength > 0 and real_confidence > 0:
+    elif real_strength_raw > 0:
         movement = "bullish"
-    elif real_strength < 0 and real_confidence > 0:
+    elif real_strength_raw < 0:
         movement = "bearish"
     else:
         movement = "neutral"
+
+    real_strength = scale_0_100(real_strength_raw, MAX_STRENGTH)
+    real_confidence = scale_0_100(real_confidence_raw, MAX_CONFIDENCE)
 
     return real_confidence, real_strength, actual_movement, movement

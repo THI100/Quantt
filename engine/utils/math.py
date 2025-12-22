@@ -31,3 +31,6 @@ def swing_points(candles: np.ndarray, left: int = 2, right: int = 2):
 
 def clamp_multiplier(value: float, min_v: float = -25.0, max_v: float = 25.0) -> float:
     return float(np.clip(value, min_v, max_v))
+
+def scale_0_100(value: float, max_value: float) -> float:
+    return round(min(abs(value) / max_value, 1.0) * 100, 2)
