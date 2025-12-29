@@ -1,4 +1,6 @@
-from exchange.binance import c_client
+from data.cache import cached_client
+
+c_client = cached_client()
 
 def get_ticker(symbol: str):
     """Fetch a ticker."""

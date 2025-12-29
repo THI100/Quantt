@@ -18,10 +18,6 @@ def create_client():
         }
     })
 
-    # You may still want these options:
-    client.options["warnOnFetchBalanceWithoutAddress"] = False
-    client.options["recvWindow"] = 5000 
-
     return client
 
 okx_client = create_client()

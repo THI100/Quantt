@@ -21,10 +21,6 @@ def create_client():
 
     client.enableDemoTrading(enable_demo) 
 
-    # You may still want these options:
-    client.options["warnOnFetchBalanceWithoutAddress"] = False
-    client.options["recvWindow"] = 5000 
-
     return client
 
 bb_client = create_client()

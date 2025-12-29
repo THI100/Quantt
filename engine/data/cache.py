@@ -3,6 +3,7 @@ from config import settings
 import time
 from functools import wraps
 from utils import math
+from exchange.selector import get_exchange_client
 
 
 def ttl_cache(ttl_seconds: int):
@@ -44,3 +45,7 @@ def cached_p28(market: str):
         timeframe=settings.timeframe,
         limit=28
     )
+
+@ttl_cache(ttl_seconds=38400)  # Cache for the specified timeframe
+def cached_client():
+     return get_exchange_client()
