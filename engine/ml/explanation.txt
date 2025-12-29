@@ -1,0 +1,2 @@
+This module has AI models, training, deep learning from persistance and possibly backtesting
+Usage of time series and tabular regression models for strategy and execution modules.

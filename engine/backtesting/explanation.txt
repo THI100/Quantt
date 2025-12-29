@@ -1,0 +1,7 @@
+Create and execute tests using past market data as actual with acceleration.
+Features avaliable:
+ - Leverage simulation
+ - Perfil tests
+ - Strategy tests
+ - Market analysis
+ And others...

@@ -1,0 +1,6 @@
+Makes and creates reports about the portfolio
+throught the persistance and records, measurements calculated are:
+ - PnL
+ - Win Rate
+ - R:R ratio
+ - Profit per trade

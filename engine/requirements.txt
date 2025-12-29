@@ -1,61 +1,77 @@
 # =========================
 # MAIN / CORE
 # =========================
-python-dotenv>=1.0.0        # .env handling (API keys, modes)
-ccxt>=4.3.0                 # Exchange connectivity (Binance)
-numpy>=1.26.0               # Numerical operations
-pandas>=2.2.0               # Time-series & OHLCV handling
-scipy>=1.12.0               # Advanced math (optional indicators)
-pytz>=2024.1                # Timezone consistency
+python-dotenv>=1.0.0
+ccxt>=4.3.0
+numpy>=1.26.0
+pandas>=2.2.0
+scipy>=1.12.0
+pytz>=2024.1
 
 # =========================
 # ASYNC / PERFORMANCE
 # =========================
-aiohttp>=3.9.0              # Async HTTP (used by ccxt)
-async-timeout>=4.0.3        # Async safety timeouts
-uvloop>=0.19.0              # Faster event loop (Unix only)
+aiohttp>=3.9.0
+async-timeout>=4.0.3
+uvloop>=0.19.0              # Unix only (safe to keep)
 
 # =========================
 # TECHNICAL INDICATORS
 # =========================
-ta>=0.11.0                  # Technical analysis indicators
-numba>=0.59.0               # JIT acceleration for indicators
+ta>=0.11.0
+numba>=0.59.0
 
 # =========================
 # LOGGING / MONITORING
 # =========================
-loguru>=0.7.2               # Structured, rotating logs
-rich>=13.7.0                # Console dashboards & pretty logs
+loguru>=0.7.2
+rich>=13.7.0
 
 # =========================
 # PERSISTENCE / STORAGE
 # =========================
-sqlalchemy>=2.0.25          # SQLite abstraction (local-first)
-alembic>=1.13.1             # Optional schema migrations
+sqlalchemy>=2.0.25
+alembic>=1.13.1
 
 # =========================
-# BACKTESTING / RESEARCH
+# BACKTESTING
 # =========================
-vectorbt>=0.26.0            # Fast vectorized backtests
-empyrical>=0.5.5            # Performance metrics (Sharpe, DD)
-statsmodels>=0.14.1         # Statistical analysis
+vectorbt>=0.26.0            # Optional high-level research
+empyrical>=0.5.5            # Performance metrics
+statsmodels>=0.14.1
+
+# =========================
+# ML / AI (CORE)
+# =========================
+scikit-learn>=1.4.0         # Baseline ML (logreg, trees, scaling)
+joblib>=1.3.2               # Model serialization
+tqdm>=4.66.2                # Training progress bars
+
+# =========================
+# ML / AI (DEEP LEARNING – OPTIONAL)
+# =========================
+torch>=2.2.0                # PyTorch (CPU by default)
+torchvision>=0.17.0         # Optional (safe dependency)
+
+# =========================
+# ML / TIME SERIES (OPTIONAL)
+# =========================
+tsfresh>=0.20.1             # Automated feature extraction
+hmmlearn>=0.3.0             # Regime detection (market states)
 
 # =========================
 # CONFIG / VALIDATION
 # =========================
-pydantic>=2.6.0             # Config & data validation
-pydantic-settings>=2.2.1    # Environment-based settings
+pydantic>=2.6.0
+pydantic-settings>=2.2.1
 
 # =========================
-# OPTIONAL (FUTURE API / UI)
+# OPTIONAL API (LATER)
 # =========================
-fastapi>=0.110.0            # Control plane (later)
-uvicorn>=0.29.0             # ASGI server
+fastapi>=0.110.0
+uvicorn>=0.29.0
 
 # =========================
-# DEV / QUALITY (OPTIONAL)
+# COMMAND TO INSTALL ALL DEPENDENCIES
 # =========================
-pytest>=8.0.0               # Unit tests (future)
-black>=24.1.0               # Code formatting
-ruff>=0.2.1                 # Linting
-mypy>=1.8.0                 # Static typing
+py -m pip install -r requirements.txt
