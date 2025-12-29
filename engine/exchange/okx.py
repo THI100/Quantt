@@ -9,7 +9,7 @@ def create_client():
     api_key = os.getenv("API_KEY")
     api_secret = os.getenv("API_SECRET")
 
-    client = ccxt.binance({
+    client = ccxt.okx({
         "apiKey": api_key,
         "secret": api_secret,
         "enableRateLimit": True,
@@ -18,13 +18,10 @@ def create_client():
         }
     })
 
-
-    client.enableDemoTrading(enable_demo) 
-
     # You may still want these options:
     client.options["warnOnFetchBalanceWithoutAddress"] = False
     client.options["recvWindow"] = 5000 
 
     return client
 
-bi_client = create_client()
+okx_client = create_client()

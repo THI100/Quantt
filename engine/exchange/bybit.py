@@ -9,7 +9,7 @@ def create_client():
     api_key = os.getenv("API_KEY")
     api_secret = os.getenv("API_SECRET")
 
-    client = ccxt.binance({
+    client = ccxt.bybit({
         "apiKey": api_key,
         "secret": api_secret,
         "enableRateLimit": True,
@@ -27,4 +27,4 @@ def create_client():
 
     return client
 
-bi_client = create_client()
+bb_client = create_client()
