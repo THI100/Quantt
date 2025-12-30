@@ -135,6 +135,16 @@ def get_signal_smc(market: str):
 
 
 def get_overall_market_signal(market: str):
+    """
+    This function returns a general market signal based on multiple strategies.
+    It combines signals from indicators, candlestick patterns, and SMC analysis
+    to determine the overall market sentiment.
+     - Returns:
+        - real_confidence (float): Confidence level of the signal (0-100).
+        - real_strength (float): Strength of the signal (0-100).
+        - actual_movement (str): Actual market movement ("bullish", "bearish", "neutral").
+        - direction (str): Overall market direction ("bullish", "bearish", "neutral").
+    """
     mbull2, mbear2, actual_movement = get_signal_indicators(market)
     mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market)
     mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market)
