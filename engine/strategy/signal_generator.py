@@ -179,3 +179,14 @@ def get_overall_market_signal(market: str):
         direction = "neutral"
 
     return real_confidence, real_strength, actual_movement, direction
+
+def get_loss_and_profit_stops(market: str, real_confidence: float, real_strength: float, actual_movement: str, direction: str):
+    """
+    This function serves to get the stop_loss and take_profit of a determinited market.
+    Based on the strength and confidence of the market movement.
+    Determining the market based on previous smc movements and market structures/paterns.
+    """
+
+    candles = cache.cached_p14(market)
+
+    return 
