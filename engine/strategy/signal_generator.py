@@ -3,56 +3,75 @@ from data import cache, fetch
 from config import settings
 from utils.math import scale_0_100
 
-def get_signal_indicators (market: str):
+def get_signal_indicators(market: str):
 
     market_force_bullish = 0
     market_force_bearish = 0
 
     candles42 = cache.cached_p42(market=market)
 
+    # ================= RSI =================
     rsi_values = indicators.rsi(candles=candles42)
     actual_movement = ""
 
     if rsi_values[0] < 30:
-        market_force_bullish += 2  # Buy signal
+        market_force_bullish += 2
     elif rsi_values[0] > 70:
-        market_force_bearish += 2  # Sell signal
+        market_force_bearish += 2
     elif rsi_values[0] < 50:
-        market_force_bullish += 1  # Slight buy signal
+        market_force_bullish += 1
     elif rsi_values[0] > 50:
-        market_force_bearish += 1  # Slight sell signal
-    else:
-        market_force_bullish += 0  # Neutral signal
+        market_force_bearish += 1
 
     rsi_gap_mult = rsi_values[0] / rsi_values[1]
 
     if rsi_gap_mult < 1:
-        rsi_gap_mult_impact = abs((rsi_gap_mult - 1) * 10)
-        market_force_bearish += rsi_gap_mult_impact  # Sell signal
+        market_force_bearish += abs((rsi_gap_mult - 1) * 10)
     elif rsi_gap_mult > 1:
-        rsi_gap_mult_impact = abs((rsi_gap_mult - 1) * 10)
-        market_force_bullish += rsi_gap_mult_impact  # Buy signal
-    else:
-        market_force_bullish += 0  # Neutral signal
+        market_force_bullish += abs((rsi_gap_mult - 1) * 10)
 
+    # ================= TENKAN / KIJUN =================
     tenkan, kijun = indicators.tenkan_and_kijun(candles=candles42)
 
     atr_value = indicators.atr(candles42, period=14)
-    atr_multiplier = settings.atr_multiplier
-    buffer = atr_multiplier * atr_value
+    buffer = settings.atr_multiplier * atr_value
 
     diff = tenkan - kijun
 
     if diff > buffer:
         market_force_bullish += 1
         actual_movement = "bullish"
-
     elif diff < -buffer:
         market_force_bearish += 1
         actual_movement = "bearish"
-
     else:
         actual_movement = "neutral"
+
+    # ================= MACD =================
+    macd_val, signal_val, hist_val, _, _, _ = indicators.macd(candles=candles42)
+
+    # --- crossover effect ---
+    if macd_val > signal_val:
+        market_force_bullish += 1
+    elif macd_val < signal_val:
+        market_force_bearish += 1
+
+    # --- regime bias (above/below zero) ---
+    if macd_val > 0:
+        market_force_bullish += 0.5
+    else:
+        market_force_bearish += 0.5
+
+    # --- momentum strength ---
+    hist_strength = abs(hist_val)
+
+    # normalize impact (prevents huge spikes)
+    hist_weight = min(hist_strength / 50, 2)
+
+    if hist_val > 0:
+        market_force_bullish += hist_weight
+    elif hist_val < 0:
+        market_force_bearish += hist_weight
 
     return market_force_bullish, market_force_bearish, actual_movement
 
@@ -85,19 +104,18 @@ def get_signal_candlestick_patterns(market: str):
         bearish_confidence,
     )
 
-
-def get_signal_smc(market: str):
+def get_signal_smr(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
     bullish_confidence = 0
     bearish_confidence = 0
 
     candles = cache.cached_p28(market=market)
-    smc_events = indicators.smc_reader(candles=candles)
+    smc_events = indicators.smr(candles=candles)
 
     for e in smc_events:
         etype = e["type"]
-        mult = e["multiplicator"]
+        mult = e['multiplicator']
         strength = min(e["volume_strength"], 2.0)
 
         impact = abs(mult) * strength
@@ -147,7 +165,7 @@ def get_overall_market_signal(market: str):
     """
     mbull2, mbear2, actual_movement = get_signal_indicators(market)
     mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market)
-    mbull3, mbear3, cbull3, cbear3 = get_signal_smc(market)
+    mbull3, mbear3, cbull3, cbear3 = get_signal_smr(market)
 
     bullish = mbull1 + mbull2 + mbull3
     bearish = mbear1 + mbear2 + mbear3
