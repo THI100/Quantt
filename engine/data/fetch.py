@@ -4,7 +4,7 @@ c_client = cached_client()
 
 def get_ticker(symbol: str):
     """Fetch a ticker."""
-    return c_client.fetch_tickers(symbol)
+    return c_client.fetch_ticker(symbol)
 
 def get_tickers(symbols: list):
     """Fetch multiple tickers."""

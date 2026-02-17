@@ -1,5 +1,5 @@
 import strategy.indicators as indicators
-from data import cache
+from data import cache, fetch
 from config import settings
 from utils.math import scale_0_100
 
@@ -188,5 +188,7 @@ def get_loss_and_profit_stops(market: str, real_confidence: float, real_strength
     """
 
     candles = cache.cached_p14(market)
-
+    ticker = fetch.get_ticker(market)
+    last_price = ticker['last']
+    
     return 
