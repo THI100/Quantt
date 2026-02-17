@@ -96,6 +96,95 @@ def tenkan_and_kijun(
 
 #----------------------------------------------------------------------#
 
+#---------- MACD-indicator ----------#
+
+def macd(
+    candles: List[List[float]],
+    fast_period: int = 12,
+    slow_period: int = 26,
+    signal_period: int = 9,
+    price_mode: str = "close",  # "close" | "hl2" | "ohlc4"
+):
+    """
+    Returns:
+        macd_value: float        # last MACD line value
+        signal_value: float      # last signal line value
+        hist_value: float        # last histogram value
+        macd_series: list[float]
+        signal_series: list[float]
+        hist_series: list[float]
+    """
+
+    if len(candles) < slow_period + signal_period:
+        raise ValueError("Not enough candles to compute MACD")
+
+    candles = np.asarray(candles, dtype=float)
+
+    opens = candles[:, 1]
+    highs = candles[:, 2]
+    lows = candles[:, 3]
+    closes = candles[:, 4]
+
+    # --- price selection ---
+    if price_mode == "close":
+        price = closes
+    elif price_mode == "hl2":
+        price = (highs + lows) / 2.0
+    elif price_mode == "ohlc4":
+        price = (opens + highs + lows + closes) / 4.0
+    else:
+        raise ValueError("price_mode must be 'close', 'hl2', or 'ohlc4'")
+
+    def ema(series, period):
+        alpha = 2.0 / (period + 1.0)
+        ema_vals = [series[0]]
+        for i in range(1, len(series)):
+            ema_vals.append(alpha * series[i] + (1 - alpha) * ema_vals[-1])
+        return np.array(ema_vals)
+
+    # --- MACD components ---
+    ema_fast = ema(price, fast_period)
+    ema_slow = ema(price, slow_period)
+
+    macd_line = ema_fast - ema_slow
+    signal_line = ema(macd_line, signal_period)
+    histogram = macd_line - signal_line
+
+    macd_value = float(macd_line[-1])
+    signal_value = float(signal_line[-1])
+    hist_value = float(histogram[-1])
+
+    return (
+        macd_value,
+        signal_value,
+        hist_value,
+        macd_line.tolist(),
+        signal_line.tolist(),
+        histogram.tolist(),
+    )
+
+#----------------------------------------------------------------------#
+
+#---------- ATR-indicator ----------#
+
+def atr(candles, period=14):
+    trs = []
+    for i in range(1, len(candles)):
+        high = candles[i][2]
+        low = candles[i][3]
+        prev_close = candles[i-1][4]
+
+        tr = max(
+            high - low,
+            abs(high - prev_close),
+            abs(low - prev_close)
+        )
+        trs.append(tr)
+
+    return sum(trs[-period:]) / period
+
+#----------------------------------------------------------------------#
+
 # ============================================================
 # Candlestick Pattern Reader
 # ============================================================
@@ -239,17 +328,16 @@ def detect_candlestick_patterns(
 
     return patterns
 
-
 # ============================================================
-# Smart Money Concept Reader (STRICT VERSION)
+# Specialized Market Reader
 # ============================================================
 
-def smc_reader(
+def smr(
     candles: List[List[float]],
     swing_left: int = 2,
     swing_right: int = 2,
     volume_period: int = 20,
-    min_volume_strength: float = 1.05,  # menos agressivo
+    min_volume_strength: float = 1.1,
 ) -> List[Dict]:
 
     candles = np.asarray(candles, dtype=float)
@@ -258,9 +346,11 @@ def smc_reader(
     events = []
 
     highs = candles[:, 2]
-    lows  = candles[:, 3]
+    lows = candles[:, 3]
     closes = candles[:, 4]
+    volumes = candles[:, 5]
 
+    # -------- Detect swings once --------
     swing_highs = {}
     swing_lows = {}
 
@@ -270,36 +360,58 @@ def smc_reader(
         if lows[i] == np.min(lows[i - swing_left:i + swing_right + 1]):
             swing_lows[i] = lows[i]
 
+    swing_high_idxs = sorted(swing_highs.keys())
+    swing_low_idxs = sorted(swing_lows.keys())
+
     last_high = None
     last_low = None
+    prev_high = None
+    prev_low = None
+
     trend = None
-    broken_highs = set()
-    broken_lows = set()
+    hi_ptr = 0
+    lo_ptr = 0
 
     for i in range(len(candles)):
-        close = closes[i]
-        volume_strength = candles[i][5] / avg_vol if avg_vol > 0 else 1.0
 
+        volume_strength = volumes[i] / avg_vol if avg_vol > 0 else 1.0
         if volume_strength < min_volume_strength:
             continue
 
-        for idx in sorted(swing_highs):
-            if idx < i:
-                last_high = swing_highs[idx]
+        # -------- advance swing pointers --------
+        while hi_ptr < len(swing_high_idxs) and swing_high_idxs[hi_ptr] < i:
+            prev_high = last_high
+            last_high = swing_highs[swing_high_idxs[hi_ptr]]
+            hi_ptr += 1
 
-        for idx in sorted(swing_lows):
-            if idx < i:
-                last_low = swing_lows[idx]
+            if prev_high is not None:
+                if last_high > prev_high:
+                    events.append({"type": "HH", "index": i})
+                else:
+                    events.append({"type": "LH", "index": i})
 
-        # -------- Inicialização da tendência --------
+        while lo_ptr < len(swing_low_idxs) and swing_low_idxs[lo_ptr] < i:
+            prev_low = last_low
+            last_low = swing_lows[swing_low_idxs[lo_ptr]]
+            lo_ptr += 1
+
+            if prev_low is not None:
+                if last_low > prev_low:
+                    events.append({"type": "HL", "index": i})
+                else:
+                    events.append({"type": "LL", "index": i})
+
+        close = closes[i]
+
+        # -------- Initialize trend --------
         if trend is None and last_high and last_low:
             trend = "up" if close > last_high else "down"
             continue
 
-        # -------- Bullish break --------
-        if last_high and close > last_high and last_high not in broken_highs:
-            mult = (close - last_high) / last_high * 100
+        # -------- BOS / CHOCH --------
+        if last_high and close > last_high:
             event_type = "bos_bullish" if trend == "up" else "choch_bullish"
+            mult = (close - last_high) / last_high * 100
 
             events.append({
                 "type": event_type,
@@ -307,14 +419,11 @@ def smc_reader(
                 "multiplicator": smath.clamp_multiplier(mult),
                 "volume_strength": volume_strength,
             })
-
             trend = "up"
-            broken_highs.add(last_high)
 
-        # -------- Bearish break --------
-        if last_low and close < last_low and last_low not in broken_lows:
-            mult = (last_low - close) / last_low * 100
+        if last_low and close < last_low:
             event_type = "bos_bearish" if trend == "down" else "choch_bearish"
+            mult = (last_low - close) / last_low * 100
 
             events.append({
                 "type": event_type,
@@ -322,57 +431,6 @@ def smc_reader(
                 "multiplicator": smath.clamp_multiplier(mult),
                 "volume_strength": volume_strength,
             })
-
             trend = "down"
-            broken_lows.add(last_low)
-
-        # -------- FVG --------
-        if i >= 2:
-            c1 = candles[i - 2]
-            c3 = candles[i]
-
-            # Bullish FVG
-            if c3[3] > c1[2]:
-                gap = (c3[3] - c1[2]) / c1[2] * 100
-                if abs(gap) >= 0.4:
-                    events.append({
-                        "type": "bullish_fvg",
-                        "index": i,
-                        "multiplicator": smath.clamp_multiplier(gap),
-                        "volume_strength": volume_strength,
-                    })
-
-            # Bearish FVG (BUG CORRIGIDO)
-            if c3[2] < c1[3]:
-                gap = (c1[3] - c3[2]) / c1[3] * 100
-                if abs(gap) >= 0.4:
-                    events.append({
-                        "type": "bearish_fvg",
-                        "index": i,
-                        "multiplicator": smath.clamp_multiplier(-gap),
-                        "volume_strength": volume_strength,
-                    })
 
     return events
-
-
-#---------- ATR-indicator ----------#
-
-def atr(candles, period=14):
-    trs = []
-    for i in range(1, len(candles)):
-        high = candles[i][2]
-        low = candles[i][3]
-        prev_close = candles[i-1][4]
-
-        tr = max(
-            high - low,
-            abs(high - prev_close),
-            abs(low - prev_close)
-        )
-        trs.append(tr)
-
-    return sum(trs[-period:]) / period
-
-
-#----------------------------------------------------------------------#
