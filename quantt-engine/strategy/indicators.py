@@ -1,10 +1,12 @@
-import numpy as np # type: ignore
 from typing import Dict, List
+
+import numpy as np  # type: ignore
 import utils.math as smath
 
-#---------------- TECHNICAL INDICATORS ----------------#
+# ---------------- TECHNICAL INDICATORS ----------------#
 
-#----------RSI-indicator----------#
+# ----------RSI-indicator----------#
+
 
 def rsi(
     candles: List[List[float]],
@@ -61,12 +63,14 @@ def rsi(
 
     return rsi_value, rsi_mean, rsi_series
 
-#----------TnK-indicator----------#
+
+# ----------TnK-indicator----------#
+
 
 def tenkan_and_kijun(
     candles: List[List[float]],
-    conversion_period: int = 9,   # Tenkan-sen
-    base_period: int = 26,        # Kijun-sen
+    conversion_period: int = 9,  # Tenkan-sen
+    base_period: int = 26,  # Kijun-sen
 ):
     """
     Returns:
@@ -84,19 +88,21 @@ def tenkan_and_kijun(
 
     # --- Conversion Line (Tenkan-sen) ---
     tenkan_high = np.max(highs[-conversion_period:])
-    tenkan_low  = np.min(lows[-conversion_period:])
-    tenkan_sen  = (tenkan_high + tenkan_low) / 2.0
+    tenkan_low = np.min(lows[-conversion_period:])
+    tenkan_sen = (tenkan_high + tenkan_low) / 2.0
 
     # --- Base Line (Kijun-sen) ---
     kijun_high = np.max(highs[-base_period:])
-    kijun_low  = np.min(lows[-base_period:])
-    kijun_sen  = (kijun_high + kijun_low) / 2.0
+    kijun_low = np.min(lows[-base_period:])
+    kijun_sen = (kijun_high + kijun_low) / 2.0
 
     return tenkan_sen, kijun_sen
 
-#----------------------------------------------------------------------#
 
-#---------- MACD-indicator ----------#
+# ----------------------------------------------------------------------#
+
+# ---------- MACD-indicator ----------#
+
 
 def macd(
     candles: List[List[float]],
@@ -163,31 +169,31 @@ def macd(
         histogram.tolist(),
     )
 
-#----------------------------------------------------------------------#
 
-#---------- ATR-indicator ----------#
+# ----------------------------------------------------------------------#
+
+# ---------- ATR-indicator ----------#
+
 
 def atr(candles, period=14):
     trs = []
     for i in range(1, len(candles)):
         high = candles[i][2]
         low = candles[i][3]
-        prev_close = candles[i-1][4]
+        prev_close = candles[i - 1][4]
 
-        tr = max(
-            high - low,
-            abs(high - prev_close),
-            abs(low - prev_close)
-        )
+        tr = max(high - low, abs(high - prev_close), abs(low - prev_close))
         trs.append(tr)
 
     return sum(trs[-period:]) / period
 
-#----------------------------------------------------------------------#
+
+# ----------------------------------------------------------------------#
 
 # ============================================================
 # Candlestick Pattern Reader
 # ============================================================
+
 
 def detect_candlestick_patterns(
     candles: List[List[float]],
@@ -221,21 +227,25 @@ def detect_candlestick_patterns(
 
         if multiplier >= 2:
             if curr[4] > curr[1] and prev[4] < prev[1]:
-                patterns.append({
-                    "type": "bullish_engulfing",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(multiplier),
-                    "volume_strength": volume_strength,
-                })
+                patterns.append(
+                    {
+                        "type": "bullish_engulfing",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(multiplier),
+                        "volume_strength": volume_strength,
+                    }
+                )
                 continue
 
             if curr[4] < curr[1] and prev[4] > prev[1]:
-                patterns.append({
-                    "type": "bearish_engulfing",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(-multiplier),
-                    "volume_strength": volume_strength,
-                })
+                patterns.append(
+                    {
+                        "type": "bearish_engulfing",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(-multiplier),
+                        "volume_strength": volume_strength,
+                    }
+                )
                 continue
 
         # ----------------------------------------------------
@@ -245,23 +255,27 @@ def detect_candlestick_patterns(
             # Hammer / Hanging Man (long lower wick)
             if lw >= 2 * body_c and uw <= body_c:
                 mult = lw / body_c
-                patterns.append({
-                    "type": "hammer_like",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                })
+                patterns.append(
+                    {
+                        "type": "hammer_like",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
                 continue
 
             # Shooting Star / Inverted Hammer (long upper wick)
             if uw >= 2 * body_c and lw <= body_c:
                 mult = uw / body_c
-                patterns.append({
-                    "type": "shooting_star_like",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(-mult),
-                    "volume_strength": volume_strength,
-                })
+                patterns.append(
+                    {
+                        "type": "shooting_star_like",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(-mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
                 continue
 
         # ----------------------------------------------------
@@ -270,22 +284,26 @@ def detect_candlestick_patterns(
         if body_c > 0:
             if lw >= 3 * body_c and uw <= body_c * 0.2:
                 mult = lw / body_c
-                patterns.append({
-                    "type": "dragonfly_doji",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                })
+                patterns.append(
+                    {
+                        "type": "dragonfly_doji",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
                 continue
 
             if uw >= 3 * body_c and lw <= body_c * 0.2:
                 mult = uw / body_c
-                patterns.append({
-                    "type": "gravestone_doji",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(-mult),
-                    "volume_strength": volume_strength,
-                })
+                patterns.append(
+                    {
+                        "type": "gravestone_doji",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(-mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
                 continue
 
         # ----------------------------------------------------
@@ -294,12 +312,14 @@ def detect_candlestick_patterns(
         if body_c < body_p * 0.3 and (uw + lw) > body_p:
             mult = (uw + lw) / body_p
             sign = 1 if curr[4] > curr[1] else -1
-            patterns.append({
-                "type": "doji_star",
-                "index": i,
-                "multiplicator": smath.clamp_multiplier(sign * mult),
-                "volume_strength": volume_strength,
-            })
+            patterns.append(
+                {
+                    "type": "doji_star",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(sign * mult),
+                    "volume_strength": volume_strength,
+                }
+            )
 
         # ----------------------------------------------------
         # Momentum Candle (body dominance + volume)
@@ -313,24 +333,27 @@ def detect_candlestick_patterns(
 
             # avoid division noise
             if prev_body_sum > 0 and body_c >= 2 * prev_body_sum:
-
                 # stricter volume requirement
                 if volume_strength >= min_volume_strength:
                     mult = body_c / prev_body_sum
                     sign = 1 if curr[4] > curr[1] else -1
 
-                    patterns.append({
-                        "type": "momentum_candle",
-                        "index": i,
-                        "multiplicator": smath.clamp_multiplier(sign * mult),
-                        "volume_strength": volume_strength,
-                    })
+                    patterns.append(
+                        {
+                            "type": "momentum_candle",
+                            "index": i,
+                            "multiplicator": smath.clamp_multiplier(sign * mult),
+                            "volume_strength": volume_strength,
+                        }
+                    )
 
     return patterns
+
 
 # ============================================================
 # Specialized Market Reader
 # ============================================================
+
 
 def smr(
     candles: List[List[float]],
@@ -355,9 +378,9 @@ def smr(
     swing_lows = {}
 
     for i in range(swing_left, len(candles) - swing_right):
-        if highs[i] == np.max(highs[i - swing_left:i + swing_right + 1]):
+        if highs[i] == np.max(highs[i - swing_left : i + swing_right + 1]):
             swing_highs[i] = highs[i]
-        if lows[i] == np.min(lows[i - swing_left:i + swing_right + 1]):
+        if lows[i] == np.min(lows[i - swing_left : i + swing_right + 1]):
             swing_lows[i] = lows[i]
 
     swing_high_idxs = sorted(swing_highs.keys())
@@ -373,33 +396,59 @@ def smr(
     lo_ptr = 0
 
     for i in range(len(candles)):
-
         volume_strength = volumes[i] / avg_vol if avg_vol > 0 else 1.0
-        if volume_strength < min_volume_strength:
-            continue
 
         # -------- advance swing pointers --------
-        while hi_ptr < len(swing_high_idxs) and swing_high_idxs[hi_ptr] < i:
+        # We process swings as soon as they are confirmed (at index idx + swing_right).
+        # We do this before the volume filter to ensure they are processed at the correct index
+        # and don't cluster on the first high-volume candle.
+        while (
+            hi_ptr < len(swing_high_idxs) and swing_high_idxs[hi_ptr] + swing_right <= i
+        ):
+            idx = swing_high_idxs[hi_ptr]
+            val = swing_highs[idx]
             prev_high = last_high
-            last_high = swing_highs[swing_high_idxs[hi_ptr]]
+            last_high = val
             hi_ptr += 1
 
             if prev_high is not None:
-                if last_high > prev_high:
-                    events.append({"type": "HH", "index": i})
-                else:
-                    events.append({"type": "LH", "index": i})
+                mult = (
+                    abs(last_high - prev_high) / prev_high * 100
+                    if prev_high != 0
+                    else 0
+                )
+                events.append(
+                    {
+                        "type": "HH" if last_high > prev_high else "LH",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
 
-        while lo_ptr < len(swing_low_idxs) and swing_low_idxs[lo_ptr] < i:
+        while (
+            lo_ptr < len(swing_low_idxs) and swing_low_idxs[lo_ptr] + swing_right <= i
+        ):
+            idx = swing_low_idxs[lo_ptr]
+            val = swing_lows[idx]
             prev_low = last_low
-            last_low = swing_lows[swing_low_idxs[lo_ptr]]
+            last_low = val
             lo_ptr += 1
 
             if prev_low is not None:
-                if last_low > prev_low:
-                    events.append({"type": "HL", "index": i})
-                else:
-                    events.append({"type": "LL", "index": i})
+                mult = abs(last_low - prev_low) / prev_low * 100 if prev_low != 0 else 0
+                events.append(
+                    {
+                        "type": "HL" if last_low > prev_low else "LL",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
+
+        # -------- volume filter for BOS / CHOCH --------
+        if volume_strength < min_volume_strength:
+            continue
 
         close = closes[i]
 
@@ -413,24 +462,28 @@ def smr(
             event_type = "bos_bullish" if trend == "up" else "choch_bullish"
             mult = (close - last_high) / last_high * 100
 
-            events.append({
-                "type": event_type,
-                "index": i,
-                "multiplicator": smath.clamp_multiplier(mult),
-                "volume_strength": volume_strength,
-            })
+            events.append(
+                {
+                    "type": event_type,
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                }
+            )
             trend = "up"
 
         if last_low and close < last_low:
             event_type = "bos_bearish" if trend == "down" else "choch_bearish"
             mult = (last_low - close) / last_low * 100
 
-            events.append({
-                "type": event_type,
-                "index": i,
-                "multiplicator": smath.clamp_multiplier(mult),
-                "volume_strength": volume_strength,
-            })
+            events.append(
+                {
+                    "type": event_type,
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                }
+            )
             trend = "down"
 
     return events

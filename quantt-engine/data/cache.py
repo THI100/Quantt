@@ -1,9 +1,10 @@
-import data.fetch as fetch
-from config import settings
 import time
 from functools import wraps
+
+from config import settings
 from utils import math
-from exchange.selector import get_exchange_client
+
+import data.fetch as fetch
 
 
 def ttl_cache(ttl_seconds: int):
@@ -19,33 +20,26 @@ def ttl_cache(ttl_seconds: int):
             return cache["value"]
 
         return wrapper
+
     return decorator
 
 
-@ttl_cache(ttl_seconds=math.get_cache_timing(settings.timeframe))  # Cache for the specified timeframe
+@ttl_cache(
+    ttl_seconds=math.get_cache_timing(settings.timeframe)
+)  # Cache for the specified timeframe
 def cached_p42(market: str):
-    return fetch.get_OHLCV(
-        symbol=market,
-        timeframe=settings.timeframe,
-        limit=42
-    )
+    return fetch.get_OHLCV(symbol=market, timeframe=settings.timeframe, limit=42)
 
-@ttl_cache(ttl_seconds=math.get_cache_timing(settings.timeframe))  # Cache for the specified timeframe
+
+@ttl_cache(
+    ttl_seconds=math.get_cache_timing(settings.timeframe)
+)  # Cache for the specified timeframe
 def cached_p14(market: str):
-    return fetch.get_OHLCV(
-        symbol=market,
-        timeframe=settings.timeframe,
-        limit=14
-    )
+    return fetch.get_OHLCV(symbol=market, timeframe=settings.timeframe, limit=14)
 
-@ttl_cache(ttl_seconds=math.get_cache_timing(settings.timeframe))  # Cache for the specified timeframe
+
+@ttl_cache(
+    ttl_seconds=math.get_cache_timing(settings.timeframe)
+)  # Cache for the specified timeframe
 def cached_p28(market: str):
-    return fetch.get_OHLCV(
-        symbol=market,
-        timeframe=settings.timeframe,
-        limit=28
-    )
-
-@ttl_cache(ttl_seconds=38400)  # Cache for the specified timeframe
-def cached_client():
-     return get_exchange_client()
+    return fetch.get_OHLCV(symbol=market, timeframe=settings.timeframe, limit=28)

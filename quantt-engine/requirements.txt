@@ -1,78 +1,29 @@
-# =========================
-# MAIN / CORE
-# =========================
 python-dotenv>=1.0.0
 ccxt>=4.3.0
 numpy>=1.26.0
 pandas>=2.2.0
 scipy>=1.12.0
 pytz>=2024.1
-
-# =========================
-# ASYNC / PERFORMANCE
-# =========================
 aiohttp>=3.9.0
 async-timeout>=4.0.3
-uvloop>=0.19.0              # Unix only (safe to keep)
-
-# =========================
-# TECHNICAL INDICATORS
-# =========================
+uvloop>=0.19.0
 ta>=0.11.0
 numba>=0.59.0
-
-# =========================
-# LOGGING / MONITORING
-# =========================
 loguru>=0.7.2
 rich>=13.7.0
-
-# =========================
-# PERSISTENCE / STORAGE
-# =========================
 sqlalchemy>=2.0.25
 alembic>=1.13.1
-
-# =========================
-# BACKTESTING
-# =========================
-vectorbt>=0.26.0            # Optional high-level research
-empyrical>=0.5.5            # Performance metrics
+vectorbt>=0.26.0
+empyrical>=0.5.5
 statsmodels>=0.14.1
-
-# =========================
-# ML / AI (CORE)
-# =========================
-scikit-learn>=1.4.0         # Baseline ML (logreg, trees, scaling)
-joblib>=1.3.2               # Model serialization
-tqdm>=4.66.2                # Training progress bars
-
-# =========================
-# ML / AI (DEEP LEARNING – OPTIONAL)
-# =========================
-torch>=2.2.0                # PyTorch (CPU by default)
-torchvision>=0.17.0         # Optional (safe dependency)
-
-# =========================
-# ML / TIME SERIES (OPTIONAL)
-# =========================
-tsfresh>=0.20.1             # Automated feature extraction
-hmmlearn>=0.3.0             # Regime detection (market states)
-
-# =========================
-# CONFIG / VALIDATION
-# =========================
+scikit-learn>=1.4.0
+joblib>=1.3.2
+tqdm>=4.66.2
+torch>=2.2.0
+torchvision>=0.17.0
+tsfresh>=0.20.1
+hmmlearn>=0.3.0
 pydantic>=2.6.0
 pydantic-settings>=2.2.1
-
-# =========================
-# API
-# =========================
 fastapi>=0.110.0
 uvicorn>=0.29.0
-
-# =========================           |
-# COMMAND TO INSTALL ALL DEPENDENCIES |
-# =========================          \ /
-
-                    # py -m pip install -r requirements.txt
