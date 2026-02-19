@@ -1,39 +1,40 @@
-from asyncio.windows_events import NULL
+from typing import Literal, Optional
 
 from data.client import cached_client
 
+# Define the allowed types for the linter
+# OrderType = Literal['market', 'limit', 'stop', 'take_profit']
+# OrderSide = Literal['bullish', 'bearish']
 client = cached_client()
 
 
 def order(
     market: str,
-    t: str,  # 'market' or 'limit'
-    sell_buy: str,  # "bearish" or "bullish"
+    t: str,
+    sell_buy: str,
     n: float,
-    price: float = None,
-    stop_loss: float = None,
-    take_profit: float = None,
+    price: Optional[float] = None,  # Fixed Error #1
+    stop_loss: Optional[float] = None,
+    take_profit: Optional[float] = None,
 ):
-    # 1. Standardize the Side
+    # Standardize side
+    side: Literal["buy", "sell"]
     if sell_buy == "bearish":
         side = "sell"
     elif sell_buy == "bullish":
         side = "buy"
     else:
-        raise ValueError(f"Invalid side: {sell_buy}. Use 'bearish' or 'bullish'.")
+        raise ValueError("Invalid side")
 
-    # 2. Build the params dictionary for CCXT
-    # Binance uses 'stopPrice' for stop orders, but for bracket orders
-    # (entry + SL/TP), CCXT uses a unified 'params' structure.
+    # Build params for Binance/CCXT
     params = {}
-
     if stop_loss:
-        params["stopLossPrice"] = stop_loss
+        params["stopLossPrice"] = stop_loss  # Binance specific key
     if take_profit:
         params["takeProfitPrice"] = take_profit
 
-    # 3. Create the order
-    # Note: price is required for 'limit' orders, can be None for 'market'
+    # By passing 'price' even if it is None, CCXT handles
+    # it correctly based on the 't' (type) parameter.
     return client.create_order(
         symbol=market, type=t, side=side, amount=n, price=price, params=params
     )
@@ -41,4 +42,4 @@ def order(
 
 def check_orders():
 
-    return NULL
+    return
