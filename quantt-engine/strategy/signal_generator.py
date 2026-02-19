@@ -220,71 +220,46 @@ def get_loss_and_profit_stops(
     candles = cache.cached_p42(market)
     actual_value = candles[-1][4]
     stop_losses_events = indicators.smr(candles=candles)
-    macd_vals = indicators.macd(candles=candles)
-    # macd_vals = (macd_value, signal_value, hist_value, ...)
-    hist_val = macd_vals[2]
-    direction = "bullish" if hist_val >= 0 else "bearish"
 
-    # Variables to track structural levels
+    # 1. Determine direction (MACD is a fine filter)
+    macd_vals = indicators.macd(candles=candles)
+    direction = "bullish" if macd_vals[2] >= 0 else "bearish"
+
     last_high_val = None
     last_low_val = None
-    stop_loss = None
 
-    # The smr function uses swing_right = 2 by default to confirm peaks/troughs
-    swing_right = 2
-
+    # 2. Iterate to find the MOST RECENT structural points
     for a in stop_losses_events:
-        atype = a["type"]
         i = a["index"]
+        # Ensure we don't hit an IndexError
+        idx = max(0, i - 2)
 
-        # Track solid structural highs and lows
-        if atype in ("HH", "LH"):
-            last_high_val = candles[i - swing_right][2]
-            if direction == "bearish":
-                stop_loss = last_high_val
-        elif atype in ("HL", "LL"):
-            last_low_val = candles[i - swing_right][3]
-            if direction == "bullish":
-                stop_loss = last_low_val
+        if a["type"] in ("HH", "LH"):
+            last_high_val = candles[idx][2]
+        elif a["type"] in ("HL", "LL"):
+            last_low_val = candles[idx][3]
 
-        # Utilizing solid BoS/CHoCH as stop loss levels (breakout points)
-        elif atype in ("bos_bullish", "choch_bullish"):
-            if direction == "bullish" and last_high_val:
-                stop_loss = last_high_val
-        elif atype in ("bos_bearish", "choch_bearish"):
-            if direction == "bearish" and last_low_val:
-                stop_loss = last_low_val
-
-    # Fallback if no structural stop loss was found in the events
-    if stop_loss is None:
-        if direction == "bullish":
-            stop_loss = actual_value * 0.98  # 2% fallback below price
-        else:
-            stop_loss = actual_value * 1.02  # 2% fallback above price
-
-    # Final calculation and validation to ensure SL/TP are on the correct side
+    # 3. Assign SL based on direction
     if direction == "bullish":
-        if stop_loss >= actual_value:
-            # Ensure SL is below actual value; use latest low or a tight offset
-            stop_loss = (
-                last_low_val
-                if (last_low_val and last_low_val < actual_value)
-                else actual_value * 0.99
-            )
+        # For bullish, SL should be the last structural LOW
+        stop_loss = last_low_val if last_low_val else actual_value * 0.98
 
-        r = actual_value - stop_loss
-        take_profit = actual_value + (r * risk.risk_reward_ratio)
+        # Emergency check: SL must be below price
+        if stop_loss >= actual_value:
+            stop_loss = actual_value * 0.99
+
+        risk_amt = actual_value - stop_loss
+        take_profit = actual_value + (risk_amt * risk.risk_reward_ratio)
 
     else:  # bearish
-        if stop_loss <= actual_value:
-            # Ensure SL is above actual value; use latest high or a tight offset
-            stop_loss = (
-                last_high_val
-                if (last_high_val and last_high_val > actual_value)
-                else actual_value * 1.01
-            )
+        # For bearish, SL should be the last structural HIGH
+        stop_loss = last_high_val if last_high_val else actual_value * 1.02
 
-        r = stop_loss - actual_value
-        take_profit = actual_value - (r * risk.risk_reward_ratio)
+        # Emergency check: SL must be above price
+        if stop_loss <= actual_value:
+            stop_loss = actual_value * 1.01
+
+        risk_amt = stop_loss - actual_value
+        take_profit = actual_value - (risk_amt * risk.risk_reward_ratio)
 
     return stop_loss, take_profit, actual_value
