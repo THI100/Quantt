@@ -1,5 +1,3 @@
-import fastAPI as fapi # type: ignore
-
 risk_reward_ratio = 2.0
 maximum_loss = 0.15
 profile = "moderate"
