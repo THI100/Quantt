@@ -1,28 +1,42 @@
 from asyncio.windows_events import NULL
 
-from data.client import cached_client as client
+from data.client import cached_client
+
+client = cached_client()
 
 
 def order(
-    market: str, t: str, sell_buy: str, n: float, stop_loss: float, take_profit: float
+    market: str,
+    t: str,  # 'market' or 'limit'
+    sell_buy: str,  # "bearish" or "bullish"
+    n: float,
+    price: float = None,
+    stop_loss: float = None,
+    take_profit: float = None,
 ):
-    """
-    market: symbol of your choice (example: "BTC/USDT")
-    t: type of your order (Types: 'market' or 'limit' or 'STOP_LOSS' or 'STOP_LOSS_LIMIT' or 'TAKE_PROFIT' or 'TAKE_PROFIT_LIMIT' or 'STOP'), usually you will USE 'market'
-    sell_buy: "bearish" or "bullish"
-    n: amount of funds on this trade, recommended using risk_manager smart_amount
-    stop_loss: given by get_loss_and_profit_stops function
-    take_profit: given by get_loss_and_profit_stops function
-    """
-
-    p = [stop_loss, take_profit]
-
+    # 1. Standardize the Side
     if sell_buy == "bearish":
-        sell_buy = "sell"
+        side = "sell"
+    elif sell_buy == "bullish":
+        side = "buy"
     else:
-        sell_buy = "buy"
+        raise ValueError(f"Invalid side: {sell_buy}. Use 'bearish' or 'bullish'.")
 
-    return client.create_order(symbol=market, type=t, side=sell_buy, amount=n, params=p)
+    # 2. Build the params dictionary for CCXT
+    # Binance uses 'stopPrice' for stop orders, but for bracket orders
+    # (entry + SL/TP), CCXT uses a unified 'params' structure.
+    params = {}
+
+    if stop_loss:
+        params["stopLossPrice"] = stop_loss
+    if take_profit:
+        params["takeProfitPrice"] = take_profit
+
+    # 3. Create the order
+    # Note: price is required for 'limit' orders, can be None for 'market'
+    return client.create_order(
+        symbol=market, type=t, side=side, amount=n, price=price, params=params
+    )
 
 
 def check_orders():
