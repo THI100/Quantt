@@ -217,10 +217,10 @@ def get_loss_and_profit_stops(
     Determining the market based on previous smr.
     """
 
-    candle = cache.cached_p28(market)
-    actual_value = candle[-1][4]
-    stop_losses_events = indicators.smr(candle)
-    macd_vals = indicators.macd(candle)
+    candles = cache.cached_p42(market)
+    actual_value = candles[-1][4]
+    stop_losses_events = indicators.smr(candles=candles)
+    macd_vals = indicators.macd(candles=candles)
     # macd_vals = (macd_value, signal_value, hist_value, ...)
     hist_val = macd_vals[2]
     direction = "bullish" if hist_val >= 0 else "bearish"
