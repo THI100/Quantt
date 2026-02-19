@@ -18,6 +18,5 @@ def get_OHLCV(symbol: str, timeframe: str, limit: int):
     return c_client.fetchOHLCV(symbol, timeframe, limit=limit)
 
 
-def get_balance():
-    """Fetch account balance."""
+def balance():
     return c_client.fetch_balance()
