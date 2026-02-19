@@ -1,7 +1,10 @@
-import strategy.indicators as indicators
-from data import cache, fetch
 from config import settings
+from data import cache, fetch
+from numpy._core.numeric import indices
 from utils.math import scale_0_100
+
+import strategy.indicators as indicators
+
 
 def get_signal_indicators(market: str):
 
@@ -75,6 +78,7 @@ def get_signal_indicators(market: str):
 
     return market_force_bullish, market_force_bearish, actual_movement
 
+
 def get_signal_candlestick_patterns(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
@@ -104,6 +108,7 @@ def get_signal_candlestick_patterns(market: str):
         bearish_confidence,
     )
 
+
 def get_signal_smr(market: str):
     market_force_bullish = 0.0
     market_force_bearish = 0.0
@@ -111,11 +116,11 @@ def get_signal_smr(market: str):
     bearish_confidence = 0
 
     candles = cache.cached_p28(market=market)
-    smc_events = indicators.smr(candles=candles)
+    smr_events = indicators.smr(candles=candles)
 
-    for e in smc_events:
+    for e in smr_events:
         etype = e["type"]
-        mult = e['multiplicator']
+        mult = e["multiplicator"]
         strength = min(e["volume_strength"], 2.0)
 
         impact = abs(mult) * strength
@@ -176,14 +181,18 @@ def get_overall_market_signal(market: str):
     real_strength_raw = bullish - bearish
 
     direction = (
-        "bullish" if real_strength_raw > 0
-        else "bearish" if real_strength_raw < 0
+        "bullish"
+        if real_strength_raw > 0
+        else "bearish"
+        if real_strength_raw < 0
         else "neutral"
     )
 
     real_confidence_raw = (
-        conf_bull if real_strength_raw > 0
-        else conf_bear if real_strength_raw < 0
+        conf_bull
+        if real_strength_raw > 0
+        else conf_bear
+        if real_strength_raw < 0
         else 0
     )
 
@@ -198,15 +207,27 @@ def get_overall_market_signal(market: str):
 
     return real_confidence, real_strength, actual_movement, direction
 
-def get_loss_and_profit_stops(market: str, real_confidence: float, real_strength: float, actual_movement: str, direction: str):
+
+def get_loss_and_profit_stops(
+    market: str,
+    real_confidence: float,
+    real_strength: float,
+    actual_movement: str,
+    direction: str,
+):
     """
     This function serves to get the stop_loss and take_profit of a determinited market.
     Based on the strength and confidence of the market movement.
     Determining the market based on previous smc movements and market structures/paterns.
     """
 
-    candles = cache.cached_p14(market)
+    candles = cache.cached_p28(market)
     ticker = fetch.get_ticker(market)
-    last_price = ticker['last']
-    
-    return 
+    last_price = ticker["last"]
+    stop_losses = indicators.smr(candles=candles)
+
+    for a in stop_losses:
+        atype = a["type"]
+        i = a["index"]
+
+    return
