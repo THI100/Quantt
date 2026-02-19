@@ -41,15 +41,9 @@ def scale_0_100(value: float, max_value: float) -> float:
 
 
 def get_cache_timing(tm: str) -> int:
-    if tm == "1m":
+    if tm == "1m" or tm == "5m" or tm == "15m" or tm == "30m" or tm == "1h":
         return 60
-    elif tm == "5m":
-        return 300
-    elif tm == "15m" or tm == "30m" or tm == "1h":
-        return 900
-    elif tm == "4h" or tm == "6h" or tm == "12h":
-        return 3600
-    elif tm == "1d":
-        return 86400 / 3
+    elif tm == "4h" or tm == "6h" or tm == "12h" or tm == "1d":
+        return 600
     else:
-        return 900  # Default to 15m
+        return 3000

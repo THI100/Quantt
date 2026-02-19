@@ -21,6 +21,6 @@ def ttl_cache(ttl_seconds: int):
     return decorator
 
 
-@ttl_cache(ttl_seconds=38400)  # Cache for the specified timeframe
+@ttl_cache(ttl_seconds=86400)  # Cache for the specified timeframe
 def cached_client():
     return get_exchange_client()
