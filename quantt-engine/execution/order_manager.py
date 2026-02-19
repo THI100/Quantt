@@ -13,31 +13,58 @@ def order(
     t: str,
     sell_buy: str,
     n: float,
-    price: Optional[float] = None,  # Fixed Error #1
+    price: Optional[float] = None,
     stop_loss: Optional[float] = None,
     take_profit: Optional[float] = None,
 ):
-    # Standardize side
-    side: Literal["buy", "sell"]
-    if sell_buy == "bearish":
-        side = "sell"
-    elif sell_buy == "bullish":
-        side = "buy"
+    # 1. Determine Entry and Exit Sides
+    if sell_buy == "bullish":
+        entry_side = "buy"
+        exit_side = "sell"
+    elif sell_buy == "bearish":
+        entry_side = "sell"
+        exit_side = "buy"
     else:
         raise ValueError("Invalid side")
 
-    # Build params for Binance/CCXT
-    params = {}
-    if stop_loss:
-        params["stopLossPrice"] = stop_loss  # Binance specific key
-    if take_profit:
-        params["takeProfitPrice"] = take_profit
+    # 2. Place the Main Entry Order
+    # Using entry_side ('buy' for bullish)
+    entry_order = client.create_order(market, t, entry_side, n, price)
+    print(f"Entry Filled: {entry_order['id']}")
 
-    # By passing 'price' even if it is None, CCXT handles
-    # it correctly based on the 't' (type) parameter.
-    return client.create_order(
-        symbol=market, type=t, side=side, amount=n, price=price, params=params
-    )
+    # 3. Place Stop Loss (Using exit_side!)
+    if stop_loss:
+        try:
+            client.create_order(
+                symbol=market,
+                type="STOP_LOSS_LIMIT",  # Most reliable for Spot
+                side=exit_side,  # Must be 'sell' if entry was 'buy'
+                amount=n,
+                price=stop_loss,  # The price it executes at
+                params={
+                    "stopPrice": stop_loss,  # The price that triggers it
+                },
+            )
+        except Exception as e:
+            print(f"Stop Loss Failed: {e}")
+
+    # 4. Place Take Profit (Using exit_side!)
+    if take_profit:
+        try:
+            client.create_order(
+                symbol=market,
+                type="TAKE_PROFIT_LIMIT",
+                side=exit_side,  # Must be 'sell' if entry was 'buy'
+                amount=n,
+                price=take_profit,
+                params={
+                    "stopPrice": take_profit,
+                },
+            )
+        except Exception as e:
+            print(f"Take Profit Failed: {e}")
+
+    return "Success"
 
 
 def check_orders():
