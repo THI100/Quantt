@@ -16,6 +16,8 @@ def smart_amount(market: str):
 
     ma = limited / last
 
-    market_amount = ma.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    print(f"{limited}, {last}")
+
+    market_amount = round(ma, 4)
 
     return market_amount

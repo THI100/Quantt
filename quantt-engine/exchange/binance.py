@@ -1,7 +1,7 @@
 import os
 
 import ccxt
-from config.settings import is_demo_enabled as enable_demo
+from config.settings import FUTURE_SPOT, is_demo_enabled
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,7 +25,7 @@ def create_client():
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
-                "defaultType": "spot",
+                "defaultType": FUTURE_SPOT,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
@@ -34,7 +34,7 @@ def create_client():
         }
     )
 
-    client.enableDemoTrading(enable_demo)
+    client.enable_demo_trading(is_demo_enabled)
 
     return client
 

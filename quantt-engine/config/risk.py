@@ -2,6 +2,7 @@ risk_reward_ratio = 2.0
 maximum_loss = 0.15
 profile = "moderate"
 porcentage_of_capital_per_trade = 0
+leverage = 10
 
 if porcentage_of_capital_per_trade == 0 and profile == "conservative":
     porcentage_of_capital_per_trade = 0.01
