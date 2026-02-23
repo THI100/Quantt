@@ -13,9 +13,11 @@ ls = data2[0]
 tp = data2[1]
 p = data2[2]
 nn = risk_manager.smart_amount(marker)
+if nn < 0.01:
+    nn = 0.01
 print(f"{s}, {ls}, {tp}, {p}, {nn}")
 
-ord = order_manager.order(marker, "market", s, 0.01, p, ls, tp)
+ord = order_manager.order(marker, "market", s, nn, p, ls, tp)
 
 print(
     f"Entry: \n{ord[0]}. \n take profit order: \n{ord[1]}. \n stop loss order: \n{ord[2]}"

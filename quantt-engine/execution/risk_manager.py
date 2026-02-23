@@ -19,3 +19,12 @@ def smart_amount(market: str):
     market_amount = round(ma, 4)
 
     return market_amount
+
+
+def blp(market: str):
+    """
+    Search for the best price for limit type of orders, utilizing the order book.
+    there might be some delays and inacuracies compared to the order book.
+    """
+
+    return
