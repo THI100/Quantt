@@ -208,9 +208,7 @@ def get_overall_market_signal(market: str):
     return real_confidence, real_strength, actual_movement, direction
 
 
-def get_loss_and_profit_stops(
-    market: str,
-):
+def get_loss_and_profit_stops(market: str, direction: str):
     """
     This function serves to get the stop_loss and take_profit of a determinited market.
     Based on the strength and confidence of the market movement.
@@ -221,14 +219,10 @@ def get_loss_and_profit_stops(
     actual_value = candles[-1][4]
     stop_losses_events = indicators.smr(candles=candles)
 
-    # 1. Determine direction (MACD is a fine filter)
-    macd_vals = indicators.macd(candles=candles)
-    direction = "bullish" if macd_vals[2] >= 0 else "bearish"
-
     last_high_val = None
     last_low_val = None
 
-    # 2. Iterate to find the MOST RECENT structural points
+    # 1. Iterate to find the MOST RECENT structural points
     for a in stop_losses_events:
         i = a["index"]
         # Ensure we don't hit an IndexError
@@ -239,7 +233,7 @@ def get_loss_and_profit_stops(
         elif a["type"] in ("HL", "LL"):
             last_low_val = candles[idx][3]
 
-    # 3. Assign SL based on direction
+    # 2. Assign SL based on direction
     if direction == "bullish":
         # For bullish, SL should be the last structural LOW
         stop_loss = last_low_val if last_low_val else actual_value * 0.98

@@ -16,8 +16,6 @@ def smart_amount(market: str):
 
     ma = limited / last
 
-    print(f"{limited}, {last}")
-
     market_amount = round(ma, 4)
 
     return market_amount

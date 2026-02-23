@@ -32,13 +32,17 @@ def order(
     # 3. Place Stop Loss
     if stop_loss:
         try:
-            client.create_order(
+            sl_order = client.create_order(
                 symbol=market,
-                type="STOP_MARKET",  # Most reliable for Spot
+                type="STOP_MARKET",
                 side=exit_side,  # Must be 'sell' if entry was 'buy'
                 amount=n,
                 price=stop_loss,  # The price it executes at
-                params={"stopPrice": stop_loss, "reduceOnly": True},
+                params={
+                    "stopPrice": stop_loss,
+                    "reduceOnly": True,
+                    "workingType": "MARK_PRICE",
+                },
             )
         except Exception as e:
             print(f"Stop Loss Failed: {e}")
@@ -46,47 +50,19 @@ def order(
     # 4. Place Take Profit
     if take_profit:
         try:
-            client.create_order(
+            tp_order = client.create_order(
                 symbol=market,
                 type="TAKE_PROFIT_MARKET",
                 side=exit_side,
                 amount=n,
                 price=take_profit,
-                params={"stopPrice": take_profit, "reduceOnly": True},
+                params={
+                    "stopPrice": take_profit,
+                    "reduceOnly": True,
+                    "workingType": "MARK_PRICE",
+                },
             )
         except Exception as e:
             print(f"Take Profit Failed: {e}")
 
-    # # 3. Place Stop Loss (Using exit_side!)
-    # if stop_loss:
-    #     try:
-    #         client.create_order(
-    #             symbol=market,
-    #             type="STOP_LOSS_LIMIT",  # Most reliable for Spot
-    #             side=exit_side,  # Must be 'sell' if entry was 'buy'
-    #             amount=n,
-    #             price=stop_loss,  # The price it executes at
-    #             params={
-    #                 "stopPrice": stop_loss,  # The price that triggers it
-    #             },
-    #         )
-    #     except Exception as e:
-    #         print(f"Stop Loss Failed: {e}")
-
-    # # 4. Place Take Profit (Using exit_side!)
-    # if take_profit:
-    #     try:
-    #         client.create_order(
-    #             symbol=market,
-    #             type="TAKE_PROFIT_LIMIT",
-    #             side=exit_side,  # Must be 'sell' if entry was 'buy'
-    #             amount=n,
-    #             price=take_profit,
-    #             params={
-    #                 "stopPrice": take_profit,
-    #             },
-    #         )
-    #     except Exception as e:
-    #         print(f"Take Profit Failed: {e}")
-
-    return "Success"
+    return entry_order, tp_order, sl_order
