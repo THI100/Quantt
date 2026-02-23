@@ -1,3 +1,5 @@
+from typing import Optional
+
 from data.client import cached_client
 
 c_client = cached_client()
@@ -15,7 +17,12 @@ def get_tickers(symbols: list):
 
 def get_OHLCV(symbol: str, timeframe: str, limit: int):
     """Fetch a x amount of OHLCV from x market wih x timeframe."""
-    return c_client.fetchOHLCV(symbol, timeframe, limit=limit)
+    return c_client.fetch_ohlcv(symbol, timeframe, limit=limit)
+
+
+def get_order_book(symbol: str, limit: Optional[int] = None):
+    """Fetch the order book from a certain symbol;"""
+    return c_client.fetch_order_book(symbol, limit)
 
 
 def balance():

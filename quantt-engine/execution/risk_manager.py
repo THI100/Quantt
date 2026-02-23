@@ -1,4 +1,4 @@
-from decimal import ROUND_HALF_UP, Decimal
+from typing import Optional
 
 import config.risk as risk
 import data.cache as cache
@@ -21,10 +21,21 @@ def smart_amount(market: str):
     return market_amount
 
 
-def blp(market: str):
+def blp(market: str, amount: Optional[float] = 0):
     """
     Search for the best price for limit type of orders, utilizing the order book.
     there might be some delays and inacuracies compared to the order book.
     """
+
+    order_book = fetch.get_order_book(market)
+    lp = fetch.get_ticker(market)
+    lp = lp["last"]
+
+    if amount <= 0:
+        # return error
+    elif amount > 1.0:
+        # apply iceberg
+    else:
+        # apply at best
 
     return
