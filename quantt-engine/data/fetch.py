@@ -21,8 +21,13 @@ def get_OHLCV(symbol: str, timeframe: str, limit: int):
 
 
 def get_order_book(symbol: str, limit: Optional[int] = None):
-    """Fetch the order book from a certain symbol;"""
+    """Fetch the order book from a certain symbol."""
     return c_client.fetch_order_book(symbol, limit)
+
+
+def get_order(symbol: str, id: str):
+    """Fetch the order from a certain symbol."""
+    return c_client.fetch_order(id, symbol)
 
 
 def balance():
