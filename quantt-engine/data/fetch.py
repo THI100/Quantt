@@ -30,5 +30,9 @@ def get_order(symbol: str, id: str):
     return c_client.fetch_order(id, symbol)
 
 
+def get_orders(symbol: str):
+    return c_client.fetch_open_orders(symbol)
+
+
 def balance():
     return c_client.fetch_balance()
