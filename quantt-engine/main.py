@@ -2,7 +2,8 @@ import data.cache as cache
 import data.fetch as fetch
 import strategy.indicators as indicators
 import strategy.signal_generator as sg
-from execution import order_manager, risk_manager
+
+# from execution import order_manager, risk_manager
 
 # marker = "BTC/USDT"
 # data = sg.get_overall_market_signal(marker)
@@ -24,5 +25,5 @@ from execution import order_manager, risk_manager
 # )
 
 
-order = fetch.get_order_book("BTC/USDT")
+order = fetch.get_orders("BTC/USDT")
 print(order)
