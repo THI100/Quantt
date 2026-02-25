@@ -2,7 +2,7 @@ import config.settings as settings
 import data.fetch as fetch
 
 
-def manage_open_symbols(coldown: int):
+def manage_open_symbols():
     """
     Determines symbol status by checking the most recent filled trade.
     'open' = Ready for new trade (Last trade was an Exit).

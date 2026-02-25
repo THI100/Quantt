@@ -1,5 +1,6 @@
 import data.cache as cache
 import data.fetch as fetch
+import execution.position_manager as pm
 import strategy.indicators as indicators
 import strategy.signal_generator as sg
 
@@ -25,5 +26,5 @@ import strategy.signal_generator as sg
 # )
 
 
-order = fetch.get_orders("BTC/USDT")
+order = pm.manage_open_symbols()
 print(order)
