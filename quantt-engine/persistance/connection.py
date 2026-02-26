@@ -1,4 +1,4 @@
-from sqlalchemy import create_all, create_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 DB_URL = "sqlite:///./my_database.db"
