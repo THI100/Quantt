@@ -2,8 +2,8 @@ import time
 from typing import Optional
 
 import data.fetch as fetch
-import risk_manager
 from data.client import cached_client
+from execution import risk_manager
 
 client = cached_client()
 
