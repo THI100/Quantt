@@ -1,5 +1,5 @@
-from sqlalchemy import JSON
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import JSON, DateTime
+from sqlalchemy.orm import Mapped, mapped_collection, mapped_column
 
 from .connection import Base
 
@@ -9,6 +9,7 @@ class Profiles(Base):
 
     num: Mapped[int] = mapped_column(primary_key=True, unique=True)
     name: Mapped[str] = mapped_column(unique=True)
+    password: Mapped[str] = mapped_column(hash=True)
     configs: Mapped[JSON] = mapped_column()
 
 
@@ -38,3 +39,13 @@ class TakeStopOrders(Base):
     time: Mapped[int] = mapped_column(unique=True)
     previous_time: Mapped[int] = mapped_column(unique=True)
     fees: Mapped[float] = mapped_column()
+
+
+class Results(Base):
+    __tablename__ = "Results"
+
+    order_entry: Mapped[JSON] = mapped_column()
+    order_exit: Mapped[JSON] = mapped_column()
+    profit: Mapped[int] = mapped_column()
+    loss: Mapped[int] = mapped_column()
+    date: Mapped[str] = mapped_column()
