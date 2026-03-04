@@ -27,7 +27,6 @@ class GeneralOrder(Base):
     order_type: Mapped[str] = mapped_column(String(20))
     time: Mapped[int] = mapped_column(unique=True)
     previous_time: Mapped[int] = mapped_column(nullable=True)
-    fees: Mapped[float] = mapped_column(Float, default=0.0)
     # Foreign Keys to TakeStopOrders
     take_id: Mapped[Optional[int]] = mapped_column(ForeignKey("take_stop_orders.id"))
     stop_id: Mapped[Optional[int]] = mapped_column(ForeignKey("take_stop_orders.id"))

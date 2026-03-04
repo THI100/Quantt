@@ -36,15 +36,26 @@ def order(
     # Using entry_side ('buy' for bullish)
     entry_order = client.create_order(market, t, entry_side, n, price)
 
-    # with Session(engine) as session:
-    #     try:
-    #         new_order = GeneralOrder()
+    with Session(engine) as session:
+        try:
+            new_order = GeneralOrder(
+                id=entry_order["id"],
+                price=entry_order["average"],
+                amount=entry_order["amount"],
+                side=entry_order["side"],
+                symbol=entry_order["symbol"],
+                order_type=entry_order["type"],
+                time=entry_order["timestamp"],
+                previous_time=entry_order["lastTradeTimestamp"],
+            )
+            session.add(new_order)
 
-    #     except Exception as e:
-    #         session.rollback()
-    #         print(f"An error occurred: {e}")
+            session.commit()
+            print(f"Entry Filled: {entry_order['id']} and saved!!!")
 
-    print(f"Entry Filled: {entry_order['id']}")
+        except Exception as e:
+            session.rollback()
+            print(f"An error occurred: {e}")
 
     # 3. Place Stop Loss
     if stop_loss:
