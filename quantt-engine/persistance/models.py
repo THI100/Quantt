@@ -5,21 +5,23 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .connection import Base
 
+# class UserProfile(Base):
+#     __tablename__ = "user_profiles"
 
-class UserProfile(Base):
-    __tablename__ = "user_profiles"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(50), unique=True)
-    password: Mapped[str] = mapped_column(String(255))
-    configs: Mapped[JSON] = mapped_column(JSON, nullable=True)
-    orders: Mapped[list["GeneralOrder"]] = relationship(back_populates="user")
+#     id: Mapped[int] = mapped_column(primary_key=True)
+#     name: Mapped[str] = mapped_column(String(50), unique=True)
+#     password: Mapped[str] = mapped_column(String(255))
+#     configs: Mapped[JSON] = mapped_column(JSON, nullable=True)
+#     orders: Mapped[list["GeneralOrder"]] = relationship(back_populates="user")
 
 
 class GeneralOrder(Base):
     __tablename__ = "general_orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    # user_id: Mapped[int] = mapped_column(ForeignKey("user_profiles.id"))
+    # user: Mapped["UserProfile"] = relationship(back_populates="orders")
+    # take_order_list: Mapped[list["TakeStopOrder"]] = relationship(back_populates="parent_order")
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     side: Mapped[str] = mapped_column(String(10))
@@ -40,6 +42,7 @@ class TakeStopOrder(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     parent_order_id: Mapped[int] = mapped_column(ForeignKey("general_orders.id"))
+    # parent_order: Mapped["GeneralOrder"] = relationship(back_populates="take_order_list")
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     side: Mapped[str] = mapped_column(String(10))
@@ -52,10 +55,10 @@ class TakeStopOrder(Base):
 class Result(Base):
     __tablename__ = "results"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[Optional[int]] = mapped_column(primary_key=True)
     # Foreign ids for profits, losses and referent orders
     entry_order_id: Mapped[int] = mapped_column(ForeignKey("general_orders.id"))
     exit_order_id: Mapped[int] = mapped_column(ForeignKey("take_stop_orders.id"))
-    profit_loss: Mapped[float] = mapped_column(Float)
-    date: Mapped[str] = mapped_column(String(30))
+    profit_loss: Mapped[Optional[float]] = mapped_column(Float)
+    date: Mapped[Optional[str]] = mapped_column(String(30))
     entry_order: Mapped["GeneralOrder"] = relationship(foreign_keys=[entry_order_id])

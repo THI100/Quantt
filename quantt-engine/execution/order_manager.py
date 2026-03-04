@@ -1,12 +1,10 @@
 import time
 from typing import Optional
 
-from sqlalchemy.orm import Session
-
 import data.fetch as fetch
 from data.client import cached_client
 from execution import risk_manager
-from persistance.connection import SessionLocal, engine
+from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
 
 client = cached_client()
@@ -84,13 +82,13 @@ def order(
                 g_order.stop_id = sl_order["id"]
                 new_order = TakeStopOrder(
                     id=sl_order["id"],
-                    price=sl_order["average"],
+                    parent_order_id=general_id,
+                    price=sl_order["triggerPrice"],
                     amount=sl_order["amount"],
                     side=sl_order["side"],
                     symbol=sl_order["symbol"],
                     order_type=type,
                     time=sl_order["timestamp"],
-                    previous_time=sl_order["lastTradeTimestamp"],
                 )
                 session.add(new_order)
 
@@ -126,13 +124,13 @@ def order(
                 g_order.take_id = tp_order["id"]
                 new_order = TakeStopOrder(
                     id=tp_order["id"],
-                    price=tp_order["average"],
+                    parent_order_id=general_id,
+                    price=tp_order["triggerPrice"],
                     amount=tp_order["amount"],
                     side=tp_order["side"],
                     symbol=tp_order["symbol"],
                     order_type=type,
                     time=tp_order["timestamp"],
-                    previous_time=tp_order["lastTradeTimestamp"],
                 )
                 session.add(new_order)
                 session.commit()
@@ -141,6 +139,8 @@ def order(
             except Exception as e:
                 session.rollback()
                 print(f"An error occurred: {e}")
+
+    return entry_order, tp_order, sl_order
 
 
 def execute_iceberg(market: str, total_amount: float, side: str):

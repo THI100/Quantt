@@ -10,7 +10,7 @@ from persistance.connection import Base, engine
 
 Base.metadata.create_all(bind=engine)
 
-marker = "BTC/USDT"
+marker = "LTC/USDT"
 data = sg.get_overall_market_signal(marker)
 s = data[3]
 data2 = sg.get_loss_and_profit_stops(marker, s)
