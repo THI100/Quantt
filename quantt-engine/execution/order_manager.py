@@ -10,7 +10,7 @@ from persistance.connection import SessionLocal, engine
 from persistance.models import GeneralOrder, TakeStopOrder
 
 client = cached_client()
-# db = SessionLocal()
+db = SessionLocal()
 
 
 def order(
@@ -38,7 +38,7 @@ def order(
 
     general_id = entry_order["id"]
 
-    with Session(engine) as session:
+    with db as session:
         try:
             new_order = GeneralOrder(
                 id=entry_order["id"],
@@ -78,7 +78,7 @@ def order(
         except Exception as e:
             print(f"Stop Loss Failed: {e}")
 
-        with Session(engine) as session:
+        with db as session:
             try:
                 g_order = session.get(GeneralOrder, general_id)
                 g_order.stop_id = sl_order["id"]
@@ -120,7 +120,7 @@ def order(
         except Exception as e:
             print(f"Take Profit Failed: {e}")
 
-        with Session(engine) as session:
+        with db as session:
             try:
                 g_order = session.get(GeneralOrder, general_id)
                 g_order.take_id = tp_order["id"]
@@ -149,8 +149,6 @@ def execute_iceberg(market: str, total_amount: float, side: str):
     chunk_size = total_amount * 0.1
 
     while remaining_amount > 0:
-        # 1. Find the "Meaningful" Price Level using our blp logic
-        # We pass chunk_size to ensure we find a level that can handle this slice
         price_data = risk_manager.blp(market, side, chunk_size)
         target_price = price_data
 
@@ -158,22 +156,17 @@ def execute_iceberg(market: str, total_amount: float, side: str):
 
         print(f"Placing {side} limit order: {current_slice} at {target_price}")
 
-        # 2. Place a Post-Only order to ensure Maker fees
-        # (Assuming 'exchange' is your initialized CCXT object)
         try:
             order = client.create_order(
                 market, "limit", side, current_slice, target_price, {"postOnly": True}
             )
         except Exception as e:
             print(f"Order failed/rejected (possibly price changed): {e}")
-            time.sleep(2)  # cooling off
+            time.sleep(2)
             continue
 
-        # 3. Wait/Monitor Period (e.g., 30 seconds)
-        # Give the market time to come to our limit price
         time.sleep(30)
 
-        # 4. Check status and Cancel if not fully filled
         order_status = fetch.get_order(order["id"], market)
         filled = order_status["filled"]
         remaining_amount -= filled
