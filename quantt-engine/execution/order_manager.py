@@ -36,6 +36,8 @@ def order(
     # Using entry_side ('buy' for bullish)
     entry_order = client.create_order(market, t, entry_side, n, price)
 
+    general_id = entry_order["id"]
+
     with Session(engine) as session:
         try:
             new_order = GeneralOrder(
@@ -78,6 +80,8 @@ def order(
 
         with Session(engine) as session:
             try:
+                g_order = session.get(GeneralOrder, general_id)
+                g_order.stop_id = sl_order["id"]
                 new_order = TakeStopOrder(
                     id=sl_order["id"],
                     price=sl_order["average"],
@@ -118,6 +122,8 @@ def order(
 
         with Session(engine) as session:
             try:
+                g_order = session.get(GeneralOrder, general_id)
+                g_order.take_id = tp_order["id"]
                 new_order = TakeStopOrder(
                     id=tp_order["id"],
                     price=tp_order["average"],
