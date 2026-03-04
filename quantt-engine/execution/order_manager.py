@@ -59,10 +59,11 @@ def order(
 
     # 3. Place Stop Loss
     if stop_loss:
+        type = "STOP_MARKET"
         try:
             sl_order = client.create_order(
                 symbol=market,
-                type="STOP_MARKET",
+                type=type,
                 side=exit_side,  # Must be 'sell' if entry was 'buy'
                 amount=n,
                 price=stop_loss,  # The price it executes at
@@ -75,12 +76,34 @@ def order(
         except Exception as e:
             print(f"Stop Loss Failed: {e}")
 
+        with Session(engine) as session:
+            try:
+                new_order = TakeStopOrder(
+                    id=sl_order["id"],
+                    price=sl_order["average"],
+                    amount=sl_order["amount"],
+                    side=sl_order["side"],
+                    symbol=sl_order["symbol"],
+                    order_type=type,
+                    time=sl_order["timestamp"],
+                    previous_time=sl_order["lastTradeTimestamp"],
+                )
+                session.add(new_order)
+
+                session.commit()
+                print(f"Entry Filled: {sl_order['id']} and saved!!!")
+
+            except Exception as e:
+                session.rollback()
+                print(f"An error occurred: {e}")
+
     # 4. Place Take Profit
     if take_profit:
+        type = "TAKE_PROFIT_MARKET"
         try:
             tp_order = client.create_order(
                 symbol=market,
-                type="TAKE_PROFIT_MARKET",
+                type=type,
                 side=exit_side,
                 amount=n,
                 price=take_profit,
@@ -93,7 +116,25 @@ def order(
         except Exception as e:
             print(f"Take Profit Failed: {e}")
 
-    return entry_order, tp_order, sl_order
+        with Session(engine) as session:
+            try:
+                new_order = TakeStopOrder(
+                    id=tp_order["id"],
+                    price=tp_order["average"],
+                    amount=tp_order["amount"],
+                    side=tp_order["side"],
+                    symbol=tp_order["symbol"],
+                    order_type=type,
+                    time=tp_order["timestamp"],
+                    previous_time=tp_order["lastTradeTimestamp"],
+                )
+                session.add(new_order)
+                session.commit()
+                print(f"Entry Filled: {tp_order['id']} and saved!!!")
+
+            except Exception as e:
+                session.rollback()
+                print(f"An error occurred: {e}")
 
 
 def execute_iceberg(market: str, total_amount: float, side: str):
