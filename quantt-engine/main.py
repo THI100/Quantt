@@ -1,11 +1,13 @@
 import data.cache as cache
 import data.fetch as fetch
 import execution.order_manager as order_manager
+import execution.position_manager as pm
 import execution.risk_manager as risk_manager
-
-# import execution.position_manager as pm
 import strategy.indicators as indicators
 import strategy.signal_generator as sg
+from persistance.connection import Base, engine
+
+Base.metadata.create_all(bind=engine)
 
 marker = "BTC/USDT"
 data = sg.get_overall_market_signal(marker)

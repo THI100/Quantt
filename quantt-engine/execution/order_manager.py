@@ -1,11 +1,16 @@
 import time
 from typing import Optional
 
+from sqlalchemy.orm import Session
+
 import data.fetch as fetch
 from data.client import cached_client
 from execution import risk_manager
+from persistance.connection import SessionLocal, engine
+from persistance.models import GeneralOrder, TakeStopOrder
 
 client = cached_client()
+# db = SessionLocal()
 
 
 def order(
@@ -30,6 +35,15 @@ def order(
     # 2. Place the Main Entry Order
     # Using entry_side ('buy' for bullish)
     entry_order = client.create_order(market, t, entry_side, n, price)
+
+    # with Session(engine) as session:
+    #     try:
+    #         new_order = GeneralOrder()
+
+    #     except Exception as e:
+    #         session.rollback()
+    #         print(f"An error occurred: {e}")
+
     print(f"Entry Filled: {entry_order['id']}")
 
     # 3. Place Stop Loss

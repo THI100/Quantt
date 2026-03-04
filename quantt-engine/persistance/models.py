@@ -1,6 +1,6 @@
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from sqlalchemy import JSON, Float, ForeignKey, Integer, String
+from sqlalchemy import JSON, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .connection import Base
@@ -12,7 +12,7 @@ class UserProfile(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(50), unique=True)
     password: Mapped[str] = mapped_column(String(255))
-    configs: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=True)
+    configs: Mapped[JSON] = mapped_column(JSON, nullable=True)
     orders: Mapped[list["GeneralOrder"]] = relationship(back_populates="user")
 
 
