@@ -1,3 +1,5 @@
+import os
+
 import data.cache as cache
 import data.fetch as fetch
 import execution.order_manager as order_manager
@@ -8,7 +10,10 @@ import strategy.indicators as indicators
 import strategy.signal_generator as sg
 from persistance.connection import Base, engine
 
-Base.metadata.create_all(bind=engine)
+if os.path.exists("./general.db"):
+    print("existent")
+else:
+    Base.metadata.create_all(bind=engine)
 
 marker = "LTC/USDT"
 data = sg.get_overall_market_signal(marker)

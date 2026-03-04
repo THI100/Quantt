@@ -41,6 +41,7 @@ def order(
             new_order = GeneralOrder(
                 id=entry_order["id"],
                 price=entry_order["average"],
+                entrace_exit="entrace",
                 amount=entry_order["amount"],
                 side=entry_order["side"],
                 symbol=entry_order["symbol"],

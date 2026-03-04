@@ -21,7 +21,7 @@ class GeneralOrder(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     # user_id: Mapped[int] = mapped_column(ForeignKey("user_profiles.id"))
     # user: Mapped["UserProfile"] = relationship(back_populates="orders")
-    # take_order_list: Mapped[list["TakeStopOrder"]] = relationship(back_populates="parent_order")
+    entrace_exit: Mapped[str] = mapped_column(String(10))
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     side: Mapped[str] = mapped_column(String(10))
@@ -42,7 +42,6 @@ class TakeStopOrder(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     parent_order_id: Mapped[int] = mapped_column(ForeignKey("general_orders.id"))
-    # parent_order: Mapped["GeneralOrder"] = relationship(back_populates="take_order_list")
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     side: Mapped[str] = mapped_column(String(10))

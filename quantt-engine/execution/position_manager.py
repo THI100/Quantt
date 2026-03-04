@@ -18,10 +18,8 @@ def manage_open_symbols():
             symbol_status[symbol] = "open"
             continue
 
+        else:
 
 
-        except (IndexError, AttributeError):
-            # Fallback if the data structure is unexpected
-            symbol_status[symbol] = "open"
 
     return symbol_status
