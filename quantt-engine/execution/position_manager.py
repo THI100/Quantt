@@ -54,13 +54,14 @@ def manage_open_symbols():
                 if hit_tp or hit_sl:
                     # 3. Create the Exit record in GeneralOrder
                     exit_order = GeneralOrder(
+                        id=trade["id"],
                         entrace_exit="exit",
                         price=trade["price"],
                         amount=trade["amount"],
                         side="sell" if last_record.side == "buy" else "buy",
                         symbol=symbol,
                         order_type="limit" if hit_tp else "market",
-                        time=trade["time"],
+                        time=trade["timestamp"],
                         previous_time=last_record.time,  # Linking to the entrance
                     )
                     session.add(exit_order)
