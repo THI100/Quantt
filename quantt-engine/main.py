@@ -15,7 +15,7 @@ if os.path.exists("./general.db"):
 else:
     Base.metadata.create_all(bind=engine)
 
-marker = "LTC/USDT"
+marker = "ETH/USDT"
 data = sg.get_overall_market_signal(marker)
 s = data[3]
 data2 = sg.get_loss_and_profit_stops(marker, s)
@@ -29,11 +29,6 @@ if nn < 0.01:
 print(f"{s}, {ls}, {tp}, {p}, {nn}")
 
 ord = order_manager.order(marker, "market", s, nn, p, ls, tp)
-
-print(
-    f"Entry: \n{ord[0]}. \n take profit order: \n{ord[1]}. \n stop loss order: \n{ord[2]}"
-)
-
 
 # order = pm.manage_open_symbols()
 # print(order)

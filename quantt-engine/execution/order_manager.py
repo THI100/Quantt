@@ -52,7 +52,6 @@ def order(
             session.add(new_order)
 
             session.commit()
-            print(f"Entry Filled: {entry_order['id']} and saved!!!")
 
         except Exception as e:
             session.rollback()
@@ -94,7 +93,6 @@ def order(
                 session.add(new_order)
 
                 session.commit()
-                print(f"Entry Filled: {sl_order['id']} and saved!!!")
 
             except Exception as e:
                 session.rollback()
@@ -135,13 +133,12 @@ def order(
                 )
                 session.add(new_order)
                 session.commit()
-                print(f"Entry Filled: {tp_order['id']} and saved!!!")
 
             except Exception as e:
                 session.rollback()
                 print(f"An error occurred: {e}")
 
-    return entry_order, tp_order, sl_order
+    print("Concluded")
 
 
 def execute_iceberg(market: str, total_amount: float, side: str):
