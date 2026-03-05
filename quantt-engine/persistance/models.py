@@ -27,7 +27,7 @@ class GeneralOrder(Base):
     side: Mapped[str] = mapped_column(String(10))
     symbol: Mapped[str] = mapped_column(String(20))
     order_type: Mapped[str] = mapped_column(String(20))
-    time: Mapped[int] = mapped_column(unique=True)
+    time: Mapped[int] = mapped_column()
     previous_time: Mapped[int] = mapped_column(nullable=True)
     # Foreign Keys to TakeStopOrders
     take_id: Mapped[Optional[int]] = mapped_column(ForeignKey("take_stop_orders.id"))
