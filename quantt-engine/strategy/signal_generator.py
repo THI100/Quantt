@@ -1,9 +1,9 @@
-from config import risk, settings
-from data import cache, fetch
 from numpy._core.numeric import indices
-from utils.math import scale_0_100
 
 import strategy.indicators as indicators
+from config import risk, settings
+from data import cache, fetch
+from utils.math import scale_0_100
 
 
 def get_signal_indicators(market: str):
@@ -199,8 +199,14 @@ def get_overall_market_signal(market: str):
     max_strength = bullish + bearish
     max_confidence = conf_bull + conf_bear
 
-    real_strength = scale_0_100(real_strength_raw, max_strength)
-    real_confidence = scale_0_100(real_confidence_raw, max_confidence)
+    if real_strength_raw and max_strength > 1:
+        real_strength = scale_0_100(real_strength_raw, max_strength)
+    else:
+        real_strength = 0
+    if real_confidence_raw and max_confidence > 1:
+        real_confidence = scale_0_100(real_confidence_raw, max_confidence)
+    else:
+        real_confidence = 0
 
     if real_confidence == 0:
         direction = "neutral"
@@ -218,6 +224,13 @@ def get_loss_and_profit_stops(market: str, direction: str):
     candles = cache.cached_p42(market)
     actual_value = candles[-1][4]
     stop_losses_events = indicators.smr(candles=candles)
+
+    if direction == "neutral":
+        v = indicators.tenkan_and_kijun(candles)
+        if v[0] > v[1]:
+            direction = "bearish"
+        else:
+            direction = "bullish"
 
     last_high_val = None
     last_low_val = None
@@ -256,4 +269,4 @@ def get_loss_and_profit_stops(market: str, direction: str):
         risk_amt = stop_loss - actual_value
         take_profit = actual_value - (risk_amt * risk.risk_reward_ratio)
 
-    return stop_loss, take_profit, actual_value
+    return stop_loss, take_profit, actual_value, direction

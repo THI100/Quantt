@@ -1,5 +1,6 @@
 import os
 
+import core.engine as e
 from persistance.connection import Base, engine
 
 
@@ -8,6 +9,8 @@ def start():
         print("existent")
     else:
         Base.metadata.create_all(bind=engine)
+
+    e.avaliation_and_place()
 
 
 def stop():

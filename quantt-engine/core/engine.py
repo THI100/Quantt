@@ -1,3 +1,5 @@
+from asyncio.windows_events import SelectorEventLoop
+
 import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
@@ -5,14 +7,17 @@ import strategy.signal_generator as sg
 
 
 def avaliation_and_place():
-    o_c = pm.manage_open_symbols()
+    open_closed = pm.manage_open_symbols()
+    print(open_closed)
 
-    for oc in o_c:
-        if oc == "open":
-            marker = oc
+    for symbol, status in open_closed.items():
+        if status == "open":
+            marker = symbol
             data = sg.get_overall_market_signal(marker)
             s = data[3]
             data2 = sg.get_loss_and_profit_stops(marker, s)
+            s_temp = data2[3]
+            s = s_temp
 
             ls = data2[0]
             tp = data2[1]
