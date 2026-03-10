@@ -1,7 +1,13 @@
-def start():
-    message = "Starting bot"
+import os
 
-    return message
+from persistance.connection import Base, engine
+
+
+def start():
+    if os.path.exists("./general.db"):
+        print("existent")
+    else:
+        Base.metadata.create_all(bind=engine)
 
 
 def stop():
