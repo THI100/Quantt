@@ -1,23 +1,31 @@
 import time
 from functools import wraps
 
+import data.fetch as fetch
 from config import settings
 from utils import math
-
-import data.fetch as fetch
 
 
 def ttl_cache(ttl_seconds: int):
     def decorator(func):
-        cache = {"value": None, "expiry": 0}
+        # Store data as: { (args, kwargs): {"value": result, "expiry": time} }
+        cache = {}
 
         @wraps(func)
         def wrapper(*args, **kwargs):
+            # Create a unique key based on the function arguments
+            # Note: args must be hashable (like strings or tuples)
+            cache_key = (args, frozenset(kwargs.items()))
+
             now = time.time()
-            if now >= cache["expiry"]:
-                cache["value"] = func(*args, **kwargs)
-                cache["expiry"] = now + ttl_seconds
-            return cache["value"]
+            cached_item = cache.get(cache_key)
+
+            if cached_item is None or now >= cached_item["expiry"]:
+                # Fetch new data and update the specific key
+                result = func(*args, **kwargs)
+                cache[cache_key] = {"value": result, "expiry": now + ttl_seconds}
+
+            return cache[cache_key]["value"]
 
         return wrapper
 

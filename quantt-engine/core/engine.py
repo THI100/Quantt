@@ -10,23 +10,26 @@ def avaliation_and_place():
     open_closed = pm.manage_open_symbols()
     print(open_closed)
 
-    for symbol, status in open_closed.items():
+    for market, status in open_closed.items():
         if status == "open":
-            marker = symbol
-            data = sg.get_overall_market_signal(marker)
+            symbol = market
+            data = sg.get_overall_market_signal(symbol)
             s = data[3]
-            data2 = sg.get_loss_and_profit_stops(marker, s)
-            s_temp = data2[3]
-            s = s_temp
+
+            if s == "neutral":
+                continue
+
+            data2 = sg.get_loss_and_profit_stops(symbol, s)
 
             ls = data2[0]
             tp = data2[1]
             p = data2[2]
-            nn = risk_manager.smart_amount(marker)
+            nn = risk_manager.smart_amount(symbol)
+
             if nn < 0.01:
                 nn = 0.01
 
-            order_manager.order(marker, "market", s, nn, p, ls, tp)
+            order_manager.order(symbol, "market", s, nn, p, ls, tp)
 
         else:
             continue

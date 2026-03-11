@@ -225,13 +225,6 @@ def get_loss_and_profit_stops(market: str, direction: str):
     actual_value = candles[-1][4]
     stop_losses_events = indicators.smr(candles=candles)
 
-    if direction == "neutral":
-        v = indicators.tenkan_and_kijun(candles)
-        if v[0] > v[1]:
-            direction = "bearish"
-        else:
-            direction = "bullish"
-
     last_high_val = None
     last_low_val = None
 
@@ -269,4 +262,4 @@ def get_loss_and_profit_stops(market: str, direction: str):
         risk_amt = stop_loss - actual_value
         take_profit = actual_value - (risk_amt * risk.risk_reward_ratio)
 
-    return stop_loss, take_profit, actual_value, direction
+    return stop_loss, take_profit, actual_value
