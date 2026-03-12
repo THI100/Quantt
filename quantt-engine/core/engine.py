@@ -29,6 +29,8 @@ def avaliation_and_place():
             if nn < 0.01:
                 nn = 0.01
 
+            print(f"{ls}, {tp}, {p}, {nn}, {symbol}")
+
             order_manager.order(symbol, "market", s, nn, p, ls, tp)
 
         else:
