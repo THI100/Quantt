@@ -11,4 +11,6 @@ list_of_interest = [
     "XRP/USDT",
     "ADA/USDT",
     "AVAX/USDT",
+    "ETC/USDT",
+    "LINK/USDT",
 ]

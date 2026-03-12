@@ -21,7 +21,7 @@ class GeneralOrder(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     # user_id: Mapped[int] = mapped_column(ForeignKey("user_profiles.id"))
     # user: Mapped["UserProfile"] = relationship(back_populates="orders")
-    entrace_exit: Mapped[str] = mapped_column(String(10))
+    entrance_exit: Mapped[str] = mapped_column(String(10))
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     side: Mapped[str] = mapped_column(String(10))
