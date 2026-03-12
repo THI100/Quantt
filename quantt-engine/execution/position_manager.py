@@ -52,21 +52,39 @@ def manage_open_symbols():
                 hit_tp = tp_price and abs(trade["price"] - tp_price) / tp_price < 0.0001
                 hit_sl = sl_price and abs(trade["price"] - sl_price) / sl_price < 0.0001
 
+                db_symbol_name = last_record.symbol
+
                 if hit_tp or hit_sl:
-                    # Create the missing Exit record
+                    # 1. Check if this specific exchange ID is already in our DB
+                    already_exists = (
+                        session.execute(
+                            select(GeneralOrder).filter(
+                                GeneralOrder.id == str(trade["id"])
+                            )
+                        )
+                        .scalars()
+                        .first()
+                    )
+
+                    if already_exists:
+                        # If it exists, it means the trade is already logged as an exit
+                        is_now_closed = True
+                        break
+
+                    # 2. If it doesn't exist, create the Exit record
                     exit_order = GeneralOrder(
-                        id=trade["id"],
-                        entrace_exit="exit",  # Matches your state logic
+                        id=str(trade["id"]),
+                        entrance_exit="exit",
                         price=trade["price"],
                         amount=trade["amount"],
                         side="sell" if last_record.side == "buy" else "buy",
-                        symbol=symbol,
+                        symbol=last_record.symbol,  # Use the symbol exactly as it is in the DB
                         order_type="limit" if hit_tp else "market",
                         time=trade["timestamp"],
                         previous_time=last_record.time,
                     )
                     session.add(exit_order)
-                    is_now_closed_on_exchange = True
+                    is_now_closed = True
                     break
 
             if is_now_closed_on_exchange:
