@@ -40,7 +40,7 @@ def order(
         try:
             new_order = GeneralOrder(
                 id=entry_order["id"],
-                price=entry_order["average"],
+                price=entry_order["average"] if t == "market" else entry_order["price"],
                 entrance_exit="entrance",
                 amount=entry_order["amount"],
                 side=entry_order["side"],
