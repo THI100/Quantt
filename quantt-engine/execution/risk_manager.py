@@ -1,7 +1,8 @@
+import numpy as np
+
 import config.risk as risk
 import data.cache as cache
 import data.fetch as fetch
-import numpy as np
 
 
 def smart_amount(market: str):
@@ -28,6 +29,13 @@ def blp(market: str, side: str, amount: float):
     order_book = fetch.get_order_book(market)
     ticker = fetch.get_ticker(market)
     lp = ticker["last"]
+
+    if side == "bullish":
+        side = "buy"
+    elif side == "bearish":
+        side = "sell"
+    else:
+        raise ValueError("Invalid side")
 
     levels = order_book["bids"] if side == "buy" else order_book["asks"]
 

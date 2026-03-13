@@ -141,10 +141,23 @@ def order(
     print("Concluded")
 
 
+def order_ice(
+    type: str,
+):
+    a = 0
+
+
 def execute_iceberg(market: str, total_amount: float, side: str):
     remaining_amount = total_amount
     # Break the order into 10% chunks to hide our size
     chunk_size = total_amount * 0.1
+
+    if side == "bullish":
+        side = "buy"
+    elif side == "bearish":
+        side = "sell"
+    else:
+        raise ValueError("Invalid side")
 
     while remaining_amount > 0:
         price_data = risk_manager.blp(market, side, chunk_size)
@@ -158,6 +171,30 @@ def execute_iceberg(market: str, total_amount: float, side: str):
             order = client.create_order(
                 market, "limit", side, current_slice, target_price, {"postOnly": True}
             )
+
+            order_ice()
+
+            with db as session:
+                try:
+                    new_order = GeneralOrder(
+                        id=order["id"],
+                        price=order["average"],
+                        entrance_exit="entrance",
+                        amount=order["amount"],
+                        side=order["side"],
+                        symbol=order["symbol"],
+                        order_type=order["type"],
+                        time=order["timestamp"],
+                        previous_time=order["lastTradeTimestamp"],
+                    )
+                    session.add(new_order)
+
+                    session.commit()
+
+                except Exception as e:
+                    session.rollback()
+                    print(f"An error occurred: {e}")
+
         except Exception as e:
             print(f"Order failed/rejected (possibly price changed): {e}")
             time.sleep(2)
@@ -175,6 +212,6 @@ def execute_iceberg(market: str, total_amount: float, side: str):
             )
             client.cancel_order(order["id"], market)
 
-        print(f"Remaining total to buy/sell: {remaining_amount}")
+        print(f"Remaining total to {side}: {remaining_amount}")
 
-    print("Execution Complete.")
+    print(f"{market} Iceberg Execution Complete.")
