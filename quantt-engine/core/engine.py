@@ -25,15 +25,15 @@ def avaliation_and_place():
 
             ls = data2[0]
             tp = data2[1]
-            p = data2[2]
             nn = risk_manager.smart_amount(symbol)
+            p = risk_manager.blp(symbol, s, nn)
 
             if nn < 0.01:
                 nn = 0.01
 
             print(f"This value: {tp} has this porcentage of being achieved {data[1]}.")
 
-            order_manager.order(symbol, "market", s, nn, p, ls, tp)
+            order_manager.order(symbol, "limit", s, nn, p, ls, tp)
 
         else:
             continue
