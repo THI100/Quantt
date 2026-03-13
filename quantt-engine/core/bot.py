@@ -2,7 +2,11 @@ import os
 import time
 
 import core.engine as e
+from config import risk, settings
+from data.client import cached_client
 from persistance.connection import Base, engine
+
+client = cached_client()
 
 
 def start():
@@ -10,6 +14,9 @@ def start():
         print("existent")
     else:
         Base.metadata.create_all(bind=engine)
+
+    for symbol in settings.list_of_interest:
+        client.set_leverage(risk.leverage, symbol)
 
     try:
         while True:

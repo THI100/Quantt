@@ -37,7 +37,7 @@ def get_signal_indicators(market: str):
     tenkan, kijun = indicators.tenkan_and_kijun(candles=candles42)
 
     atr_value = indicators.atr(candles42, period=14)
-    buffer = settings.atr_multiplier * atr_value
+    buffer = risk.atr_multiplier * atr_value
 
     diff = tenkan - kijun
 

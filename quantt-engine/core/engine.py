@@ -1,8 +1,8 @@
-import config.settings as sets
 import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
+from config import risk, settings
 
 
 def avaliation_and_place():
@@ -15,7 +15,7 @@ def avaliation_and_place():
             data = sg.get_overall_market_signal(symbol)
             s = data[3]
 
-            if data[0] < sets.acceptable_confidence:
+            if data[0] < risk.acceptable_confidence:
                 continue
 
             if s == "neutral":
@@ -30,6 +30,8 @@ def avaliation_and_place():
 
             if nn < 0.01:
                 nn = 0.01
+
+            print(f"This value: {tp} has this porcentage of being achieved {data[1]}.")
 
             order_manager.order(symbol, "market", s, nn, p, ls, tp)
 

@@ -1,9 +1,7 @@
 is_demo_enabled = True
 timeframe = "15m"
-atr_multiplier = 0.4
 EXCHANGE = "binance"
 FUTURE_SPOT = "future"
-acceptable_confidence = 40
 
 list_of_interest = [
     "BTC/USDT",
