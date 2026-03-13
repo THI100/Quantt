@@ -1,4 +1,5 @@
 import os
+import time
 
 import core.engine as e
 from persistance.connection import Base, engine
@@ -10,7 +11,13 @@ def start():
     else:
         Base.metadata.create_all(bind=engine)
 
-    e.avaliation_and_place()
+    try:
+        while True:
+            e.avaliation_and_place()
+            time.sleep(60)
+    except KeyboardInterrupt:
+        # This block runs when you press Ctrl + C
+        print("\nLoop stopped by user.")
 
 
 def stop():

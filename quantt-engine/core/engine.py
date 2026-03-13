@@ -1,5 +1,4 @@
-from asyncio.windows_events import SelectorEventLoop
-
+import config.settings as sets
 import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
@@ -16,6 +15,9 @@ def avaliation_and_place():
             data = sg.get_overall_market_signal(symbol)
             s = data[3]
 
+            if data[0] < sets.acceptable_confidence:
+                continue
+
             if s == "neutral":
                 continue
 
@@ -28,8 +30,6 @@ def avaliation_and_place():
 
             if nn < 0.01:
                 nn = 0.01
-
-            print(f"{ls}, {tp}, {p}, {nn}, {symbol}")
 
             order_manager.order(symbol, "market", s, nn, p, ls, tp)
 

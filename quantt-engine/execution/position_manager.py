@@ -51,7 +51,7 @@ def manage_open_symbols():
                 # 2. Timing Verification (Must be after the entrance)
                 is_after_entrance = trade["timestamp"] > last_record.time
 
-                if is_opposite_side and (is_reduce_only or is_after_entrance):
+                if is_opposite_side and (is_reduce_only and is_after_entrance):
                     # 3. Check if already logged
                     already_exists = (
                         session.execute(
