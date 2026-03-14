@@ -112,3 +112,15 @@ def manage_open_symbols():
         session.close()
 
     return symbol_status
+
+
+def manage_open_limit():
+
+    for symbol in settings.list_of_interest:
+        current_open = fetch.get_open_orders(symbol, 10)
+
+        for x in current_open:
+            if x["reduceOnly"] == True or x["status"] == "filled":
+                continue
+
+            id = x["id"]

@@ -1,4 +1,6 @@
 import core.bot as bot
-import execution.risk_manager as rm
+from data import fetch
 
-bot.start()
+# bot.start()
+
+print(fetch.get_open_orders("ADA/USDT"))
