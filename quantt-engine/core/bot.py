@@ -21,7 +21,7 @@ def start():
     try:
         while True:
             e.avaliation_and_place()
-            time.sleep(60)
+            time.sleep(90)
     except KeyboardInterrupt:
         # This block runs when you press Ctrl + C
         print("\nLoop stopped by user.")

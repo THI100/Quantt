@@ -46,4 +46,4 @@ def get_cache_timing(tm: str) -> int:
     elif tm == "4h" or tm == "6h" or tm == "12h" or tm == "1d":
         return 600
     else:
-        return 3000
+        return 1800

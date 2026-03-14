@@ -142,12 +142,96 @@ def order(
 
 
 def order_ice(
-    type: str,
+    market: str, total_amount: float, side: str, tp: float, sl: float, order_id: int
 ):
-    a = 0
+
+    if side == "buy":
+        exit_side = "sell"
+    else:
+        exit_side = "buy"
+
+    if sl:
+        type = "STOP_MARKET"
+        try:
+            sl_order = client.create_order(
+                symbol=market,
+                type=type,
+                side=exit_side,  # Must be 'sell' if entry was 'buy'
+                amount=total_amount,
+                price=sl,  # The price it executes at
+                params={
+                    "stopPrice": sl,
+                    "reduceOnly": True,
+                    "workingType": "MARK_PRICE",
+                },
+            )
+        except Exception as e:
+            print(f"Stop Loss Failed: {e}")
+
+        with db as session:
+            try:
+                g_order = session.get(GeneralOrder, order_id)
+                g_order.stop_id = sl_order["id"]
+                new_order = TakeStopOrder(
+                    id=sl_order["id"],
+                    parent_order_id=order_id,
+                    price=sl_order["triggerPrice"],
+                    amount=sl_order["amount"],
+                    side=sl_order["side"],
+                    symbol=sl_order["symbol"],
+                    order_type=type,
+                    time=sl_order["timestamp"],
+                )
+                session.add(new_order)
+
+                session.commit()
+
+            except Exception as e:
+                session.rollback()
+                print(f"An error occurred: {e}")
+
+    # 4. Place Take Profit
+    if tp:
+        type = "TAKE_PROFIT_MARKET"
+        try:
+            tp_order = client.create_order(
+                symbol=market,
+                type=type,
+                side=exit_side,
+                amount=total_amount,
+                price=tp,
+                params={
+                    "stopPrice": tp,
+                    "reduceOnly": True,
+                    "workingType": "MARK_PRICE",
+                },
+            )
+        except Exception as e:
+            print(f"Take Profit Failed: {e}")
+
+        with db as session:
+            try:
+                g_order = session.get(GeneralOrder, order_id)
+                g_order.take_id = tp_order["id"]
+                new_order = TakeStopOrder(
+                    id=tp_order["id"],
+                    parent_order_id=order_id,
+                    price=tp_order["triggerPrice"],
+                    amount=tp_order["amount"],
+                    side=tp_order["side"],
+                    symbol=tp_order["symbol"],
+                    order_type=type,
+                    time=tp_order["timestamp"],
+                )
+                session.add(new_order)
+                session.commit()
+
+            except Exception as e:
+                session.rollback()
+                print(f"An error occurred: {e}")
 
 
-def execute_iceberg(market: str, total_amount: float, side: str):
+def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: float):
     remaining_amount = total_amount
     # Break the order into 10% chunks to hide our size
     chunk_size = total_amount * 0.1
@@ -172,7 +256,7 @@ def execute_iceberg(market: str, total_amount: float, side: str):
                 market, "limit", side, current_slice, target_price, {"postOnly": True}
             )
 
-            order_ice()
+            order_ice(market, current_slice, side, tp, sl, order["id"])
 
             with db as session:
                 try:
