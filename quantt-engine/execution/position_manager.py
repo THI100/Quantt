@@ -144,13 +144,19 @@ def manage_open_limit(client):
                     client.cancel_order(order_id, symbol)
 
                     # Delete old record from DB
-                    order_del = session.get(GeneralOrder, order_id)
-                    if order_del:
-                        session.delete(order_del)
-                        session.commit()
+                    old_order = session.get(GeneralOrder, order_id)
 
                     # Create new order on exchange
                     new_exchange_order = client.create_order(symbol, typ, s, amt, p)
+                    new_id = new_exchange_order["id"]
+
+                    children = (
+                        session.query(TakeStopOrder)
+                        .filter(TakeStopOrder.parent_order_id == order_id)
+                        .all()
+                    )
+                    for child in children:
+                        child.parent_order_id = new_id
 
                     # Save new order to DB
                     new_order_record = GeneralOrder(
@@ -165,7 +171,12 @@ def manage_open_limit(client):
                         previous_time=new_exchange_order.get("lastTradeTimestamp"),
                     )
                     session.add(new_order_record)
-                    session.commit()
+
+                    if old_order:
+                        session.delete(old_order)
+
+                        session.commit()
+                        print(f"Successfully migrated children to new order {new_id}")
 
                 except Exception as e:
                     session.rollback()
