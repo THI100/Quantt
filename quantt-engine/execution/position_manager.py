@@ -127,7 +127,7 @@ def manage_open_limit(client):
 
         for x in current_open:
             # 1. Skip logic
-            if x.get("reduceOnly") or x.get("status") == "filled":
+            if x.get("reduceOnly") is True or x.get("status") == "filled":
                 continue
 
             s = x.get("side").lower()

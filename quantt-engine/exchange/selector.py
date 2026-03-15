@@ -12,11 +12,6 @@ def get_exchange_client(exchange_name: str = settings.EXCHANGE):
 
         return bi_client
 
-    elif exchange_name == "coinbase":
-        from exchange.coinbase import cb_client
-
-        return cb_client
-
     elif exchange_name == "okx":
         from exchange.okx import okx_client
 
