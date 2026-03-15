@@ -1,12 +1,17 @@
+import logging
+
 from sqlalchemy import desc, select
 
 import config.settings as settings
 import data.fetch as fetch
+from execution import risk_manager as rm
 from persistance.connection import SessionLocal
 from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def manage_open_symbols():
@@ -114,13 +119,57 @@ def manage_open_symbols():
     return symbol_status
 
 
-def manage_open_limit():
+def manage_open_limit(client):
+    typ = "limit"
 
     for symbol in settings.list_of_interest:
         current_open = fetch.get_open_orders(symbol, 10)
 
         for x in current_open:
-            if x["reduceOnly"] == True or x["status"] == "filled":
+            # 1. Skip logic
+            if x.get("reduceOnly") or x.get("status") == "filled":
                 continue
 
-            id = x["id"]
+            price = x.get("price")
+            amt = x.get("amount")
+            order_id = x.get("id")
+
+            # 2. Risk Management calculation
+            p = rm.blp(symbol, price, amt)
+
+            # 4. Execute Exchange & DB changes
+            with SessionLocal() as session:
+                try:
+                    # Cancel existing
+                    client.cancel_order(order_id, symbol)
+
+                    # Delete old record from DB
+                    order_del = session.get(GeneralOrder, order_id)
+                    if order_del:
+                        session.delete(order_del)
+                        session.commit()
+
+                    # Create new order on exchange
+                    new_exchange_order = client.create_order(
+                        symbol, typ, x["side"], amt, price
+                    )
+
+                    # Save new order to DB
+                    new_order_record = GeneralOrder(
+                        id=new_exchange_order["id"],
+                        price=new_exchange_order.get("price", price),
+                        entrance_exit="entrance",
+                        amount=new_exchange_order.get("amount", amt),
+                        side=new_exchange_order.get("side"),
+                        symbol=symbol,
+                        order_type=typ,
+                        time=new_exchange_order.get("timestamp"),
+                        previous_time=new_exchange_order.get("lastTradeTimestamp"),
+                    )
+                    session.add(new_order_record)
+                    session.commit()
+                    print(f"Successfully rotated order for {symbol}")
+
+                except Exception as e:
+                    session.rollback()
+                    logger.error(f"Failed to manage order {order_id}: {e}")
