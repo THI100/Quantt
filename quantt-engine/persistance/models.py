@@ -35,6 +35,7 @@ class GeneralOrder(Base):
     # Relationships
     take_order: Mapped[Optional["TakeStopOrder"]] = relationship(foreign_keys=[take_id])
     stop_order: Mapped[Optional["TakeStopOrder"]] = relationship(foreign_keys=[stop_id])
+    trades = relationship("Trade", backref="order", cascade="all, delete-orphan")
 
 
 class TakeStopOrder(Base):

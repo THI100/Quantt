@@ -130,12 +130,12 @@ def manage_open_limit(client):
             if x.get("reduceOnly") or x.get("status") == "filled":
                 continue
 
-            price = x.get("price")
+            s = x.get("side").lower()
             amt = x.get("amount")
             order_id = x.get("id")
 
             # 2. Risk Management calculation
-            p = rm.blp(symbol, price, amt)
+            p = rm.blp(symbol, s, amt)
 
             # 4. Execute Exchange & DB changes
             with SessionLocal() as session:
@@ -150,14 +150,12 @@ def manage_open_limit(client):
                         session.commit()
 
                     # Create new order on exchange
-                    new_exchange_order = client.create_order(
-                        symbol, typ, x["side"], amt, price
-                    )
+                    new_exchange_order = client.create_order(symbol, typ, s, amt, p)
 
                     # Save new order to DB
                     new_order_record = GeneralOrder(
                         id=new_exchange_order["id"],
-                        price=new_exchange_order.get("price", price),
+                        price=new_exchange_order.get("price"),
                         entrance_exit="entrance",
                         amount=new_exchange_order.get("amount", amt),
                         side=new_exchange_order.get("side"),
@@ -168,7 +166,6 @@ def manage_open_limit(client):
                     )
                     session.add(new_order_record)
                     session.commit()
-                    print(f"Successfully rotated order for {symbol}")
 
                 except Exception as e:
                     session.rollback()

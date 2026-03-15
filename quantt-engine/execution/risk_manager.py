@@ -30,9 +30,9 @@ def blp(market: str, side: str, amount: float):
     ticker = fetch.get_ticker(market)
     lp = ticker["last"]
 
-    if side == "bullish":
+    if side == "bullish" or side == "buy" or side == "Buy":
         side = "buy"
-    elif side == "bearish":
+    elif side == "bearish" or side == "sell" or side == "sell":
         side = "sell"
     else:
         raise ValueError("Invalid side")

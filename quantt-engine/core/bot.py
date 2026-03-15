@@ -4,6 +4,7 @@ import time
 import core.engine as e
 from config import risk, settings
 from data.client import cached_client
+from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 
 client = cached_client()
@@ -20,6 +21,7 @@ def start():
 
     try:
         while True:
+            manage_open_limit(client)
             e.avaliation_and_place()
             time.sleep(90)
     except KeyboardInterrupt:
