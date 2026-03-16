@@ -16,14 +16,14 @@ authors = [
 license = { text = "MIT" }
 
 dependencies = [
-    "python-dotenv>=1.0.0",
-    "ccxt>=4.3.0",
-    "numpy>=1.26.0",
+    "python-dotenv>=1.0.0", # In usage
+    "ccxt>=4.3.0", # In usage
+    "numpy>=1.26.0", # In usage
     "pandas>=2.2.0",
-    "aiohttp>=3.9.0",
-    "async-timeout>=4.0.3",
+    "aiohttp>=3.9.0", # In usage
+    "async-timeout>=4.0.3", # In usage
     "uvloop>=0.19.0; sys_platform != 'win32'",
-    "sqlalchemy>=2.0.25",
+    "sqlalchemy>=2.0.25", # In usage
     "alembic>=1.13.1",
     "loguru>=0.7.2",
     "rich>=13.7.0",
