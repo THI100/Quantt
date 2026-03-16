@@ -1,6 +1,8 @@
 from typing import Dict, List
 
 import numpy as np  # type: ignore
+from loguru import logger
+
 import utils.math as smath
 
 # ---------------- TECHNICAL INDICATORS ----------------#
@@ -20,7 +22,7 @@ def rsi(
     """
 
     if len(candles) < period + 1:
-        raise ValueError("Not enough candles to compute RSI")
+        logger.warning("Not enough candles to compute RSI")
 
     candles = np.asarray(candles, dtype=float)
 
@@ -33,7 +35,7 @@ def rsi(
     elif mode == "open-close":
         deltas = closes - opens
     else:
-        raise ValueError("mode must be 'close-close' or 'open-close'")
+        logger.error(f"mode must be 'close-close' or 'open-close', actual mode: {mode}")
 
     # --- gains / losses ---
     gains = np.clip(deltas, 0.0, None)
@@ -79,7 +81,7 @@ def tenkan_and_kijun(
     """
 
     if len(candles) < base_period:
-        raise ValueError("Not enough candles for Ichimoku")
+        logger.warning("Not enough candles for tenkan and kijun.")
 
     candles = np.asarray(candles, dtype=float)
 
@@ -122,7 +124,7 @@ def macd(
     """
 
     if len(candles) < slow_period + signal_period:
-        raise ValueError("Not enough candles to compute MACD")
+        logger.warning("Not enough candles to compute MACD")
 
     candles = np.asarray(candles, dtype=float)
 
@@ -139,7 +141,9 @@ def macd(
     elif price_mode == "ohlc4":
         price = (opens + highs + lows + closes) / 4.0
     else:
-        raise ValueError("price_mode must be 'close', 'hl2', or 'ohlc4'")
+        logger.error(
+            f"price_mode must be 'close', 'hl2', or 'ohlc4' actual price_mode: {price_mode}"
+        )
 
     def ema(series, period):
         alpha = 2.0 / (period + 1.0)

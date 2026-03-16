@@ -1,8 +1,10 @@
 import os
 
 import ccxt
-from config.settings import is_demo_enabled as enable_demo
 from dotenv import load_dotenv
+from loguru import logger
+
+from config.settings import is_demo_enabled as enable_demo
 
 load_dotenv()
 
@@ -12,7 +14,7 @@ def create_client():
     api_secret = os.getenv("API_SECRET")
 
     if not api_key or not api_secret:
-        raise RuntimeError("Missing API credentials")
+        logger.error("Missing API credentials")
 
     client = ccxt.bybit(
         {

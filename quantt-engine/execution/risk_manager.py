@@ -1,4 +1,5 @@
 import numpy as np
+from loguru import logger
 
 import config.risk as risk
 import data.cache as cache
@@ -35,7 +36,7 @@ def blp(market: str, side: str, amount: float):
     elif side == "bearish" or side == "sell" or side == "sell":
         side = "sell"
     else:
-        raise ValueError("Invalid side")
+        logger.error(f"Invalid side, actual side: {side}")
 
     levels = order_book["bids"] if side == "buy" else order_book["asks"]
 

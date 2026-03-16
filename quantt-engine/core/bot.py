@@ -1,6 +1,8 @@
 import os
 import time
 
+from loguru import logger
+
 import core.engine as e
 from config import risk, settings
 from data.client import cached_client
@@ -12,7 +14,7 @@ client = cached_client()
 
 def start():
     if os.path.exists("./general.db"):
-        print("existent")
+        logger.info("existent")
     else:
         Base.metadata.create_all(bind=engine)
 
@@ -26,7 +28,7 @@ def start():
             time.sleep(90)
     except KeyboardInterrupt:
         # This block runs when you press Ctrl + C
-        print("\nLoop stopped by user.")
+        logger.info("\nLoop stopped by user.")
 
 
 def stop():

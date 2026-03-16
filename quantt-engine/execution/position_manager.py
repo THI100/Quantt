@@ -1,5 +1,4 @@
-import logging
-
+from loguru import logger
 from sqlalchemy import desc, select
 
 import config.settings as settings
@@ -10,8 +9,6 @@ from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
-
-logger = logging.getLogger(__name__)
 
 
 def manage_open_symbols():
@@ -29,9 +26,11 @@ def manage_open_symbols():
             last_record = session.execute(stmt).scalars().first()
 
             if last_record:
-                print(f"DEBUG: {symbol} last state: '{last_record.entrance_exit}'")
+                logger.debug(
+                    f"DEBUG: {symbol} last state: '{last_record.entrance_exit}'"
+                )
             else:
-                print(f"DEBUG: {symbol} has NO records in DB.")
+                logger.debug(f"DEBUG: {symbol} has NO records in DB.")
 
             # If no history exists, or the last action was an EXIT, the market is OPEN
             if not last_record or last_record.entrance_exit == "exit":
@@ -99,7 +98,7 @@ def manage_open_symbols():
 
                     session.add(exit_order)
                     is_now_closed_on_exchange = True
-                    print(
+                    logger.debug(
                         f"DEBUG: Detected Exit for {symbol} at {trade['price']} (Side: {trade['side']})"
                     )
                     break
@@ -112,7 +111,7 @@ def manage_open_symbols():
 
     except Exception as e:
         session.rollback()
-        print(f"Error syncing {symbol}: {e}")
+        logger.error(f"Error syncing {symbol}: {e}")
     finally:
         session.close()
 
@@ -176,7 +175,9 @@ def manage_open_limit(client):
                         session.delete(old_order)
 
                         session.commit()
-                        print(f"Successfully migrated children to new order {new_id}")
+                        logger.info(
+                            f"Successfully migrated children to new order {new_id}"
+                        )
 
                 except Exception as e:
                     session.rollback()

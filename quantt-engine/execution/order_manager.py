@@ -1,6 +1,8 @@
 import time
 from typing import Optional
 
+from loguru import logger
+
 import data.fetch as fetch
 from data.client import cached_client
 from execution import risk_manager
@@ -28,7 +30,7 @@ def order(
         entry_side = "sell"
         exit_side = "buy"
     else:
-        raise ValueError("Invalid side")
+        logger.error(f"Invalid side, actual side: {sell_buy}")
 
     # 2. Place the Main Entry Order
     # Using entry_side ('buy' for bullish)
@@ -55,7 +57,7 @@ def order(
 
         except Exception as e:
             session.rollback()
-            print(f"An error occurred: {e}")
+            logger.error(f"An error occurred: {e}")
 
     # 3. Place Stop Loss
     if stop_loss:
@@ -74,7 +76,7 @@ def order(
                 },
             )
         except Exception as e:
-            print(f"Stop Loss Failed: {e}")
+            logger.error(f"Stop Loss Failed: {e}")
 
         with db as session:
             try:
@@ -96,7 +98,7 @@ def order(
 
             except Exception as e:
                 session.rollback()
-                print(f"An error occurred: {e}")
+                logger.error(f"An error occurred: {e}")
 
     # 4. Place Take Profit
     if take_profit:
@@ -115,7 +117,7 @@ def order(
                 },
             )
         except Exception as e:
-            print(f"Take Profit Failed: {e}")
+            logger.error(f"Take Profit Failed: {e}")
 
         with db as session:
             try:
@@ -136,9 +138,7 @@ def order(
 
             except Exception as e:
                 session.rollback()
-                print(f"An error occurred: {e}")
-
-    print("Concluded")
+                logger.error(f"An error occurred: {e}")
 
 
 def order_ice(
@@ -166,7 +166,7 @@ def order_ice(
                 },
             )
         except Exception as e:
-            print(f"Stop Loss Failed: {e}")
+            logger.error(f"Stop Loss Failed: {e}")
 
         with db as session:
             try:
@@ -188,7 +188,7 @@ def order_ice(
 
             except Exception as e:
                 session.rollback()
-                print(f"An error occurred: {e}")
+                logger.error(f"An error occurred: {e}")
 
     # 4. Place Take Profit
     if tp:
@@ -207,7 +207,7 @@ def order_ice(
                 },
             )
         except Exception as e:
-            print(f"Take Profit Failed: {e}")
+            logger.error(f"Take Profit Failed: {e}")
 
         with db as session:
             try:
@@ -228,7 +228,7 @@ def order_ice(
 
             except Exception as e:
                 session.rollback()
-                print(f"An error occurred: {e}")
+                logger.error(f"An error occurred: {e}")
 
 
 def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: float):
@@ -241,7 +241,7 @@ def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: 
     elif side == "bearish":
         side = "sell"
     else:
-        raise ValueError("Invalid side")
+        logger.error(f"Invalid side, actual side: {side}")
 
     while remaining_amount > 0:
         price_data = risk_manager.blp(market, side, chunk_size)
@@ -249,7 +249,7 @@ def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: 
 
         current_slice = min(chunk_size, remaining_amount)
 
-        print(f"Placing {side} limit order: {current_slice} at {target_price}")
+        logger.info(f"Placing {side} limit order: {current_slice} at {target_price}")
 
         try:
             order = client.create_order(
@@ -277,10 +277,10 @@ def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: 
 
                 except Exception as e:
                     session.rollback()
-                    print(f"An error occurred: {e}")
+                    logger.error(f"An error occurred: {e}")
 
         except Exception as e:
-            print(f"Order failed/rejected (possibly price changed): {e}")
+            logger.error(f"Order failed/rejected (possibly price changed): {e}")
             time.sleep(2)
             continue
 
@@ -291,11 +291,11 @@ def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: 
         remaining_amount -= filled
 
         if order_status["status"] != "closed":
-            print(
+            logger.info(
                 f"Order partially filled. Canceling remaining {order_status['remaining']} to re-price."
             )
             client.cancel_order(order["id"], market)
 
-        print(f"Remaining total to {side}: {remaining_amount}")
+        logger.info(f"Remaining total to {side}: {remaining_amount}")
 
-    print(f"{market} Iceberg Execution Complete.")
+    logger.info(f"{market} Iceberg Execution Complete.")

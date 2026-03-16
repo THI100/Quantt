@@ -1,3 +1,5 @@
+from loguru import logger
+
 import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
@@ -7,7 +9,7 @@ from config import risk, settings
 
 def avaliation_and_place():
     open_closed = pm.manage_open_symbols()
-    print(open_closed)
+    logger.info(open_closed)
 
     for market, status in open_closed.items():
         if status == "open":
@@ -31,11 +33,13 @@ def avaliation_and_place():
             if nn < 0.01:
                 nn = 0.01
 
-            print(f"This value: {tp} has this porcentage of being achieved {data[1]}.")
+            logger.info(
+                f"This value: {tp} has this porcentage of being achieved {data[1]}."
+            )
 
             order_manager.order(symbol, "limit", s, nn, p, ls, tp)
 
         else:
             continue
 
-    print("placement completed")
+    logger.info("placement completed")

@@ -2,6 +2,7 @@ import os
 
 import ccxt
 from dotenv import load_dotenv
+from loguru import logger
 
 load_dotenv()
 
@@ -11,7 +12,7 @@ def create_client():
     api_secret = os.getenv("API_SECRET")
 
     if not api_key or not api_secret:
-        raise RuntimeError("Missing API credentials")
+        logger.error("Missing API credentials")
 
     client = ccxt.okx(
         {

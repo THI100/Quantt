@@ -1,3 +1,5 @@
+from loguru import logger
+
 from config import settings
 
 
@@ -18,4 +20,4 @@ def get_exchange_client(exchange_name: str = settings.EXCHANGE):
         return okx_client
 
     else:
-        raise ValueError(f"Unsupported exchange: {exchange_name}")
+        logger.error(f"Unsupported exchange: {exchange_name}")
