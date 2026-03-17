@@ -9,7 +9,7 @@ from config.settings import FUTURE_SPOT
 load_dotenv()
 
 
-def create_client():
+async def create_client():
     api_key = os.getenv("API_KEY")
     api_secret = os.getenv("API_SECRET")
 
@@ -38,6 +38,3 @@ def create_client():
     )
 
     return client
-
-
-okx_client = create_client()

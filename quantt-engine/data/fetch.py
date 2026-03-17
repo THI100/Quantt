@@ -1,7 +1,5 @@
 from typing import Optional
 
-from loguru import AwaitableCompleter
-
 from data.client import cached_client
 
 client = cached_client()

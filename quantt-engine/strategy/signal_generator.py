@@ -1,19 +1,17 @@
+import asyncio
+
 import strategy.indicators as indicators
 from config import risk, settings
-from data import cache, fetch
+from data import cache
 from utils.math import scale_0_100
 
 
-def get_signal_indicators(market: str):
-
+async def get_signal_indicators(candles42: list):
     market_force_bullish = 0
     market_force_bearish = 0
 
-    candles42 = cache.cached_p42(market=market)
-
     # ================= RSI =================
     rsi_values = indicators.rsi(candles=candles42)
-    actual_movement = ""
 
     if rsi_values[0] < 30:
         market_force_bullish += 2
@@ -25,186 +23,145 @@ def get_signal_indicators(market: str):
         market_force_bearish += 1
 
     rsi_gap_mult = rsi_values[0] / rsi_values[1]
-
+    gap_impact = abs((rsi_gap_mult - 1) * 10)
     if rsi_gap_mult < 1:
-        market_force_bearish += abs((rsi_gap_mult - 1) * 10)
-    elif rsi_gap_mult > 1:
-        market_force_bullish += abs((rsi_gap_mult - 1) * 10)
+        market_force_bearish += gap_impact
+    else:
+        market_force_bullish += gap_impact
 
     # ================= TENKAN / KIJUN =================
     tenkan, kijun = indicators.tenkan_and_kijun(candles=candles42)
-
     atr_value = indicators.atr(candles42, period=14)
     buffer = risk.atr_multiplier * atr_value
-
     diff = tenkan - kijun
 
     if diff > buffer:
-        market_force_bullish += 1
         actual_movement = "bullish"
+        market_force_bullish += 1
     elif diff < -buffer:
-        market_force_bearish += 1
         actual_movement = "bearish"
+        market_force_bearish += 1
     else:
         actual_movement = "neutral"
 
     # ================= MACD =================
-    macd_val, signal_val, hist_val, _, _, _ = indicators.macd(candles=candles42)
+    macd_val, signal_val, hist_val, *_ = indicators.macd(candles=candles42)
 
-    # --- crossover effect ---
     if macd_val > signal_val:
         market_force_bullish += 1
-    elif macd_val < signal_val:
+    else:
         market_force_bearish += 1
 
-    # --- regime bias (above/below zero) ---
     if macd_val > 0:
         market_force_bullish += 0.5
     else:
         market_force_bearish += 0.5
 
-    # --- momentum strength ---
-    hist_strength = abs(hist_val)
-
-    # normalize impact (prevents huge spikes)
-    hist_weight = min(hist_strength / 50, 2)
-
+    hist_weight = min(abs(hist_val) / 50, 2)
     if hist_val > 0:
         market_force_bullish += hist_weight
-    elif hist_val < 0:
+    else:
         market_force_bearish += hist_weight
 
     return market_force_bullish, market_force_bearish, actual_movement
 
 
-def get_signal_candlestick_patterns(market: str):
-    market_force_bullish = 0.0
-    market_force_bearish = 0.0
-    bullish_confidence = 0
-    bearish_confidence = 0
-
-    candles = cache.cached_p14(market=market)
-    patterns = indicators.detect_candlestick_patterns(candles=candles)
+async def get_signal_candlestick_patterns(candles14: list):
+    bull_f, bear_f, bull_c, bear_c = 0.0, 0.0, 0, 0
+    patterns = indicators.detect_candlestick_patterns(candles=candles14)
 
     for p in patterns:
-        mult = p["multiplicator"]
-        strength = p["volume_strength"]
-
-        impact = abs(mult) * min(strength, 2.0)
-
-        if mult > 0:
-            market_force_bullish += impact
-            bullish_confidence += 1
-        elif mult < 0:
-            market_force_bearish += impact
-            bearish_confidence += 1
-
-    return (
-        market_force_bullish,
-        market_force_bearish,
-        bullish_confidence,
-        bearish_confidence,
-    )
+        impact = abs(p["multiplicator"]) * min(p["volume_strength"], 2.0)
+        if p["multiplicator"] > 0:
+            bull_f += impact
+            bull_c += 1
+        else:
+            bear_f += impact
+            bear_c += 1
+    return bull_f, bear_f, bull_c, bear_c
 
 
-def get_signal_smr(market: str):
-    market_force_bullish = 0.0
-    market_force_bearish = 0.0
-    bullish_confidence = 0
-    bearish_confidence = 0
-
-    candles = cache.cached_p28(market=market)
-    smr_events = indicators.smr(candles=candles)
+async def get_signal_smr(candles28: list):
+    bull_f, bear_f, bull_c, bear_c = 0.0, 0.0, 0, 0
+    smr_events = indicators.smr(candles=candles28)
 
     for e in smr_events:
-        etype = e["type"]
-        mult = e["multiplicator"]
-        strength = min(e["volume_strength"], 2.0)
+        etype, impact = (
+            e["type"],
+            abs(e["multiplicator"]) * min(e["volume_strength"], 2.0),
+        )
 
-        impact = abs(mult) * strength
-
-        # ---------------- Bullish events ----------------
-        if etype in ("bos_bullish", "choch_bullish", "bullish_fvg"):
-            bullish_confidence += 1
-
+        if "bullish" in etype:
+            bull_c += 1
             if etype == "bos_bullish":
-                market_force_bullish += impact * 1.5
+                bull_f += impact * 1.5
             elif etype == "choch_bullish":
-                market_force_bullish += impact * 2.0
-                market_force_bearish *= 0.5
+                bull_f += impact * 2.0
+                bear_f *= 0.5
             elif etype == "bullish_fvg":
-                market_force_bullish += impact * 0.7
+                bull_f += impact * 0.7
 
-        # ---------------- Bearish events ----------------
-        elif etype in ("bos_bearish", "choch_bearish", "bearish_fvg"):
-            bearish_confidence += 1
-
+        elif "bearish" in etype:
+            bear_c += 1
             if etype == "bos_bearish":
-                market_force_bearish += impact * 1.5
+                bear_f += impact * 1.5
             elif etype == "choch_bearish":
-                market_force_bearish += impact * 2.0
-                market_force_bullish *= 0.5
+                bear_f += impact * 2.0
+                bull_f *= 0.5
             elif etype == "bearish_fvg":
-                market_force_bearish += impact * 0.7
+                bear_f += impact * 0.7
 
-    return (
-        market_force_bullish,
-        market_force_bearish,
-        bullish_confidence,
-        bearish_confidence,
+    return bull_f, bear_f, bull_c, bear_c
+
+
+async def get_overall_market_signal(market: str):
+    # OPTIMIZATION: Fetch all cache data in parallel first
+    c14_task = cache.cached_p14(market=market)
+    c28_task = cache.cached_p28(market=market)
+    c42_task = cache.cached_p42(market=market)
+
+    candles14, candles28, candles42 = await asyncio.gather(c14_task, c28_task, c42_task)
+
+    # Execute signal logic in parallel
+    results = await asyncio.gather(
+        get_signal_indicators(market, candles42),
+        get_signal_candlestick_patterns(market, candles14),
+        get_signal_smr(market, candles28),
     )
 
-
-def get_overall_market_signal(market: str):
-    """
-    This function returns a general market signal based on multiple strategies.
-    It combines signals from indicators, candlestick patterns, and SMC analysis
-    to determine the overall market sentiment.
-     - Returns:
-        - real_confidence (float): Confidence level of the signal (0-100).
-        - real_strength (float): Strength of the signal (0-100).
-        - actual_movement (str): Actual market movement ("bullish", "bearish", "neutral").
-        - direction (str): Overall market direction ("bullish", "bearish", "neutral").
-    """
-    mbull2, mbear2, actual_movement = get_signal_indicators(market)
-    mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market)
-    mbull3, mbear3, cbull3, cbear3 = get_signal_smr(market)
+    (
+        (mbull2, mbear2, actual_movement),
+        (mbull1, mbear1, cbull1, cbear1),
+        (mbull3, mbear3, cbull3, cbear3),
+    ) = results
 
     bullish = mbull1 + mbull2 + mbull3
     bearish = mbear1 + mbear2 + mbear3
-
-    conf_bull = cbull1 + cbull3
-    conf_bear = cbear1 + cbear3
-
     real_strength_raw = bullish - bearish
 
-    direction = (
-        "bullish"
-        if real_strength_raw > 0
-        else "bearish"
-        if real_strength_raw < 0
-        else "neutral"
-    )
+    direction = "neutral"
+    if real_strength_raw > 0:
+        direction = "bullish"
+    elif real_strength_raw < 0:
+        direction = "bearish"
 
-    real_confidence_raw = (
-        conf_bull
-        if real_strength_raw > 0
-        else conf_bear
-        if real_strength_raw < 0
+    real_conf_raw = (
+        (cbull1 + cbull3)
+        if direction == "bullish"
+        else (cbear1 + cbear3)
+        if direction == "bearish"
         else 0
     )
 
     max_strength = bullish + bearish
-    max_confidence = conf_bull + conf_bear
+    max_confidence = (cbull1 + cbull3) + (cbear1 + cbear3)
 
-    if real_strength_raw and max_strength > 1:
-        real_strength = scale_0_100(real_strength_raw, max_strength)
-    else:
-        real_strength = 0
-    if real_confidence_raw and max_confidence > 1:
-        real_confidence = scale_0_100(real_confidence_raw, max_confidence)
-    else:
-        real_confidence = 0
+    real_strength = (
+        scale_0_100(real_strength_raw, max_strength) if max_strength > 1 else 0
+    )
+    real_confidence = (
+        scale_0_100(real_conf_raw, max_confidence) if max_confidence > 1 else 0
+    )
 
     if real_confidence == 0:
         direction = "neutral"
@@ -212,52 +169,33 @@ def get_overall_market_signal(market: str):
     return real_confidence, real_strength, actual_movement, direction
 
 
-def get_loss_and_profit_stops(market: str, direction: str):
-    """
-    This function serves to get the stop_loss and take_profit of a determinited market.
-    Based on the strength and confidence of the market movement.
-    Determining the market based on previous smr.
-    """
-
-    candles = cache.cached_p42(market)
+async def get_loss_and_profit_stops(market: str, direction: str):
+    candles = await cache.cached_p42(market)
     actual_value = candles[-1][4]
     stop_losses_events = indicators.smr(candles=candles)
 
-    last_high_val = None
-    last_low_val = None
+    last_high_val, last_low_val = None, None
 
-    # 1. Iterate to find the MOST RECENT structural points
     for a in stop_losses_events:
-        i = a["index"]
-        # Ensure we don't hit an IndexError
-        idx = max(0, i - 2)
-
+        idx = max(0, a["index"] - 2)
         if a["type"] in ("HH", "LH"):
             last_high_val = candles[idx][2]
         elif a["type"] in ("HL", "LL"):
             last_low_val = candles[idx][3]
 
-    # 2. Assign SL based on direction
     if direction == "bullish":
-        # For bullish, SL should be the last structural LOW
-        stop_loss = last_low_val if last_low_val else actual_value * 0.98
-
-        # Emergency check: SL must be below price
-        if stop_loss >= actual_value:
-            stop_loss = actual_value * 0.99
-
-        risk_amt = actual_value - stop_loss
-        take_profit = actual_value + (risk_amt * risk.risk_reward_ratio)
-
-    else:  # bearish
-        # For bearish, SL should be the last structural HIGH
-        stop_loss = last_high_val if last_high_val else actual_value * 1.02
-
-        # Emergency check: SL must be above price
-        if stop_loss <= actual_value:
-            stop_loss = actual_value * 1.01
-
-        risk_amt = stop_loss - actual_value
-        take_profit = actual_value - (risk_amt * risk.risk_reward_ratio)
+        stop_loss = min(
+            last_low_val if last_low_val else actual_value * 0.98, actual_value * 0.99
+        )
+        take_profit = actual_value + (
+            (actual_value - stop_loss) * risk.risk_reward_ratio
+        )
+    else:
+        stop_loss = max(
+            last_high_val if last_high_val else actual_value * 1.02, actual_value * 1.01
+        )
+        take_profit = actual_value - (
+            (stop_loss - actual_value) * risk.risk_reward_ratio
+        )
 
     return stop_loss, take_profit, actual_value

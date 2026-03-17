@@ -9,7 +9,7 @@ from config.settings import FUTURE_SPOT, is_demo_enabled
 load_dotenv()
 
 
-def create_client():
+async def create_client():
     api_key = os.getenv("API_KEY")
     api_secret = os.getenv("API_SECRET")
 
@@ -41,6 +41,3 @@ def create_client():
         client.set_sandbox_mode(True)  # Modern and working way to enable demo in CCXT
 
     return client
-
-
-bi_client = create_client()

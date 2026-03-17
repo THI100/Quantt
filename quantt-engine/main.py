@@ -1,4 +1,5 @@
-import core.bot as bot
-from data import fetch
+import asyncio
 
-bot.start()
+import core.bot as bot
+
+asyncio.run(bot.start())

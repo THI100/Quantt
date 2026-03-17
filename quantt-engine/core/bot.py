@@ -14,10 +14,16 @@ from persistance.connection import Base, engine
 
 
 async def start():
-    # 1. Initialize the Async Client
-    client = cached_client()
-
+    client = None
     try:
+        # CRITICAL: Must await the cached_client coroutine
+        client = await cached_client()
+
+        # Verify the client was actually returned
+        if client is None:
+            logger.error("Failed to initialize exchange client.")
+            return
+
         # 2. Load Markets (API Fetch) - mandatory for CCXT calculation accuracy
         logger.info("Loading exchange markets...")
         await client.load_markets()
@@ -48,10 +54,6 @@ async def start():
 
     except Exception as err:
         logger.error(f"Bot encountered an error: {err}")
-    finally:
-        # 6. Graceful Shutdown: Close the aiohttp connectors inside CCXT
-        await client.close()
-        logger.info("Exchange connection closed. Bot stopped.")
 
 
 if __name__ == "__main__":

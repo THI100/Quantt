@@ -6,9 +6,9 @@ import data.cache as cache
 import data.fetch as fetch
 
 
-def smart_amount(market: str):
-    bal = fetch.balance()
-    ticker = fetch.get_ticker(market)
+async def smart_amount(market: str):
+    bal = await fetch.balance()
+    ticker = await fetch.get_ticker(market)
     last = ticker["last"]
     usdt_n = bal["USDT"]["free"]
 
@@ -21,14 +21,14 @@ def smart_amount(market: str):
     return market_amount
 
 
-def blp(market: str, side: str, amount: float):
+async def blp(market: str, side: str, amount: float):
     """
     Search for the best price for limit type of orders, utilizing the order book.
     there might be some delays and inacuracies compared to the order book.
     """
 
-    order_book = fetch.get_order_book(market)
-    ticker = fetch.get_ticker(market)
+    order_book = await fetch.get_order_book(market)
+    ticker = await fetch.get_ticker(market)
     lp = ticker["last"]
 
     if side == "bullish" or side == "buy" or side == "Buy":
@@ -62,6 +62,6 @@ def blp(market: str, side: str, amount: float):
             if price_deviation > 0.005:
                 # Move price 0.1% offset from Last Price instead of deep book level
                 offset = 0.001 if side == "buy" else -0.001
-                chosen_price = last_price * (1 - offset)
+                chosen_price = lp * (1 - offset)
 
     return chosen_price
