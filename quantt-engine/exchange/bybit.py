@@ -1,6 +1,6 @@
 import os
 
-import ccxt.async_support as ccxt
+import ccxt.async_support as ccxt  # type: ignore
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -14,20 +14,21 @@ async def create_client():
     api_secret = os.getenv("API_SECRET")
 
     if not api_key or not api_secret:
-        logger.error("Missing API credentials")
+        logger.error("Missing API credentials in environment variables.")
+        return None
 
+    # We initialize the async class
     client = ccxt.bybit(
         {
-            # SETTINGS, CURIOUS? YES, YOU CAN TWEAK ON IT.
             "apiKey": api_key,
             "secret": api_secret,
-            # DONT MESS WITH THIS ONE!
             "enableRateLimit": True,
             "timeout": 30000,
             "throwOnError": True,
+            # If TICK_SIZE gives you an error,
+            # you can use the integer value 4 or just omit it for Bybit default
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
-                # NOT EVEN THAT ONE, FOR THE SAFETY OF THE ENGINE! :)
                 "defaultType": FUTURE_SPOT,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
@@ -39,5 +40,6 @@ async def create_client():
 
     if is_demo_enabled:
         client.set_sandbox_mode(True)
+        logger.info("Sandbox/Demo mode enabled for Bybit.")
 
     return client

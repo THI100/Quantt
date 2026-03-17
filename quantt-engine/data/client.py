@@ -29,4 +29,4 @@ def async_ttl_cache(ttl_seconds: int):
 @async_ttl_cache(ttl_seconds=86400)
 async def cached_client():
     # NOW IT MAYBE IS ASYNC, I DONT KNOW
-    return get_exchange_client()
+    return await get_exchange_client()
