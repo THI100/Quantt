@@ -1,42 +1,44 @@
 from typing import Optional
 
+from loguru import AwaitableCompleter
+
 from data.client import cached_client
 
-c_client = cached_client()
+client = cached_client()
 
 
-def get_ticker(symbol: str):
+async def get_ticker(symbol: str):
     """Fetch a ticker."""
-    return c_client.fetch_ticker(symbol)
+    return await client.fetch_ticker(symbol)
 
 
-def get_tickers(symbols: list):
+async def get_tickers(symbols: list):
     """Fetch multiple tickers."""
-    return c_client.fetch_tickers(symbols)
+    return await client.fetch_tickers(symbols)
 
 
-def get_OHLCV(symbol: str, timeframe: str, limit: int):
+async def get_OHLCV(symbol: str, timeframe: str, limit: int):
     """Fetch a x amount of OHLCV from x market wih x timeframe."""
-    return c_client.fetch_ohlcv(symbol, timeframe, limit=limit)
+    return await client.fetch_ohlcv(symbol, timeframe, limit=limit)
 
 
-def get_order_book(symbol: str, limit: Optional[int] = None):
+async def get_order_book(symbol: str, limit: Optional[int] = None):
     """Fetch the order book from a certain symbol."""
-    return c_client.fetch_order_book(symbol, limit)
+    return await client.fetch_order_book(symbol, limit)
 
 
-def get_order(symbol: str, id: str):
+async def get_order(symbol: str, id: str):
     """Fetch the order from a certain symbol."""
-    return c_client.fetch_order(id, symbol)
+    return await client.fetch_order(id, symbol)
 
 
-def get_orders(symbol: str, limit: Optional[int] = None):
-    return c_client.fetch_orders(symbol, limit=limit)
+async def get_orders(symbol: str, limit: Optional[int] = None):
+    return await client.fetch_orders(symbol, limit=limit)
 
 
-def get_open_orders(symbol: str, limit: Optional[int] = None):
-    return c_client.fetch_open_orders(symbol, limit=limit)
+async def get_open_orders(symbol: str, limit: Optional[int] = None):
+    return await client.fetch_open_orders(symbol, limit=limit)
 
 
-def balance():
-    return c_client.fetch_balance()
+async def balance():
+    return await client.fetch_balance()

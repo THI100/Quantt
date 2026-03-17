@@ -1,19 +1,24 @@
+import asyncio
 import time
 from functools import wraps
 
 from exchange.selector import get_exchange_client
 
 
-def ttl_cache(ttl_seconds: int):
+# TTL CACHE, YES FOR A EXCHANGE SETUP!
+def async_ttl_cache(ttl_seconds: int):
     def decorator(func):
         cache = {"value": None, "expiry": 0}
+        lock = asyncio.Lock()
 
         @wraps(func)
-        def wrapper(*args, **kwargs):
-            now = time.time()
-            if now >= cache["expiry"]:
-                cache["value"] = func(*args, **kwargs)
-                cache["expiry"] = now + ttl_seconds
+        async def wrapper(*args, **kwargs):
+            async with lock:
+                now = time.time()
+                if now >= cache["expiry"]:
+                    # AWAIT FOR THAT
+                    cache["value"] = await func(*args, **kwargs)
+                    cache["expiry"] = now + ttl_seconds
             return cache["value"]
 
         return wrapper
@@ -21,6 +26,7 @@ def ttl_cache(ttl_seconds: int):
     return decorator
 
 
-@ttl_cache(ttl_seconds=86400)  # Cache for the specified timeframe
-def cached_client():
+@async_ttl_cache(ttl_seconds=86400)
+async def cached_client():
+    # NOW IT MAYBE IS ASYNC, I DONT KNOW
     return get_exchange_client()

@@ -1,5 +1,3 @@
-from numpy._core.numeric import indices
-
 import strategy.indicators as indicators
 from config import risk, settings
 from data import cache, fetch

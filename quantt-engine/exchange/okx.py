@@ -1,8 +1,10 @@
 import os
 
-import ccxt
+import ccxt.async_support as ccxt
 from dotenv import load_dotenv
 from loguru import logger
+
+from config.settings import FUTURE_SPOT
 
 load_dotenv()
 
@@ -16,15 +18,17 @@ def create_client():
 
     client = ccxt.okx(
         {
+            # SETTINGS, CURIOUS? YES, YOU CAN TWEAK ON IT.
             "apiKey": api_key,
             "secret": api_secret,
-            # Stability
+            # DONT MESS WITH THIS ONE!
             "enableRateLimit": True,
             "timeout": 30000,
             "throwOnError": True,
-            # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
+                # NOT EVEN THAT ONE, FOR THE SAFETY OF THE ENGINE! :)
+                "defaultType": FUTURE_SPOT,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,

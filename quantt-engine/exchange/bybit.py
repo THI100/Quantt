@@ -1,10 +1,10 @@
 import os
 
-import ccxt
+import ccxt.async_support as ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config.settings import is_demo_enabled as enable_demo
+from config.settings import FUTURE_SPOT, is_demo_enabled
 
 load_dotenv()
 
@@ -18,15 +18,17 @@ def create_client():
 
     client = ccxt.bybit(
         {
+            # SETTINGS, CURIOUS? YES, YOU CAN TWEAK ON IT.
             "apiKey": api_key,
             "secret": api_secret,
-            # Stability
+            # DONT MESS WITH THIS ONE!
             "enableRateLimit": True,
             "timeout": 30000,
             "throwOnError": True,
-            # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
+                # NOT EVEN THAT ONE, FOR THE SAFETY OF THE ENGINE! :)
+                "defaultType": FUTURE_SPOT,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
@@ -35,8 +37,8 @@ def create_client():
         }
     )
 
-    # Correct, modern CCXT usage
-    client.enableDemoTrading(enable_demo)
+    if is_demo_enabled:
+        client.set_sandbox_mode(True)
 
     return client
 

@@ -1,6 +1,6 @@
 import os
 
-import ccxt
+import ccxt.async_support as ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -18,15 +18,16 @@ def create_client():
 
     client = ccxt.binance(
         {
+            # SETTINGS, CURIOUS? YES, YOU CAN TWEAK ON IT.
             "apiKey": api_key,
             "secret": api_secret,
-            # Stability
+            # DONT MESS WITH THIS ONE!
             "enableRateLimit": True,
             "timeout": 30000,
             "throwOnError": True,
-            # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
+                # NOT EVEN THAT ONE, FOR THE SAFETY OF THE ENGINE! :)
                 "defaultType": FUTURE_SPOT,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
@@ -36,7 +37,8 @@ def create_client():
         }
     )
 
-    client.enable_demo_trading(is_demo_enabled)
+    if is_demo_enabled:
+        client.set_sandbox_mode(True)  # Modern and working way to enable demo in CCXT
 
     return client
 
