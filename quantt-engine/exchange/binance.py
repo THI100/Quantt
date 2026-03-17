@@ -28,7 +28,7 @@ async def create_client():
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
                 # NOT EVEN THAT ONE, FOR THE SAFETY OF THE ENGINE! :)
-                "defaultType": FUTURE_SPOT,
+                "defaultType": "future",
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,

@@ -26,7 +26,11 @@ async def start():
 
         # 2. Load Markets (API Fetch) - mandatory for CCXT calculation accuracy
         logger.info("Loading exchange markets...")
-        await client.load_markets()
+        try:
+            await client.load_markets()
+        except Exception as e:
+            logger.error(f"CCXT Load Markets Error: {type(e).__name__} - {e}")
+            # This will tell us if it's 'AuthenticationError', 'NetworkError', or 'PermissionDenied'
 
         # 3. Database setup (Sync is fine here as it's a one-off)
         if not os.path.exists("./general.db"):
@@ -54,6 +58,11 @@ async def start():
 
     except Exception as err:
         logger.error(f"Bot encountered an error: {err}")
+    finally:
+        # This will now work because 'client' is the actual CCXT instance
+        if client:
+            await client.close()
+            logger.info("Exchange connection closed. Bot stopped.")
 
 
 if __name__ == "__main__":
