@@ -25,13 +25,6 @@ def manage_open_symbols():
             )
             last_record = session.execute(stmt).scalars().first()
 
-            if last_record:
-                logger.debug(
-                    f"DEBUG: {symbol} last state: '{last_record.entrance_exit}'"
-                )
-            else:
-                logger.debug(f"DEBUG: {symbol} has NO records in DB.")
-
             # If no history exists, or the last action was an EXIT, the market is OPEN
             if not last_record or last_record.entrance_exit == "exit":
                 symbol_status[symbol] = "open"
@@ -98,9 +91,6 @@ def manage_open_symbols():
 
                     session.add(exit_order)
                     is_now_closed_on_exchange = True
-                    logger.debug(
-                        f"DEBUG: Detected Exit for {symbol} at {trade['price']} (Side: {trade['side']})"
-                    )
                     break
 
             if is_now_closed_on_exchange:
