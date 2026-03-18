@@ -4,7 +4,7 @@ from typing import Optional
 from loguru import logger
 
 import data.fetch as fetch
-from data.client import cached_client
+from exchange.binance import create_client
 from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
@@ -21,8 +21,8 @@ async def order(
     stop_loss: Optional[float] = None,
     take_profit: Optional[float] = None,
 ):
+    client = await create_client()
 
-    client = await cached_client()
     # 1. Determine Entry and Exit Sides
     if sell_buy == "bullish":
         entry_side = "buy"
@@ -85,7 +85,7 @@ async def order_ice(
     sl: Optional[float],
     order_id: int,
 ):
-    client = await cached_client()
+    client = await create_client()
 
     exit_side = "sell" if side == "buy" else "buy"
 
@@ -141,8 +141,8 @@ async def order_ice(
 async def execute_iceberg(
     market: str, total_amount: float, side: str, tp: float, sl: float
 ):
+    client = await create_client()
 
-    client = await cached_client()
     remaining_amount = total_amount
     chunk_size = total_amount * 0.1
     side = "buy" if side == "bullish" else "sell"
