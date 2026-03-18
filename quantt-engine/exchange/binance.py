@@ -1,6 +1,6 @@
 import os
 
-import ccxt
+import ccxt.async_support as ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
@@ -10,32 +10,23 @@ load_dotenv()
 
 
 async def create_client():
+    load_dotenv()
     api_key = os.getenv("API_KEY")
     api_secret = os.getenv("API_SECRET")
 
-    if not api_key or not api_secret:
-        logger.error("Missing API credentials")
-
+    # Use the renamed import here
     client = ccxt.binance(
         {
             "apiKey": api_key,
             "secret": api_secret,
-            # Stability
             "enableRateLimit": True,
-            "timeout": 30000,
-            "throwOnError": True,
-            # Precision safety
-            "precisionMode": ccxt.TICK_SIZE,
             "options": {
                 "defaultType": "future",
-                "adjustForTimeDifference": True,
-                "recvWindow": 10000,
-                "warnOnFetchOpenOrdersWithoutSymbol": False,
-                "createMarketBuyOrderRequiresPrice": True,
             },
         }
     )
 
-    client.enable_demo_trading(is_demo_enabled)
+    # Ensure is_demo_enabled is actually a Boolean (True/False)
+    client.enable_demo_trading(bool(is_demo_enabled))
 
     return client
