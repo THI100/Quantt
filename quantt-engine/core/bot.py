@@ -18,6 +18,8 @@ async def start():
     try:
         # CRITICAL: Must await the cached_client coroutine
         client = await cached_client()
+        desc = client.describe()
+        print(desc)
 
         # Verify the client was actually returned
         if client is None:
