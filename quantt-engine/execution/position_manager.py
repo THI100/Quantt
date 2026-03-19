@@ -115,13 +115,24 @@ def manage_open_limit(client):
         current_open = fetch.get_open_orders(symbol, 10)
 
         for x in current_open:
-            # 1. Skip logic
+            # 1. Skip logic (Exchange status)
             if x.get("reduceOnly") is True or x.get("status") == "filled":
                 continue
 
+            order_id = x.get("id")
+
+            # --- DATABASE CHECK START ---
+            with SessionLocal() as session:
+                # Check if this order ID exists in our DB
+                db_order = session.get(GeneralOrder, order_id)
+
+                if not db_order:
+                    logger.info(f"Order {order_id} not found in DB. Skipping.")
+                    continue
+            # --- DATABASE CHECK END ---
+
             s = x.get("side").lower()
             amt = x.get("amount")
-            order_id = x.get("id")
 
             # 2. Risk Management calculation
             p = rm.blp(symbol, s, amt)
@@ -132,7 +143,7 @@ def manage_open_limit(client):
                     # Cancel existing
                     client.cancel_order(order_id, symbol)
 
-                    # Delete old record from DB
+                    # Retrieve the object again within this session to ensure it's tracked
                     old_order = session.get(GeneralOrder, order_id)
 
                     # Create new order on exchange
@@ -149,7 +160,7 @@ def manage_open_limit(client):
 
                     # Save new order to DB
                     new_order_record = GeneralOrder(
-                        id=new_exchange_order["id"],
+                        id=new_id,
                         price=new_exchange_order.get("price"),
                         entrance_exit="entrance",
                         amount=new_exchange_order.get("amount", amt),
@@ -164,10 +175,10 @@ def manage_open_limit(client):
                     if old_order:
                         session.delete(old_order)
 
-                        session.commit()
-                        logger.info(
-                            f"Successfully migrated children to new order {new_id}"
-                        )
+                    session.commit()
+                    logger.info(
+                        f"Successfully migrated {order_id} to new order {new_id}"
+                    )
 
                 except Exception as e:
                     session.rollback()
