@@ -37,7 +37,7 @@ def avaliation_and_place():
                 f"This value: {tp} has this porcentage of being achieved {data[1]}."
             )
 
-            order_manager.order(symbol, "limit", s, nn, p, ls, tp)
+            order_manager.order(symbol, "limit", s, (nn * 25), p, ls, tp)
 
         else:
             continue
