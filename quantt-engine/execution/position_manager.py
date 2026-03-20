@@ -140,25 +140,17 @@ def manage_open_limit(client):
             # 4. Execute Exchange & DB changes
             with SessionLocal() as session:
                 try:
-                    # Cancel existing
+                    # 1. Cancel existing on exchange
                     client.cancel_order(order_id, symbol)
-
-                    # Retrieve the object again within this session to ensure it's tracked
                     old_order = session.get(GeneralOrder, order_id)
 
-                    # Create new order on exchange
+                    # 2. Create new order on exchange
                     new_exchange_order = client.create_order(symbol, typ, s, amt, p)
-                    new_id = new_exchange_order["id"]
 
-                    children = (
-                        session.query(TakeStopOrder)
-                        .filter(TakeStopOrder.parent_order_id == order_id)
-                        .all()
-                    )
-                    for child in children:
-                        child.parent_order_id = new_id
+                    # FORCED TYPE CAST: Ensure ID is an integer if your DB expects it
+                    new_id = int(new_exchange_order["id"])
 
-                    # Save new order to DB
+                    # 3. Create and add the NEW parent record FIRST
                     new_order_record = GeneralOrder(
                         id=new_id,
                         price=new_exchange_order.get("price"),
@@ -172,13 +164,24 @@ def manage_open_limit(client):
                     )
                     session.add(new_order_record)
 
+                    # IMPORTANT: Flush tells the DB about the new_id without closing the transaction
+                    session.flush()
+
+                    # 4. Now update the children (the Foreign Key will now find the parent)
+                    children = (
+                        session.query(TakeStopOrder)
+                        .filter(TakeStopOrder.parent_order_id == order_id)
+                        .all()
+                    )
+                    for child in children:
+                        child.parent_order_id = new_id
+
+                    # 5. Clean up the old record and commit everything
                     if old_order:
                         session.delete(old_order)
 
                     session.commit()
-                    logger.info(
-                        f"Successfully migrated {order_id} to new order {new_id}"
-                    )
+                    logger.info(f"Successfully migrated {order_id} to {new_id}")
 
                 except Exception as e:
                     session.rollback()

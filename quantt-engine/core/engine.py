@@ -31,13 +31,16 @@ def avaliation_and_place():
             p = risk_manager.blp(symbol, s, nn)
 
             if nn < 0.01:
-                nn = 0.01
+                logger.info(
+                    f"Is not feasible or safe to execute a order in {market}, due to low amount and balance constrains."
+                )
+                continue
 
             logger.info(
                 f"This value: {tp} has this porcentage of being achieved {data[1]}."
             )
 
-            order_manager.order(symbol, "limit", s, (nn * 25), p, ls, tp)
+            order_manager.order(symbol, "limit", s, nn, p, ls, tp)
 
         else:
             continue

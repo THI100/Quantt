@@ -1,9 +1,9 @@
 import numpy as np
 from loguru import logger
 
-import config.risk as risk
 import data.cache as cache
 import data.fetch as fetch
+from config import config, risk
 
 
 def smart_amount(market: str):
@@ -12,7 +12,7 @@ def smart_amount(market: str):
     last = ticker["last"]
     usdt_n = bal["USDT"]["free"]
 
-    limited = usdt_n * risk.porcentage_of_capital_per_trade
+    limited = (usdt_n * risk.porcentage_of_capital_per_trade) * risk.leverage
 
     ma = limited / last
 
