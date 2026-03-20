@@ -30,15 +30,17 @@ def avaliation_and_place(client):
             nn = risk_manager.smart_amount(symbol)
             p = risk_manager.blp(symbol, s, nn)
 
-            if nn < 0.01:
+            if p <= ls or p >= tp:
                 logger.info(
-                    f"Is not feasible or safe to execute a order in {market}, due to low amount and balance constrains."
+                    f"Seems like this possible order would return a error... as its price is bigger than take profit or lower than stop loss."
                 )
                 continue
 
-            logger.info(
-                f"This value: {tp} has this porcentage of being achieved {data[1]}."
-            )
+            if nn < 0.01:
+                logger.info(
+                    f"Is not feasible or safe to execute a order in {market}, due to low amount and constrains."
+                )
+                continue
 
             order_manager.order(client, symbol, "limit", s, nn, p, ls, tp)
 

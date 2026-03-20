@@ -1,7 +1,8 @@
 import core.bot as bot
+from utils import log
 
-# 1. Create an instance of the TradingBot class
+# Create instances of logging and TradingBot.
+log.setup_logging()
 my_bot = bot.TradingBot()
 
-# 2. Call the start method on that instance
 my_bot.start()

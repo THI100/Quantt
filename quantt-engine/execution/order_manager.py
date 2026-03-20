@@ -4,7 +4,6 @@ from typing import Optional
 from loguru import logger
 
 import data.fetch as fetch
-from data.client import cached_client
 from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder

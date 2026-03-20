@@ -10,6 +10,7 @@ from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 
 
+@logger.catch
 class TradingBot:
     def __init__(self):
         self.client = cached_client()
