@@ -9,11 +9,11 @@ from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
 
-client = cached_client()
 db = SessionLocal()
 
 
 def order(
+    client,
     market: str,
     t: str,
     sell_buy: str,
@@ -142,7 +142,13 @@ def order(
 
 
 def order_ice(
-    market: str, total_amount: float, side: str, tp: float, sl: float, order_id: int
+    client,
+    market: str,
+    total_amount: float,
+    side: str,
+    tp: float,
+    sl: float,
+    order_id: int,
 ):
 
     if side == "buy":
@@ -231,7 +237,9 @@ def order_ice(
                 logger.error(f"An error occurred: {e}")
 
 
-def execute_iceberg(market: str, total_amount: float, side: str, tp: float, sl: float):
+def execute_iceberg(
+    client, market: str, total_amount: float, side: str, tp: float, sl: float
+):
     remaining_amount = total_amount
     # Break the order into 10% chunks to hide our size
     chunk_size = total_amount * 0.1

@@ -7,7 +7,7 @@ import strategy.signal_generator as sg
 from config import risk, settings
 
 
-def avaliation_and_place():
+def avaliation_and_place(client):
     open_closed = pm.manage_open_symbols()
     logger.info(open_closed)
 
@@ -40,7 +40,7 @@ def avaliation_and_place():
                 f"This value: {tp} has this porcentage of being achieved {data[1]}."
             )
 
-            order_manager.order(symbol, "limit", s, nn, p, ls, tp)
+            order_manager.order(client, symbol, "limit", s, nn, p, ls, tp)
 
         else:
             continue

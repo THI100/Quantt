@@ -37,7 +37,7 @@ class TradingBot:
         try:
             while self.is_running:
                 manage_open_limit(self.client)
-                e.avaliation_and_place()
+                e.avaliation_and_place(self.client)
                 time.sleep(90)
         except KeyboardInterrupt:
             self.stop()

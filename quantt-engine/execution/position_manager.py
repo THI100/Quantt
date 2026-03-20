@@ -32,7 +32,7 @@ def manage_open_symbols():
 
             # 2. If the last record was an "entrace", we check if the Exchange closed it
             exchange_trades = fetch.get_orders(
-                symbol, limit=2
+                symbol, limit=5
             )  # Increased limit for safety
             is_now_closed_on_exchange = False
 
