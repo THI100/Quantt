@@ -51,8 +51,3 @@ class TradingBot:
         """Graceful shutdown."""
         self.is_running = False
         logger.info("Loop stopped by user. Cleaning up...")
-
-
-if __name__ == "__main__":
-    bot = TradingBot()
-    bot.start()
