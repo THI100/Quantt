@@ -10,7 +10,6 @@ from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 
 
-@logger.catch
 class TradingBot:
     def __init__(self):
         self.client = cached_client()
@@ -29,6 +28,7 @@ class TradingBot:
             self.client.set_leverage(risk.leverage, symbol)
             logger.debug(f"Leverage set for {symbol}")
 
+    @logger.catch
     def start(self):
         """Main execution loop."""
         self._setup_environment()

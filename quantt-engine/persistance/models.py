@@ -5,22 +5,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .connection import Base
 
-# class UserProfile(Base):
-#     __tablename__ = "user_profiles"
-
-#     id: Mapped[int] = mapped_column(primary_key=True)
-#     name: Mapped[str] = mapped_column(String(50), unique=True)
-#     password: Mapped[str] = mapped_column(String(255))
-#     configs: Mapped[JSON] = mapped_column(JSON, nullable=True)
-#     orders: Mapped[list["GeneralOrder"]] = relationship(back_populates="user")
-
 
 class GeneralOrder(Base):
     __tablename__ = "general_orders"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    # user_id: Mapped[int] = mapped_column(ForeignKey("user_profiles.id"))
-    # user: Mapped["UserProfile"] = relationship(back_populates="orders")
     entrance_exit: Mapped[str] = mapped_column(String(10))
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
