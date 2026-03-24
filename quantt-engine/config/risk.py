@@ -1,3 +1,5 @@
+from pydantic_settings import BaseSettings
+
 risk_reward_ratio = 2.0
 acceptable_confidence = 40
 atr_multiplier = 0.4
