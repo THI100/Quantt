@@ -3,6 +3,8 @@
 **Version:** 0.0.105
 **Status:** Active (In Development)
 
+---
+
 ## Description
 
 Quantt is a trading bot designed to measure market conditions and provide a local trading experience. It automates cryptocurrency trading using multiple analytical approaches to improve operational accuracy.
@@ -12,7 +14,7 @@ Quantt is a trading bot designed to measure market conditions and provide a loca
 ## Purpose and Scope
 
 **Problem**
-Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, OKX) with multiple strategies for improved accuracy.
+Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, OKX) with multiple strategies to improve execution accuracy.
 
 **Target Users**
 
@@ -32,7 +34,7 @@ Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, 
 **Core Features**
 
 * Technical analysis
-* AI-based forecasting
+* AI-based market signal generation (time-series forecasting)
 * Custom risk management
 * Order management and execution
 * Local-first usage
@@ -82,7 +84,34 @@ Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, 
 **Setup**
 Refer to `Setup.md`
 
-**Environment Variables**
+---
+
+## Quick Start
+
+```bash
+    # clone
+    git clone <repo>
+    cd quantt
+    
+    # engine
+    cd quantt-engine
+    py -m venv venv
+    source venv/bin/activate
+    pip install .
+    # start the engine
+    py main.py
+    
+    # ui
+    cd quantt-ui
+    npm install
+    # start the UI
+    npm run electron
+    npm run vite
+```
+
+---
+
+## Environment Variables
 
 * `API`
 * `API_SECRET`
@@ -102,26 +131,37 @@ Refer to `Setup.md`
 
 ---
 
-## Project Structure
+## Architecture Overview
 
-**UI → Engine Architecture**
+```text
+[ UI (Electron + React) ]
+            ↓
+        [ FastAPI ]
+            ↓
+ [ Trading Engine (OOP Core) ]
+            ↓
+ [ Exchange APIs via CCXT ]
+            ↓
+        [ Database ]
+```
 
-**UI Flow**
+---
 
-* User → Config → UI → Engine
-* User → Request Performance → Engine → UI
+## AI Forecasting
 
-**Engine Structure**
+* Model: Granite TTM 2.1 (fine-tuned)
+* Type: Time-series forecasting
+* Scope:
 
-* OOP-based class management:
+  * OHLCV data
+  * Active indicators
+* Precision:
 
-  * Start / Stop control
-  * Variable configuration
-  * Database management
-* Core responsibilities:
+  * FP64 / FP32
+* Performance:
 
-  * Performance tracking
-  * Configuration handling
+  * Optimized for lightweight execution
+  * Runs on 2-core CPU without significant overhead
 
 ---
 
@@ -147,14 +187,20 @@ Refer to `Setup.md`
 
 ## Testing
 
-**Execution**
+**Backtesting**
 
-* Backtesting: Run via UI
-* Live simulation:
+* Executed via UI
+* Powered by vectorbt
 
-  * Set exchange (Binance or Bybit)
-  * Provide API credentials
-  * Enable demo mode
+**Simulation (Paper Trading)**
+
+* Use demo mode
+* Supported exchanges: Binance, Bybit
+
+**Live Trading**
+
+* Requires API credentials
+* User assumes full responsibility
 
 **Frameworks**
 
@@ -179,16 +225,40 @@ Refer to `Setup.md`
 
 ## Limitations
 
-* Designed for local usage
+* Designed primarily for local usage
 * Limited scalability
-* Single exchange focus per session
+* Single exchange usage per session
+
+---
+
+## Safety Defaults
+
+* No trading without API configuration
+* Demo mode recommended by default
+* No custody or storage of user funds
 
 ---
 
 ## Security
 
 * Local application
-* Users are responsible for API usage and associated risks
+* API keys stored locally
+* Users are responsible for securing credentials and usage
+
+---
+
+## Roadmap
+
+* Improve AI model accuracy
+* Multi-exchange simultaneous support
+* Strategy modularization
+* Performance optimization
+
+---
+
+## Screenshots / UI Preview
+
+*To be added*
 
 ---
 
@@ -197,17 +267,23 @@ Refer to `Setup.md`
 **Guidelines**
 
 * Contributions via GitHub only
-* Ensure completeness and testing before pull requests
+* Ensure completeness and proper testing before pull requests
 * Large changes have lower acceptance probability
 
 **Code Style**
 
 * Procedural with structured OOP organization
-* Naming:
+* Naming conventions:
 
-  * snake_case
-  * SCREAMING_SNAKE_CASE
+  * `snake_case`
+  * `SCREAMING_SNAKE_CASE`
 * Indentation: 4 spaces
+
+---
+
+## Disclaimer
+
+This software does not provide financial advice. Use at your own risk. The user is solely responsible for any financial decisions and outcomes resulting from the use of this project.
 
 ---
 
