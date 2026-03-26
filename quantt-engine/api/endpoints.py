@@ -32,21 +32,17 @@ def stop_trigger():
         return {"status": "deactivated"}
 
     bot_thread = threading.Thread(target=bot.stop, daemon=True)
-    bot_thread.stop()
+    bot_thread.start()
 
     return {"status": "deactivating"}
 
 
 @router.get("/bot/status")
 def get_status():
-    global bot_thread
-    if bot.is_running == False:
+    if not bot.is_running:
         return {"status": "deactivated"}
-
-    bot_thread = threading.Thread(target=mos, deamon=True)
-    markets = bot_thread.mos()
-    # This returns the open markets and etc, it is a dict, equivalent of a object for JS.
-    return markets, {"status": "active"}
+    markets = mos()  # call directly, not via Thread
+    return {"status": "active", "markets": markets}
 
 
 # --- Setup for config/settings --- #

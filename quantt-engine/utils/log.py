@@ -22,11 +22,13 @@ def setup_logging():
         retention="1 week",
     )
 
-    # Timeline logging
-    _ = logger.add(
-        "logs/full_history.log",
-        level="DEBUG",
-        rotation="100 MB",
-        retention="3 days",
-        compression="zip",
-    )
+    # Heavy! 220MB ram and 23MB/s writing, constant usage.
+
+    # # Timeline logging
+    # _ = logger.add(
+    #     "logs/full_history.log",
+    #     level="DEBUG",
+    #     rotation="100 MB",
+    #     retention="3 days",
+    #     compression="zip",
+    # )
