@@ -49,6 +49,3 @@ def load_risk_config() -> RiskConfig:
 
 def save_risk_config(cfg: RiskConfig) -> None:
     _save(RISK_CONFIG_PATH, cfg)
-
-
-risk = RiskConfig()

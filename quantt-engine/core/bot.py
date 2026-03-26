@@ -24,8 +24,8 @@ class TradingBot:
             logger.info("Initializing database...")
             Base.metadata.create_all(bind=engine)
 
-        for symbol in settings.list_of_interest:
-            self.client.set_leverage(risk.leverage, symbol)
+        for symbol in settings.TradingConfig().list_of_interest:
+            self.client.set_leverage(risk.RiskConfig().leverage, symbol)
             logger.debug(f"Leverage set for {symbol}")
 
     @logger.catch

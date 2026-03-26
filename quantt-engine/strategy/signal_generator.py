@@ -1,9 +1,9 @@
-from numpy._core.numeric import indices
-
 import strategy.indicators as indicators
-from config import risk, settings
-from data import cache, fetch
+from config import risk
+from data import cache
 from utils.math import scale_0_100
+
+r = risk.RiskConfig()
 
 
 def get_signal_indicators(market: str):
@@ -37,7 +37,7 @@ def get_signal_indicators(market: str):
     tenkan, kijun = indicators.tenkan_and_kijun(candles=candles42)
 
     atr_value = indicators.atr(candles42, period=14)
-    buffer = risk.atr_multiplier * atr_value
+    buffer = r.atr_multiplier * atr_value
 
     diff = tenkan - kijun
 
@@ -249,7 +249,7 @@ def get_loss_and_profit_stops(market: str, direction: str):
             stop_loss = actual_value * 0.99
 
         risk_amt = actual_value - stop_loss
-        take_profit = actual_value + (risk_amt * risk.risk_reward_ratio)
+        take_profit = actual_value + (risk_amt * r.risk_reward_ratio)
 
     else:  # bearish
         # For bearish, SL should be the last structural HIGH
@@ -260,6 +260,6 @@ def get_loss_and_profit_stops(market: str, direction: str):
             stop_loss = actual_value * 1.01
 
         risk_amt = stop_loss - actual_value
-        take_profit = actual_value - (risk_amt * risk.risk_reward_ratio)
+        take_profit = actual_value - (risk_amt * r.risk_reward_ratio)
 
     return stop_loss, take_profit, actual_value

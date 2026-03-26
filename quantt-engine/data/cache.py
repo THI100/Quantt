@@ -33,21 +33,27 @@ def ttl_cache(ttl_seconds: int):
 
 
 @ttl_cache(
-    ttl_seconds=math.get_cache_timing(settings.timeframe)
+    ttl_seconds=math.get_cache_timing(settings.TradingConfig().timeframe)
 )  # Cache for the specified timeframe
 def cached_p42(market: str):
-    return fetch.get_OHLCV(symbol=market, timeframe=settings.timeframe, limit=42)
+    return fetch.get_OHLCV(
+        symbol=market, timeframe=settings.TradingConfig().timeframe, limit=42
+    )
 
 
 @ttl_cache(
-    ttl_seconds=math.get_cache_timing(settings.timeframe)
+    ttl_seconds=math.get_cache_timing(settings.TradingConfig().timeframe)
 )  # Cache for the specified timeframe
 def cached_p14(market: str):
-    return fetch.get_OHLCV(symbol=market, timeframe=settings.timeframe, limit=14)
+    return fetch.get_OHLCV(
+        symbol=market, timeframe=settings.TradingConfig().timeframe, limit=14
+    )
 
 
 @ttl_cache(
-    ttl_seconds=math.get_cache_timing(settings.timeframe)
+    ttl_seconds=math.get_cache_timing(settings.TradingConfig().timeframe)
 )  # Cache for the specified timeframe
 def cached_p28(market: str):
-    return fetch.get_OHLCV(symbol=market, timeframe=settings.timeframe, limit=28)
+    return fetch.get_OHLCV(
+        symbol=market, timeframe=settings.TradingConfig().timeframe, limit=28
+    )

@@ -4,7 +4,7 @@ import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
-from config import risk, settings
+from config import risk
 
 
 def avaliation_and_place(client):
@@ -17,7 +17,7 @@ def avaliation_and_place(client):
             data = sg.get_overall_market_signal(symbol)
             s = data[3]
 
-            if data[0] < risk.acceptable_confidence:
+            if data[0] < risk.RiskConfig().acceptable_confidence:
                 continue
 
             if s == "neutral":

@@ -3,7 +3,7 @@ from loguru import logger
 from config import settings
 
 
-def get_exchange_client(exchange_name: str = settings.EXCHANGE):
+def get_exchange_client(exchange_name: str = settings.TradingConfig().exchange):
     if exchange_name == "bybit":
         from exchange.bybit import bb_client
 

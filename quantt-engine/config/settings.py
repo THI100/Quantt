@@ -21,7 +21,16 @@ class TradingConfig(BaseModel):
     timeframe: str = "15m"
     exchange: str = "binance"
     future_spot: Literal["future", "spot"] = "future"
-    list_of_interest: list[str] = Field(default_factory=list)
+    list_of_interest: list[str] = [
+        "BTC/USDT",
+        "ETH/USDT",
+        "BNB/USDT",
+        "XRP/USDT",
+        "ADA/USDT",
+        "AVAX/USDT",
+        "ETC/USDT",
+        "LINK/USDT",
+    ]  # Field(default_factory=list)
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -46,8 +55,3 @@ def load_trading_config() -> TradingConfig:
 
 def save_trading_config(cfg: TradingConfig) -> None:
     _save(TRADING_CONFIG_PATH, cfg)
-
-
-# Initialization
-
-settings = TradingConfig()

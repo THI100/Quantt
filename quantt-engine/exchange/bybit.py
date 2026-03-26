@@ -4,7 +4,7 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config.settings import is_demo_enabled as enable_demo
+from config import settings
 
 load_dotenv()
 
@@ -27,6 +27,7 @@ def create_client():
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
+                "defaultType": settings.TradingConfig().future_spot,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
@@ -36,7 +37,7 @@ def create_client():
     )
 
     # Correct, modern CCXT usage
-    client.enableDemoTrading(enable_demo)
+    client.enableDemoTrading(settings.TradingConfig().is_demo_enabled)
 
     return client
 
