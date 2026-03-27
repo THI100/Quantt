@@ -1,6 +1,7 @@
 import threading
 from typing import Dict
 
+from ccxt.base.types import Int
 from fastapi import APIRouter, HTTPException
 
 from config import risk, settings
@@ -91,21 +92,21 @@ def get_status():
 
 
 @router.get("/positions/{symbol}")
-def get_position(symbol: str):
+def get_position(symbol: str, id: str):
     """Return details for a single open position."""
     _require_running()
-    position = bot.fetch_order(symbol)
+    position = bot.fet_order(symbol, id)
     if not position:
         raise HTTPException(status_code=404, detail=f"No open position for '{symbol}'.")
     return position
 
 
 @router.delete("/positions/{symbol}")
-def close_position(symbol: str):
+def close_position(symbol: str, id: str):
     """Force-close a position by symbol, sending a market order."""
     _require_running()
     try:
-        bot.close_order(symbol)
+        bot.close_order(symbol, id)
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to close position: {str(e)}"

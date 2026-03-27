@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Optional
 
 from loguru import logger
 
@@ -51,3 +52,27 @@ class TradingBot:
         """Graceful shutdown."""
         self.is_running = False
         logger.info("Loop stopped by user. Cleaning up...")
+
+    def close_order(self, symbol: str, id: str):
+        try:
+            self.client.cancel_order(id, symbol)
+        except Exception as err:
+            logger.error(
+                f"Due to {err}, it wasnt possible to close/cancel order: {id}, {symbol}"
+            )
+
+    def fet_order(self, symbol: str, id: Optional[str]):
+        if id:
+            try:
+                self.client.fetch_open_order(id, symbol)
+            except Exception as err:
+                logger.error(
+                    f"Due to {err}, it wasnt possible to fetch open order: {id}, {symbol}"
+                )
+        else:
+            try:
+                self.client.fetch_open_orders(symbol)
+            except Exception as err:
+                logger.error(
+                    f"Due to {err}, it wasnt possible to fetch open orders of {symbol}"
+                )
