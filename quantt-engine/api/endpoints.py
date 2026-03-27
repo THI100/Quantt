@@ -1,5 +1,5 @@
 import threading
-from typing import Dict
+from typing import Dict, Optional
 
 from ccxt.base.types import Int
 from fastapi import APIRouter, HTTPException
@@ -214,7 +214,7 @@ def patch_risk_config(partial: dict):
 
 
 @router.get("/config/risk/limits")
-def get_risk_limits():
+def get_risk_limits(coin: Optional[str]):
     """
     Return derived risk limits computed from the live balance.
     Requires an exchange call to fetch current account balance.
@@ -222,17 +222,34 @@ def get_risk_limits():
     """
     try:
         cfg = risk.load_risk_config()
-        balance = bot.get_balance()  # TODO: confirm method name on your TradingBot
+        balance = bot.check_bal()
+
+        if coin == "usdt":
+            b = balance[0]
+            mps = b["total"] * cfg.percentage_of_capital_per_trade
+            mte = b["total"] * cfg.maximum_loss
+            mlpt = mps * cfg.maximum_loss
+
+        elif coin == "usdc":
+            b = balance[1]
+            mps = b["total"] * cfg.percentage_of_capital_per_trade
+            mte = b["total"] * cfg.maximum_loss
+            mlpt = mps * cfg.maximum_loss
+
+        else:
+            b = balance
+            for c in balance:
+                mps = c["total"] * cfg.percentage_of_capital_per_trade
+                mte = c["total"] * cfg.maximum_loss
+                mlpt = mps * cfg.maximum_loss
+
         return {
-            "balance": balance,
-            "max_position_size": balance
-            * cfg.max_position_pct,  # TODO: confirm field name
-            "max_total_exposure": balance
-            * cfg.max_total_exposure_pct,  # TODO: confirm field name
-            "max_loss_per_trade": balance
-            * cfg.max_loss_pct,  # TODO: confirm field name
-            # TODO: add any other derived limits from your RiskConfig fields
+            "balance": b,
+            "max_position_size": mps,
+            "max_total_exposure": mte,
+            "max_loss_per_trade": mlpt,
         }
+
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to compute risk limits: {str(e)}"

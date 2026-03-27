@@ -44,9 +44,9 @@ class TradingBot:
         except KeyboardInterrupt:
             self.stop()
 
-    def check_margin(self):
+    def check_bal(self):
         bal = self.client.fetch_balance()
-        print(bal["USDT"])
+        return bal["USDT"], bal["USDC"]
 
     def stop(self):
         """Graceful shutdown."""
