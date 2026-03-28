@@ -1,7 +1,6 @@
 import threading
 from typing import Dict, Optional
 
-from ccxt.base.types import Int
 from fastapi import APIRouter, HTTPException
 
 from config import risk, settings

@@ -12,6 +12,7 @@ log.setup_logging()
 my_bot = bot.TradingBot()
 # app.include_router(router)
 
+print(my_bot.check_bal())
 my_bot.start()
 
 # if __name__ == "__main__":
