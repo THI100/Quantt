@@ -38,15 +38,3 @@ class TakeStopOrder(Base):
     order_type: Mapped[str] = mapped_column(String(30))  # Exchange order type
     time: Mapped[int] = mapped_column(unique=True)
     fees: Mapped[float] = mapped_column(Float, default=0.0)
-
-
-class Result(Base):
-    __tablename__ = "results"
-
-    id: Mapped[Optional[int]] = mapped_column(primary_key=True)
-    # Foreign ids for profits, losses and referent orders
-    entry_order_id: Mapped[int] = mapped_column(ForeignKey("general_orders.id"))
-    exit_order_id: Mapped[int] = mapped_column(ForeignKey("take_stop_orders.id"))
-    profit_loss: Mapped[Optional[float]] = mapped_column(Float)
-    date: Mapped[Optional[str]] = mapped_column(String(30))
-    entry_order: Mapped["GeneralOrder"] = relationship(foreign_keys=[entry_order_id])
