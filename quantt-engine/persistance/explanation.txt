@@ -1,3 +1,0 @@
-Hard memory in structure of SQL, Excel and others.
-This memory is used by every other module and engines.
-The memory is harvested from strategy, execution, main.

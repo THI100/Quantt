@@ -1,2 +1,0 @@
-Control API services between front and backend
-In this app case electron and fastAPI

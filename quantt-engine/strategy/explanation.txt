@@ -1,3 +1,0 @@
-Where the fun and most functionability happens, calculations and indicators.
-Present indicators are: RSI (14-day and mean average), Ichimoku cloud, Candle-patterns (with 20+ patterns, strength).
-Signal determination: Based-on multifactors.

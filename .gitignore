@@ -207,5 +207,6 @@ marimo/_lsp/
 __marimo__/
 
 pyrightconfig.json
-data.db
+general.db
 .zed/
+logs/
