@@ -14,7 +14,7 @@ def _ts_to_dt(ts_ms: int) -> datetime:
     return datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
 
 
-def _get_closed_trades(session: Session) -> list[dict]:
+def get_closed_trades(session: Session) -> list[dict]:
     """
     Core helper — pairs every 'entrance' order with its matching 'exit' order
     by symbol and previous_time, then returns a clean list of trade dicts.
@@ -84,7 +84,7 @@ def get_equity_curve(session: Session) -> list[dict]:
     Each point: { timestamp (ISO), equity (float) }
     Frontend: Line chart.
     """
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     trades.sort(key=lambda t: t["exit_time"])
 
     cumulative = 0.0
@@ -106,7 +106,7 @@ def get_daily_pnl(session: Session) -> list[dict]:
     Each point: { date (YYYY-MM-DD), pnl (float) }
     Frontend: Green/red bar chart.
     """
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     daily: dict[str, float] = {}
 
     for t in trades:
@@ -122,7 +122,7 @@ def get_drawdown_series(session: Session) -> list[dict]:
     Each point: { timestamp (ISO), drawdown_abs (float), drawdown_pct (float) }
     Frontend: Red filled area chart.
     """
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     trades.sort(key=lambda t: t["exit_time"])
 
     cumulative = peak = 0.0
@@ -150,7 +150,7 @@ def get_daily_trade_count(session: Session) -> list[dict]:
     Each point: { date (YYYY-MM-DD), count (int) }
     Frontend: Bar chart.
     """
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     daily: dict[str, int] = {}
 
     for t in trades:

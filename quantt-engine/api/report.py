@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from core.bot import TradingBot
 from persistance.connection import SessionLocal
 from reporting_portfolio.roll import (
-    _get_closed_trades,
+    get_closed_trades,
     get_daily_pnl,
     get_daily_trade_count,
     get_drawdown_series,
@@ -77,7 +77,7 @@ def get_summary():
     """
     db = SessionLocal()
     try:
-        trades = _get_closed_trades(db)
+        trades = get_closed_trades(db)
         total_pnl = round(sum(t["pnl"] for t in trades), 4)
         avg_pnl = round(total_pnl / len(trades), 4) if trades else 0.0
 
@@ -176,7 +176,7 @@ def get_trades(
     """
     db = SessionLocal()
     try:
-        trades = _get_closed_trades(db)
+        trades = get_closed_trades(db)
 
         if symbol:
             trades = [t for t in trades if t["symbol"].upper() == symbol.upper()]

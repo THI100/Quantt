@@ -14,7 +14,7 @@ def _ts_to_dt(ts_ms: int) -> datetime:
     return datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
 
 
-def _get_closed_trades(session: Session) -> list[dict]:
+def get_closed_trades(session: Session) -> list[dict]:
     """
     Core helper — pairs every 'entrance' order with its matching 'exit' order
     by symbol and previous_time, then returns a clean list of trade dicts.
@@ -83,7 +83,7 @@ def get_max_drawdown(session: Session) -> dict:
     Largest peak-to-trough drop in cumulative P&L.
     Returns absolute value and percentage of the peak.
     """
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     if not trades:
         return {"max_drawdown_abs": 0.0, "max_drawdown_pct": 0.0}
 
@@ -110,7 +110,7 @@ def get_sharpe_ratio(session: Session, risk_free_rate: float = 0.0) -> dict:
     Annualised Sharpe ratio based on per-trade P&L.
     Assumes ~252 trading days/year. Returns None if insufficient data.
     """
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     if len(trades) < 2:
         return {"sharpe_ratio": None}
 
@@ -128,7 +128,7 @@ def get_sharpe_ratio(session: Session, risk_free_rate: float = 0.0) -> dict:
 
 def get_win_rate(session: Session) -> dict:
     """Win rate, average win, average loss, and profit factor."""
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     if not trades:
         return {
             "win_rate": 0.0,
@@ -156,7 +156,7 @@ def get_win_rate(session: Session) -> dict:
 
 def get_avg_hold_time(session: Session) -> dict:
     """Average trade hold time in seconds, minutes, and hours."""
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     if not trades:
         return {"avg_hold_seconds": 0.0, "avg_hold_minutes": 0.0, "avg_hold_hours": 0.0}
 
@@ -170,7 +170,7 @@ def get_avg_hold_time(session: Session) -> dict:
 
 def get_best_and_worst_trades(session: Session, n: int = 5) -> dict:
     """Top N and bottom N trades by P&L."""
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     if not trades:
         return {"best": [], "worst": []}
 
@@ -193,7 +193,7 @@ def get_best_and_worst_trades(session: Session, n: int = 5) -> dict:
 
 def get_consecutive_wins_losses(session: Session) -> dict:
     """Longest consecutive win and loss streaks."""
-    trades = _get_closed_trades(session)
+    trades = get_closed_trades(session)
     if not trades:
         return {"max_consecutive_wins": 0, "max_consecutive_losses": 0}
 

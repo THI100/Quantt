@@ -14,8 +14,6 @@ app.include_router(principal.route)
 app.include_router(report.r_route)
 app.include_router(set.s_route)
 
-# my_bot.start()
-
 if __name__ == "__main__":
     # Run the web server
     uvicorn.run(app, host="0.0.0.0", port=8000)
