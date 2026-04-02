@@ -1,6 +1,6 @@
 # Quantt
 
-**Version:** 0.0.117
+**Version:** 0.0.121
 **Status:** Active (In Development)
 
 ---
