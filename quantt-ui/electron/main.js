@@ -2,14 +2,20 @@ const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const isDev = require('electron-is-dev');
 
+  const path = require('path');
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true,
+      // Correctly points to your preload file
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true, // Safety: strictly separates Node from React
+      nodeIntegration: false, // Safety: prevents React from running Node scripts
     },
   });
+}
 
   // If in dev mode, load the Vite dev server URL
   // If in production, load the built index.html
