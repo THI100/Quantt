@@ -1,0 +1,9 @@
+function Backtesting() {
+  return (
+    <>
+      <h1>Coming soon...</h1>
+    </>
+  );
+}
+
+export default Backtesting;
