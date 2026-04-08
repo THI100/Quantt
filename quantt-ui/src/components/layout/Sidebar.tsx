@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import "../localassets/Sidebar.css";
 
-// Renamed interface to NavItem to avoid collision with NavLink import
 interface NavItem {
   label: string;
   href: string;
@@ -10,14 +9,32 @@ interface NavItem {
 }
 
 const IconHome = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
     <polyline points="9 22 9 12 15 12 15 22" />
   </svg>
 );
 
 const IconResume = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <circle cx="10" cy="13" r="2" />
@@ -28,54 +45,108 @@ const IconResume = () => (
 );
 
 const IconSetup = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="4"  y1="6"  x2="20" y2="6"  />
-    <line x1="4"  y1="12" x2="20" y2="12" />
-    <line x1="4"  y1="18" x2="20" y2="18" />
-    <circle cx="8"  cy="6"  r="2" fill="currentColor" stroke="none" />
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="4" y1="6" x2="20" y2="6" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="18" x2="20" y2="18" />
+    <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none" />
     <circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" />
     <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none" />
   </svg>
 );
 
 const IconPositions = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <rect x="2" y="14" width="20" height="6" rx="1" />
-    <rect x="2" y="8"  width="20" height="6" rx="1" />
-    <rect x="2" y="2"  width="20" height="6" rx="1" />
+    <rect x="2" y="8" width="20" height="6" rx="1" />
+    <rect x="2" y="2" width="20" height="6" rx="1" />
   </svg>
 );
 
 const IconGraphs = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="3 17 8 11 13 14 21 5" />
-    <line x1="3"  y1="21" x2="21" y2="21" />
-    <line x1="3"  y1="5"  x2="3"  y2="21" />
+    <line x1="3" y1="21" x2="21" y2="21" />
+    <line x1="3" y1="5" x2="3" y2="21" />
   </svg>
 );
 
 const IconBacktesting = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <polyline points="1 4 1 10 7 10" />
     <path d="M3.51 15a9 9 0 1 0 .49-4.5" />
-    <line x1="12" y1="7"  x2="12" y2="12" />
+    <line x1="12" y1="7" x2="12" y2="12" />
     <line x1="12" y1="12" x2="15" y2="14" />
   </svg>
 );
 
 const IconLog = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="9"  y1="6"  x2="20" y2="6"  />
-    <line x1="9"  y1="12" x2="20" y2="12" />
-    <line x1="9"  y1="18" x2="20" y2="18" />
-    <circle cx="4" cy="6"  r="2" />
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="9" y1="6" x2="20" y2="6" />
+    <line x1="9" y1="12" x2="20" y2="12" />
+    <line x1="9" y1="18" x2="20" y2="18" />
+    <circle cx="4" cy="6" r="2" />
     <circle cx="4" cy="12" r="2" />
     <circle cx="4" cy="18" r="2" />
   </svg>
 );
 
 const IconUsers = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
     <circle cx="9" cy="7" r="4" />
     <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
@@ -84,7 +155,16 @@ const IconUsers = () => (
 );
 
 const IconDocs = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
     <polyline points="14 2 14 8 20 8" />
     <line x1="16" y1="13" x2="8" y2="13" />
@@ -94,7 +174,16 @@ const IconDocs = () => (
 );
 
 const IconSettings = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <circle cx="12" cy="12" r="3" />
     <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
     <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
@@ -102,36 +191,56 @@ const IconSettings = () => (
 );
 
 const IconMenu = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
     <line x1="3" y1="12" x2="21" y2="12" />
-    <line x1="3" y1="6"  x2="21" y2="6"  />
+    <line x1="3" y1="6" x2="21" y2="6" />
     <line x1="3" y1="18" x2="21" y2="18" />
   </svg>
 );
 
 const navItems: NavItem[] = [
   // Main Navigation
-  { label: "Home",        href: "/",            icon: <IconHome />        },
-  { label: "Resume",      href: "/Resume",      icon: <IconResume />      },
-  { label: "Setup",       href: "/Setup",       icon: <IconSetup />       },
-  { label: "Positions",   href: "/Positions",   icon: <IconPositions />   },
-  { label: "Graphs",      href: "/Graphs",      icon: <IconGraphs />      },
+  { label: "Home", href: "/", icon: <IconHome /> },
+  { label: "Resume", href: "/Resume", icon: <IconResume /> },
+  { label: "Setup", href: "/Setup", icon: <IconSetup /> },
+  { label: "Positions", href: "/Positions", icon: <IconPositions /> },
+  { label: "Graphs", href: "/Graphs", icon: <IconGraphs /> },
   { label: "Backtesting", href: "/Backtesting", icon: <IconBacktesting /> },
-  { label: "Log",         href: "/Log",         icon: <IconLog />         },
+  { label: "Log", href: "/Log", icon: <IconLog /> },
   // Management
-  { label: "Users",       href: "/users",       icon: <IconUsers />       },
-  { label: "Docs",        href: "/docs",        icon: <IconDocs />        },
-  { label: "Settings",    href: "/settings",    icon: <IconSettings />    },
+  { label: "Users", href: "/users", icon: <IconUsers /> },
+  { label: "Docs", href: "/docs", icon: <IconDocs /> },
+  { label: "Settings", href: "/settings", icon: <IconSettings /> },
 ];
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const close = () => setIsOpen(false);
 
+  // Close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        close();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   return (
-    <div className="sidebar-root">
-      {/* Toggle Button */}
+    <div className="sidebar-container" ref={menuRef}>
       <button
         className="sidebar-toggle"
         onClick={() => setIsOpen((prev) => !prev)}
@@ -139,21 +248,20 @@ export default function Sidebar() {
         aria-label="Toggle navigation"
       >
         <IconMenu />
+        <span className="sidebar-toggle-text">Menu</span>
       </button>
 
-      {/* Expandable Panel */}
       <nav
         className={`sidebar-panel${isOpen ? " open" : ""}`}
         aria-hidden={!isOpen}
       >
         <div className="sidebar-section-label">Navigation</div>
-
         {navItems.slice(0, 7).map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
             end={item.href === "/"}
-            className={({ isActive }: { isActive: boolean }) =>
+            className={({ isActive }) =>
               `sidebar-link${isActive ? " active" : ""}`
             }
             onClick={close}
@@ -165,12 +273,11 @@ export default function Sidebar() {
 
         <div className="sidebar-divider" />
         <div className="sidebar-section-label">Management</div>
-
         {navItems.slice(7).map((item) => (
           <NavLink
             key={item.href}
             to={item.href}
-            className={({ isActive }: { isActive: boolean }) =>
+            className={({ isActive }) =>
               `sidebar-link${isActive ? " active" : ""}`
             }
             onClick={close}
@@ -179,8 +286,6 @@ export default function Sidebar() {
             {item.label}
           </NavLink>
         ))}
-
-        <div className="sidebar-divider" />
       </nav>
     </div>
   );

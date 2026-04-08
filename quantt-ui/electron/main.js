@@ -1,33 +1,32 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const isDev = require('electron-is-dev');
+import { app, BrowserWindow } from "electron";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import isDev from "electron-is-dev";
 
-  const path = require('path');
+// In ESM, __dirname is not globally defined, so we create it:
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      // Correctly points to your preload file
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, // Safety: strictly separates Node from React
-      nodeIntegration: false, // Safety: prevents React from running Node scripts
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
     },
   });
-}
 
-  // If in dev mode, load the Vite dev server URL
-  // If in production, load the built index.html
   win.loadURL(
     isDev
-      ? 'http://localhost:5173'
-      : `file://${path.join(__dirname, '../dist/index.html')}`
+      ? "http://localhost:5173"
+      : `file://${path.join(__dirname, "../dist/index.html")}`,
   );
 }
 
 app.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") app.quit();
 });

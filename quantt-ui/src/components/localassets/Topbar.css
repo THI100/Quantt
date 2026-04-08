@@ -1,191 +1,218 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap');
- 
-/* ─── Shell ──────────────────────────────────────────────────────────────── */
- 
-.topbar {
-  grid-area: topbar;
-  position: static;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 900;                       /* below sidebar (1000) */
- 
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
 
-  width: 100%;
-  height: 52px;
-  padding: 0 20px;
- 
-  background: #0f0f0f;
-  border-bottom: 1px solid #1e1e1e;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
- 
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  color: #888;
+/* ─── Shell ──────────────────────────────────────────────────────────────── */
+
+.topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 950;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    background: #0a0a0a;
+    border-bottom: 1px solid #1e1e1e;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    font-family: "DM Mono", monospace;
 }
- 
-/* ─── Three-column layout ────────────────────────────────────────────────── */
- 
-.topbar-section {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
+
+.topbar-left {
+    justify-content: flex-start;
+    gap: 12px; /* Consistent spacing between Sidebar and Status */
 }
- 
-.topbar-left   { justify-content: flex-start; }
-.topbar-center { justify-content: center;     }
-.topbar-right  { justify-content: flex-end;   }
- 
-/* ─── Brand ──────────────────────────────────────────────────────────────── */
- 
-.topbar-brand {
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  color: #f5f0e8;
-  text-transform: uppercase;
-  user-select: none;
+
+/* Remove the previous negative margin helper */
+.topbar-left > :first-child {
+    margin-left: 0;
 }
- 
-/* ─── Divider ────────────────────────────────────────────────────────────── */
- 
-.topbar-divider {
-  width: 1px;
-  height: 20px;
-  background: #2a2a2a;
-  flex-shrink: 0;
-}
- 
-/* ─── Status Button ──────────────────────────────────────────────────────── */
- 
+
 .topbar-status-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  background: transparent;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  color: #888;
-  cursor: pointer;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  transition: border-color 0.2s, background 0.2s;
+    height: 32px; /* Fixed height to match sidebar toggle */
+    /* ... keep existing styles ... */
 }
- 
+
+/* ─── Three-column layout ────────────────────────────────────────────────── */
+
+.topbar-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.topbar-left {
+    justify-content: flex-start;
+}
+.topbar-center {
+    justify-content: center;
+}
+.topbar-right {
+    justify-content: flex-end;
+}
+
+/* ─── Brand ──────────────────────────────────────────────────────────────── */
+
+.topbar-brand {
+    font-family: "Syne", sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #f5f0e8;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+/* ─── Divider ────────────────────────────────────────────────────────────── */
+
+.topbar-divider {
+    width: 1px;
+    height: 20px;
+    background: #2a2a2a;
+    flex-shrink: 0;
+}
+
+/* ─── Status Button ──────────────────────────────────────────────────────── */
+
+.topbar-status-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    transition:
+        border-color 0.2s,
+        background 0.2s;
+}
+
 .topbar-status-btn:hover {
-  background: #161616;
-  border-color: #3a3a3a;
+    background: #161616;
+    border-color: #3a3a3a;
 }
- 
+
 .topbar-status-btn strong {
-  color: var(--status-color, #888);
-  font-weight: 500;
+    color: var(--status-color, #888);
+    font-weight: 500;
 }
- 
+
 /* Status dot */
 .status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--status-color, #888);
-  flex-shrink: 0;
-  transition: background 0.3s;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--status-color, #888);
+    flex-shrink: 0;
+    transition: background 0.3s;
 }
- 
+
 /* Pulsing animation for online / connecting */
 @keyframes pulse-ring {
-  0%   { box-shadow: 0 0 0 0   color-mix(in srgb, var(--status-color) 60%, transparent); }
-  70%  { box-shadow: 0 0 0 5px color-mix(in srgb, var(--status-color) 0%,  transparent); }
-  100% { box-shadow: 0 0 0 0   color-mix(in srgb, var(--status-color) 0%,  transparent); }
+    0% {
+        box-shadow: 0 0 0 0
+            color-mix(in srgb, var(--status-color) 60%, transparent);
+    }
+    70% {
+        box-shadow: 0 0 0 5px
+            color-mix(in srgb, var(--status-color) 0%, transparent);
+    }
+    100% {
+        box-shadow: 0 0 0 0
+            color-mix(in srgb, var(--status-color) 0%, transparent);
+    }
 }
- 
+
 .status-dot.pulse {
-  animation: pulse-ring 1.8s ease-out infinite;
+    animation: pulse-ring 1.8s ease-out infinite;
 }
- 
+
 .status-label {
-  white-space: nowrap;
+    white-space: nowrap;
 }
- 
+
 /* ─── Exchange Pill ──────────────────────────────────────────────────────── */
- 
+
 .topbar-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: 1px solid #2a2a2a;
-  border-radius: 6px;
-  color: #aaa;
-  font-size: 12px;
-  user-select: none;
-  white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+    color: #aaa;
+    font-size: 12px;
+    user-select: none;
+    white-space: nowrap;
 }
- 
+
 .topbar-pill svg {
-  flex-shrink: 0;
-  color: #555;
+    flex-shrink: 0;
+    color: #555;
 }
- 
+
 /* ─── API Button ─────────────────────────────────────────────────────────── */
- 
+
 .topbar-api-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
-  background: transparent;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  color: #888;
-  cursor: pointer;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  letter-spacing: 0.05em;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
-  white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background: transparent;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    color: #888;
+    cursor: pointer;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    transition:
+        border-color 0.2s,
+        color 0.2s,
+        background 0.2s;
+    white-space: nowrap;
 }
- 
+
 .topbar-api-btn:hover {
-  background: #161616;
-  border-color: #c8f04a;
-  color: #c8f04a;
+    background: #161616;
+    border-color: #c8f04a;
+    color: #c8f04a;
 }
- 
+
 .topbar-api-btn svg {
-  flex-shrink: 0;
+    flex-shrink: 0;
 }
- 
+
 /* ─── Clock ──────────────────────────────────────────────────────────────── */
- 
+
 .topbar-clock {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #666;
-  white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    white-space: nowrap;
 }
- 
+
 .topbar-clock svg {
-  flex-shrink: 0;
-  color: #444;
+    flex-shrink: 0;
+    color: #444;
 }
- 
+
 .clock-time {
-  font-size: 13px;
-  font-weight: 500;
-  color: #c8c8c8;
-  letter-spacing: 0.05em;
+    font-size: 13px;
+    font-weight: 500;
+    color: #c8c8c8;
+    letter-spacing: 0.05em;
 }
- 
+
 .clock-date {
-  font-size: 11px;
-  color: #555;
-  letter-spacing: 0.04em;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 0.04em;
 }
