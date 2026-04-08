@@ -2,7 +2,8 @@ import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import "../localassets/Sidebar.css";
 
-interface NavLink {
+// Renamed interface to NavItem to avoid collision with NavLink import
+interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
@@ -15,7 +16,6 @@ const IconHome = () => (
   </svg>
 );
 
-// Resume — document with a person silhouette, like a CV
 const IconResume = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -27,7 +27,6 @@ const IconResume = () => (
   </svg>
 );
 
-// Setup — horizontal sliders representing configuration
 const IconSetup = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="4"  y1="6"  x2="20" y2="6"  />
@@ -39,7 +38,6 @@ const IconSetup = () => (
   </svg>
 );
 
-// Positions — stacked layers representing open trade positions
 const IconPositions = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="14" width="20" height="6" rx="1" />
@@ -48,7 +46,6 @@ const IconPositions = () => (
   </svg>
 );
 
-// Graphs — line chart with upward trend
 const IconGraphs = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="3 17 8 11 13 14 21 5" />
@@ -57,7 +54,6 @@ const IconGraphs = () => (
   </svg>
 );
 
-// Backtesting — rewind arrow with a clock hand, symbolising replaying history
 const IconBacktesting = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="1 4 1 10 7 10" />
@@ -67,7 +63,6 @@ const IconBacktesting = () => (
   </svg>
 );
 
-// Log — bulleted list with dot markers, representing timestamped entries
 const IconLog = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <line x1="9"  y1="6"  x2="20" y2="6"  />
@@ -114,7 +109,7 @@ const IconMenu = () => (
   </svg>
 );
 
-const navLinks: NavLink[] = [
+const navItems: NavItem[] = [
   // Main Navigation
   { label: "Home",        href: "/",            icon: <IconHome />        },
   { label: "Resume",      href: "/Resume",      icon: <IconResume />      },
@@ -131,61 +126,62 @@ const navLinks: NavLink[] = [
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState("/");
+
+  const close = () => setIsOpen(false);
 
   return (
-    <>
-      <div className="sidebar-root">
-        {/* Toggle Button */}
-        <button
-          className="sidebar-toggle"
-          onClick={() => setIsOpen((prev) => !prev)}
-          aria-expanded={isOpen}
-          aria-label="Toggle navigation"
-        >
-          <IconMenu />
-        </button>
+    <div className="sidebar-root">
+      {/* Toggle Button */}
+      <button
+        className="sidebar-toggle"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-label="Toggle navigation"
+      >
+        <IconMenu />
+      </button>
 
-        {/* Expandable Panel */}
-        <nav
-          className={`sidebar-panel${isOpen ? " open" : ""}`}
-          aria-hidden={!isOpen}
-        >
-          <div className="sidebar-section-label">Navigation</div>
+      {/* Expandable Panel */}
+      <nav
+        className={`sidebar-panel${isOpen ? " open" : ""}`}
+        aria-hidden={!isOpen}
+      >
+        <div className="sidebar-section-label">Navigation</div>
 
-          {navLinks.slice(0, 7).map((link) => (
-            <NavLink
-              key={link.href}
-              href={link.href}
-              className={`sidebar-link${activeLink === link.href ? " active" : ""}`}
-              onClick={() => setIsOpen(false)} // closes sidebar on navigate
-            >
-              <span className="sidebar-link-icon">{link.icon}</span>
-              {link.label}
-            </NavLink>
-          ))}
+        {navItems.slice(0, 7).map((item) => (
+          <NavLink
+            key={item.href}
+            to={item.href}
+            end={item.href === "/"}
+            className={({ isActive }: { isActive: boolean }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
+            onClick={close}
+          >
+            <span className="sidebar-link-icon">{item.icon}</span>
+            {item.label}
+          </NavLink>
+        ))}
 
-          <div className="sidebar-divider" />
-          <div className="sidebar-section-label">Management</div>
+        <div className="sidebar-divider" />
+        <div className="sidebar-section-label">Management</div>
 
-          {navLinks.slice(7).map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className={`sidebar-link${activeLink === link.href ? " active" : ""}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveLink(link.href);
-              }}
-            >
-              <span className="sidebar-link-icon">{link.icon}</span>
-              {link.label}
-            </a>
-          ))}
+        {navItems.slice(7).map((item) => (
+          <NavLink
+            key={item.href}
+            to={item.href}
+            className={({ isActive }: { isActive: boolean }) =>
+              `sidebar-link${isActive ? " active" : ""}`
+            }
+            onClick={close}
+          >
+            <span className="sidebar-link-icon">{item.icon}</span>
+            {item.label}
+          </NavLink>
+        ))}
 
-          <div className="sidebar-divider" />
-        </nav>
-      </div>
-    </>
+        <div className="sidebar-divider" />
+      </nav>
+    </div>
   );
 }
