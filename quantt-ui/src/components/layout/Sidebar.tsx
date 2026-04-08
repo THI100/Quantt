@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
 import "../localassets/Sidebar.css";
 
 interface NavLink {
@@ -153,18 +154,15 @@ export default function Sidebar() {
           <div className="sidebar-section-label">Navigation</div>
 
           {navLinks.slice(0, 7).map((link) => (
-            <a
+            <NavLink
               key={link.href}
               href={link.href}
               className={`sidebar-link${activeLink === link.href ? " active" : ""}`}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveLink(link.href);
-              }}
+              onClick={() => setIsOpen(false)} // closes sidebar on navigate
             >
               <span className="sidebar-link-icon">{link.icon}</span>
               {link.label}
-            </a>
+            </NavLink>
           ))}
 
           <div className="sidebar-divider" />

@@ -1,0 +1,18 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background: #181818;
+}
+ 
+.app-layout {
+  flex: 1;
+  margin-top: 56px;        /* exact height of .topbar */
+  padding: 24px;
+  overflow-y: auto;
+  min-width: 0;            /* prevents flex blowout */
+}
+
+.main-content {
+  width: 100%;
+  margin: 0 auto;
+}

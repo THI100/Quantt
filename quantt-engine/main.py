@@ -10,6 +10,7 @@ app = FastAPI(title="quantt_engine")
 # Create instances of logging and TradingBot.
 log.setup_logging()
 my_bot = bot.TradingBot()
+my_bot.start()
 app.include_router(principal.route)
 app.include_router(report.r_route)
 app.include_router(set.s_route)
