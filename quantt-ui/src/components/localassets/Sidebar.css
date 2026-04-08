@@ -1,14 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@600;700&display=swap');
  
 .sidebar-root {
-    position: fixed;
-    z-index: 1000;
+  grid-area: sidebar;
+  position: static;      /* was: fixed */
+  top: unset;
+  left: unset;
+  width: 100%;
+  height: 100%;
     font-family: 'DM Mono', monospace;
 }
  
 .sidebar-toggle {
     display: flex;
     align-items: center;
+    margin-top: 5px;
+    margin-left: 47.5px;
     gap: 10px;
     padding: 10px 16px;
     background: #0f0f0f;
@@ -38,7 +44,6 @@
     border: 1px solid #2a2a2a;
     border-radius: 14px;
     overflow: hidden;
-    width: 220px;
     box-shadow: 0 8px 40px rgba(0,0,0,0.6);
  
     /* animation */
