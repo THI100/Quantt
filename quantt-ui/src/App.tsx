@@ -3,13 +3,16 @@ import Topbar from "./components/layout/Topbar";
 import Sidebar from "./components/layout/Sidebar";
 import "./assets/App.css";
 
-import Home from "./pages/Home";
-import Resume from "./pages/Resume";
-import Setup from "./pages/Setup";
-import Positions from "./pages/Positions";
-import Graphs from "./pages/Graphs";
-import Backtesting from "./pages/Backtesting";
-import Log from "./pages/Log";
+import Home from "./pages/Navigation/Home";
+import Resume from "./pages/Navigation/Resume";
+import Setup from "./pages/Navigation/Setup";
+import Positions from "./pages/Navigation/Positions";
+import Graphs from "./pages/Navigation/Graphs";
+import Backtesting from "./pages/Navigation/Backtesting";
+import Log from "./pages/Navigation/Log";
+import Api from "./pages/Management/Api";
+import Docs from "./pages/Management/Docs";
+import Settings from "./pages/Management/Settings";
 
 function App() {
   return (
@@ -26,6 +29,9 @@ function App() {
               <Route path="/Graphs" element={<Graphs />} />
               <Route path="/Backtesting" element={<Backtesting />} />
               <Route path="/Log" element={<Log />} />
+              <Route path="/Management/Api" element={<Api />} />
+              <Route path="/Management/Docs" element={<Docs />} />
+              <Route path="/Management/Settings" element={<Settings />} />
             </Routes>
           </div>
         </main>

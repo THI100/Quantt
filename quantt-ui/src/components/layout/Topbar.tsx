@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "../localassets/Topbar.css";
 import Sidebar from "./Sidebar.tsx";
 
@@ -120,11 +121,15 @@ const formatDate = (date: Date) =>
 export default function Topbar({
   botStatus = "offline",
   activeExchange = "Binance",
-  onApiManagement,
   onStatusClick,
 }: TopbarProps) {
   const now = useTime();
   const status = STATUS_CONFIG[botStatus];
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate("/Management/Api");
+  };
 
   return (
     <header className="topbar">
@@ -161,7 +166,7 @@ export default function Topbar({
 
         <button
           className="topbar-api-btn"
-          onClick={onApiManagement}
+          onClick={handleClick}
           title="API Management"
         >
           <IconApi />

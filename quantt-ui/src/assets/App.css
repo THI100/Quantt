@@ -22,8 +22,3 @@
     /* Ensures content doesn't feel cramped on smaller screens */
     padding: 0 16px;
 }
-
-/* Optional: Smooth scrolling for the main container */
-html {
-    scroll-behavior: smooth;
-}
