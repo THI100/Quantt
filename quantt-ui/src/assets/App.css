@@ -9,7 +9,6 @@
 .app-main {
     /* Offset by the Topbar height (52px) */
     margin-top: 52px;
-    padding: 24px;
     flex: 1;
     overflow-y: auto;
     min-width: 0;
@@ -20,5 +19,4 @@
     margin: 0 auto;
     width: 100%;
     /* Ensures content doesn't feel cramped on smaller screens */
-    padding: 0 16px;
 }
