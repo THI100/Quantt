@@ -3,7 +3,6 @@ import Topbar from "./components/layout/Topbar";
 import Sidebar from "./components/layout/Sidebar";
 import "./assets/App.css";
 
-import Test from "./pages/Navigation/Test";
 import Home from "./pages/Navigation/Home";
 import Resume from "./pages/Navigation/Resume";
 import Setup from "./pages/Navigation/Setup";
@@ -23,7 +22,6 @@ function App() {
         <main className="app-main">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/Test" element={<Test />} />
             <Route path="/Resume" element={<Resume />} />
             <Route path="/Setup" element={<Setup />} />
             <Route path="/Positions" element={<Positions />} />

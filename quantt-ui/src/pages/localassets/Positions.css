@@ -1,0 +1,169 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+
+.home-container {
+    min-height: 100vh;
+    background: #0a0a0a;
+    padding: 68px 24px 100px 24px;
+    font-family: "DM Mono", monospace;
+    overflow-y: auto;
+}
+
+/* ─── Positions Specific Styles ─────────────────────────────────────────── */
+
+.positions-list-header {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1.2fr;
+    padding: 12px 24px;
+    color: #555; /* Silver/Grey */
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: 1px solid #1e1e1e;
+}
+
+.infinite-scroll-area {
+    display: flex;
+    flex-direction: column;
+    gap: 1px; /* Creates a thin border effect between rows */
+    background: #1e1e1e;
+    margin-top: 8px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #1e1e1e;
+}
+
+.position-row-card {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1.2fr;
+    align-items: center;
+    padding: 18px 24px;
+    background: #0e0e0e; /* Deep dark blue-black */
+    transition: background 0.2s ease;
+}
+
+.position-row-card:hover {
+    background: #121212;
+    border-left: 2px solid #8a5cf6; /* Purple accent on hover */
+}
+
+/* ─── Column Styling ─────────────────────────────────────────────────────── */
+
+.asset-name {
+    font-weight: 500;
+    color: #f5f0e8;
+    margin-left: 12px;
+}
+
+.mono-value {
+    color: #c0c0c0; /* Silver */
+}
+
+.target-group {
+    display: flex;
+    flex-direction: column;
+    font-size: 11px;
+}
+
+.tp-text {
+    color: #c8f04a;
+} /* Neon Green */
+.sl-text {
+    color: #f04a4a;
+}
+
+.pos-pnl {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.pos-time {
+    font-size: 11px;
+    color: #555;
+}
+
+/* ─── Shared UI Elements ─────────────────────────────────────────────────── */
+
+.trade-type.highlight-silver {
+    background: rgba(192, 192, 192, 0.1);
+    color: #c0c0c0;
+    border: 1px solid rgba(192, 192, 192, 0.3);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+}
+
+.highlight-purple-bg {
+    background: #8a5cf6 !important;
+    box-shadow: 0 0 10px rgba(138, 92, 246, 0.5);
+}
+
+.section-title {
+    font-family: "Syne", sans-serif;
+    color: #2563eb; /* Deep Blue Header */
+    letter-spacing: 0.1em;
+}
+
+/* ─── Responsive & Mobile ────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .positions-list-header {
+        display: none;
+    }
+
+    .position-row-card {
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        border-bottom: 1px solid #1e1e1e;
+    }
+
+    .pos-asset {
+        grid-column: span 2;
+    }
+    .pos-time {
+        grid-column: span 2;
+        text-align: right;
+    }
+
+    .label-mobile {
+        display: inline-block;
+        font-size: 10px;
+        color: #555;
+        margin-right: 8px;
+        text-transform: uppercase;
+    }
+}
+
+/* ... Including the control-bar and button styles from previous files ... */
+.control-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #0a0a0a;
+    border-top: 1px solid #1e1e1e;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.control-btn {
+    padding: 8px 20px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid #333;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.start-btn {
+    border-color: #c8f04a;
+    color: #c8f04a;
+}
+.restart-btn {
+    border-color: #8a5cf6;
+    color: #8a5cf6;
+}
