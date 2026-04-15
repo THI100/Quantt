@@ -39,9 +39,10 @@ export default function Setup() {
 
           <form className="setup-form">
             <div className="input-group">
-              <label>Execution Mode</label>
+              <label htmlFor="execution-mode">Execution Mode</label>
               <div className="toggle-wrapper">
                 <input
+                  id="execution-mode"
                   type="checkbox"
                   checked={trading.is_demo_enabled}
                   onChange={(e) =>
@@ -57,16 +58,21 @@ export default function Setup() {
 
             <div className="input-row">
               <div className="input-group">
-                <label>Timeframe</label>
+                <label htmlFor="timeframe">Timeframe</label>
                 <input
+                  id="timeframe"
                   type="text"
                   value={trading.timeframe}
                   className="terminal-input"
                 />
               </div>
               <div className="input-group">
-                <label>Market</label>
-                <select value={trading.future_spot} className="terminal-input">
+                <label htmlFor="market">Market</label>
+                <select
+                  id="market"
+                  value={trading.future_spot}
+                  className="terminal-input"
+                >
                   <option value="future">Future</option>
                   <option value="spot">Spot</option>
                 </select>
@@ -74,8 +80,12 @@ export default function Setup() {
             </div>
 
             <div className="input-group">
-              <label>Exchange Entity</label>
-              <select value={trading.exchange} className="terminal-input">
+              <label htmlFor="exchange-entity">Exchange Entity</label>
+              <select
+                id="exchange-entity"
+                value={trading.exchange}
+                className="terminal-input"
+              >
                 <option value="binance">Binance</option>
                 <option value="bybit">Bybit</option>
                 <option value="okx">OKX</option>
@@ -83,8 +93,11 @@ export default function Setup() {
             </div>
 
             <div className="input-group">
-              <label>Assets of Interest (Comma separated)</label>
+              <label htmlFor="assets-of-interest">
+                Assets of Interest (Comma separated)
+              </label>
               <textarea
+                id="assets-of-interest"
                 className="terminal-input"
                 defaultValue={trading.list_of_interest.join(", ")}
               />
@@ -109,8 +122,9 @@ export default function Setup() {
           <form className="setup-form">
             <div className="input-row">
               <div className="input-group">
-                <label>Risk/Reward</label>
+                <label htmlFor="risk-reward">Risk/Reward</label>
                 <input
+                  id="risk-reward"
                   type="number"
                   step="0.1"
                   value={risk.risk_reward_ratio}
@@ -118,8 +132,9 @@ export default function Setup() {
                 />
               </div>
               <div className="input-group">
-                <label>Leverage</label>
+                <label htmlFor="leverage">Leverage</label>
                 <input
+                  id="leverage"
                   type="number"
                   value={risk.leverage}
                   className="terminal-input"
@@ -129,8 +144,9 @@ export default function Setup() {
 
             <div className="input-row">
               <div className="input-group">
-                <label>Max Loss (%)</label>
+                <label htmlFor="max-loss">Max Loss (%)</label>
                 <input
+                  id="max-loss"
                   type="number"
                   step="0.01"
                   value={risk.maximum_loss}
@@ -138,8 +154,12 @@ export default function Setup() {
                 />
               </div>
               <div className="input-group">
-                <label>Margin Type</label>
-                <select value={risk.cross_isolated} className="terminal-input">
+                <label htmlFor="margin-type">Margin Type</label>
+                <select
+                  id="margin-type"
+                  value={risk.cross_isolated}
+                  className="terminal-input"
+                >
                   <option value="cross">Cross</option>
                   <option value="isolated">Isolated</option>
                 </select>
@@ -147,10 +167,11 @@ export default function Setup() {
             </div>
 
             <div className="input-group">
-              <label>
+              <label htmlFor="confidence-threshold">
                 Confidence Threshold ({risk.acceptable_confidence}%)
               </label>
               <input
+                id="confidence-threshold"
                 type="range"
                 min="0"
                 max="100"
@@ -160,8 +181,9 @@ export default function Setup() {
             </div>
 
             <div className="input-group">
-              <label>Capital Per Trade</label>
+              <label htmlFor="capital-per-trade">Capital Per Trade</label>
               <input
+                id="capital-per-trade"
                 type="number"
                 step="0.01"
                 value={risk.percentage_of_capital_per_trade}

@@ -34,6 +34,7 @@ export default function Settings() {
               </div>
               <label className="switch">
                 <input
+                  id="compact-mode"
                   type="checkbox"
                   checked={uiSettings.compactMode}
                   onChange={() =>
@@ -49,12 +50,15 @@ export default function Settings() {
 
             <div className="setting-row">
               <div className="setting-info">
-                <span className="setting-name">Data Refresh Rate</span>
+                <label htmlFor="refresh-rate" className="setting-name">
+                  Data Refresh Rate
+                </label>
                 <span className="setting-description">
                   How often the UI re-renders chart ticks.
                 </span>
               </div>
               <select
+                id="refresh-rate"
                 className="neutral-select"
                 value={uiSettings.refreshRate}
                 onChange={(e) =>
@@ -83,6 +87,7 @@ export default function Settings() {
               </div>
               <label className="switch">
                 <input
+                  id="push-notifications"
                   type="checkbox"
                   checked={uiSettings.showNotifications}
                   onChange={() =>
@@ -105,6 +110,7 @@ export default function Settings() {
               </div>
               <label className="switch">
                 <input
+                  id="performance-mode"
                   type="checkbox"
                   checked={!uiSettings.animations}
                   onChange={() =>

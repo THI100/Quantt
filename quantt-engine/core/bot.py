@@ -9,6 +9,7 @@ from config import risk, settings
 from data.client import cached_client
 from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
+from utils.math import scale_0_100
 
 
 class TradingBot:
@@ -46,7 +47,21 @@ class TradingBot:
 
     def check_bal(self):
         bal = self.client.fetch_balance()
-        return bal["USDT"], bal["USDC"]
+        ut = bal["USDT"]
+        uc = bal["USDC"]
+        ut.update({"coin": "USDT"})
+        uc.update({"coin": "USDC"})
+        return ut, uc
+
+    def check_margin(self):
+        b = self.check_bal()
+        dic = {}
+        for c in b:
+            print(c)
+            margin_health = scale_0_100(c["used"], c["total"])
+            dic.update({c["coin"]: margin_health})
+        return dic
+
 
     def stop(self):
         """Graceful shutdown."""

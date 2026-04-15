@@ -29,8 +29,9 @@ export default function Api() {
 
           <form className="api-form">
             <div className="input-group">
-              <label>Target Exchange</label>
+              <label htmlFor="target-exchange">Target Exchange</label>
               <select
+                id="target-exchange"
                 className="neutral-input"
                 value={apiData.exchange}
                 onChange={(e) =>
@@ -44,8 +45,9 @@ export default function Api() {
             </div>
 
             <div className="input-group">
-              <label>API Key</label>
+              <label htmlFor="api-key">API Key</label>
               <input
+                id="api-key"
                 type="text"
                 className="neutral-input"
                 placeholder="Enter public key..."
@@ -57,8 +59,9 @@ export default function Api() {
             </div>
 
             <div className="input-group">
-              <label>API Secret</label>
+              <label htmlFor="api-secret">API Secret</label>
               <input
+                id="api-secret"
                 type="password"
                 className="neutral-input"
                 placeholder="Enter private secret..."

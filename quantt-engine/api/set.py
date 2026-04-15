@@ -109,3 +109,25 @@ def get_risk_limits(coin: Optional[str]):
         raise HTTPException(
             status_code=500, detail=f"Failed to compute risk limits: {str(e)}"
         )
+
+# ------------------------------------------------------------------ #
+#  Config — api                                                       #
+# ------------------------------------------------------------------ #
+
+@s_route.post("/config/api")
+def post_api(api_key: str, api_secret: str, exchange: str):
+    """
+    Directly writes the new API key and API secret into a .env.
+    """
+
+@s_route.patch("/config/api")
+def update_api(api_key: str, api_secret: str, exchange: str):
+    """
+    Directly writes the new API key and API secret into a .env.
+    """
+
+@s_route.delete("/config/api")
+def delete_api(api_key: str, api_secret: str, exchange: str):
+    """
+    Directly writes the new API key and API secret into a .env.
+    """
