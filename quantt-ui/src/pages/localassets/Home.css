@@ -5,7 +5,7 @@
 .home-container {
     min-height: 100vh;
     background: #0a0a0a;
-    padding: 68px 24px 100px 24px; /* Top padding accounts for fixed topbar (52px + 16px), bottom for control bar */
+    padding: 24px 24px 100px 24px; /* Top padding accounts for fixed topbar (52px + 16px), bottom for control bar */
     font-family: "DM Mono", monospace;
 }
 

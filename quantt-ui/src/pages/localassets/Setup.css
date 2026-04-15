@@ -1,0 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+
+.setup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 32px;
+    margin-top: 24px;
+}
+
+.config-panel {
+    background: #111111;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 32px;
+    transition: transform 0.3s ease;
+}
+
+.highlight-blue-border {
+    border-top: 4px solid #2563eb;
+}
+.highlight-purple-border {
+    border-top: 4px solid #8a5cf6;
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.panel-header h3 {
+    font-family: "Syne", sans-serif;
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+/* ─── Form Elements ──────────────────────────────────────────────────────── */
+
+.setup-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 11px;
+    color: #888; /* Silver Secondary */
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.terminal-input {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    padding: 12px;
+    border-radius: 6px;
+    color: #f5f0e8;
+    font-family: "DM Mono", monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.terminal-input:focus {
+    border-color: #2563eb;
+}
+
+.terminal-slider {
+    accent-color: #c8f04a;
+    height: 4px;
+    background: #333;
+    border-radius: 2px;
+    outline: none;
+}
+
+/* ─── Custom Toggle ──────────────────────────────────────────────────────── */
+
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toggle-label {
+    font-size: 13px;
+    color: #c0c0c0;
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+
+.blue-text {
+    color: #2563eb;
+}
+.purple-text {
+    color: #8a5cf6;
+}
+
+.full-width {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.highlight-silver-bg {
+    background: #c0c0c0 !important;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .setup-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .input-row {
+        grid-template-columns: 1fr;
+    }
+}

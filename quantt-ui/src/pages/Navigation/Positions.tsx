@@ -81,7 +81,7 @@ export default function Positions() {
 
             <div className="pos-price">
               <span className="label-mobile">Entry:</span>
-              <span className="mono-value">${pos.price}</span>
+              <span className="mono-value"> ${pos.price}</span>
             </div>
 
             <div className="pos-targets">

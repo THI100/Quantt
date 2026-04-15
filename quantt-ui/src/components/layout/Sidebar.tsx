@@ -216,8 +216,8 @@ const navItems: NavItem[] = [
   { label: "Log", href: "/Log", icon: <IconLog /> },
   // Management
   { label: "Api", href: "/Management/Api", icon: <IconApi /> },
-  { label: "Docs", href: "/Management/docs", icon: <IconDocs /> },
-  { label: "Settings", href: "/Management/settings", icon: <IconSettings /> },
+  { label: "Docs", href: "/Management/Docs", icon: <IconDocs /> },
+  { label: "Settings", href: "/Management/Settings", icon: <IconSettings /> },
 ];
 
 export default function Sidebar() {
@@ -249,10 +249,7 @@ export default function Sidebar() {
         <span className="sidebar-toggle-text">Menu</span>
       </button>
 
-      <nav
-        className={`sidebar-panel${isOpen ? " open" : ""}`}
-        aria-hidden={!isOpen}
-      >
+      <nav className={`sidebar-panel${isOpen ? " open" : ""}`}>
         <div className="sidebar-section-label">Navigation</div>
         {navItems.slice(0, 7).map((item) => (
           <NavLink

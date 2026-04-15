@@ -1,0 +1,172 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
+
+/* ─── Layout ─────────────────────────────────────────────────────────────── */
+
+.settings-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 20px;
+}
+
+.settings-card {
+    width: 100%;
+    max-width: 700px;
+    background: #0e0e0e;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 32px;
+}
+
+.settings-category {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.category-label {
+    font-family: "Syne", sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #555; /* Neutral Grey */
+    margin-bottom: 8px;
+}
+
+/* ─── Setting Rows ───────────────────────────────────────────────────────── */
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setting-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.setting-name {
+    font-size: 14px;
+    color: #f5f0e8;
+    font-weight: 500;
+}
+
+.setting-description {
+    font-size: 11px;
+    color: #666;
+    max-width: 400px;
+}
+
+/* ─── Neutral Controls ──────────────────────────────────────────────────── */
+
+.neutral-select {
+    background: #161616;
+    border: 1px solid #333;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #c0c0c0;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    outline: none;
+}
+
+.divider-line {
+    height: 1px;
+    background: #1e1e1e;
+    margin-bottom: 32px;
+}
+
+/* ─── Custom Toggle Switch ──────────────────────────────────────────────── */
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #2a2a2a;
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #888;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: rgba(200, 240, 74, 0.2);
+    border: 1px solid #c8f04a;
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+    background-color: #c8f04a;
+    box-shadow: 0 0 10px rgba(200, 240, 74, 0.5);
+}
+
+/* ─── Footer Buttons ─────────────────────────────────────────────────────── */
+
+.settings-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    border-top: 1px solid #1e1e1e;
+    padding-top: 32px;
+}
+
+/* Reusing button styles from previous pages */
+.neutral-btn {
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: "DM Mono", monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.grey-btn {
+    background: transparent;
+    border: 1px solid #333;
+    color: #666;
+}
+
+.grey-btn:hover {
+    color: #fff;
+    border-color: #666;
+}
+
+.confirm-btn {
+    background: #c8f04a;
+    border: 1px solid #c8f04a;
+    color: #000;
+    font-weight: 700;
+}
+
+.confirm-btn:hover {
+    box-shadow: 0 0 15px rgba(200, 240, 74, 0.3);
+}

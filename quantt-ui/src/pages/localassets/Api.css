@@ -1,0 +1,144 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
+
+/* ─── Vault Layout ───────────────────────────────────────────────────────── */
+
+.vault-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 40px;
+}
+
+.api-card {
+    width: 100%;
+    max-width: 500px;
+    background: linear-gradient(135deg, #111111 0%, #0a0a0a 100%);
+    border: 1px solid #2a2a2a;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.api-card-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.security-icon-wrapper {
+    font-size: 32px;
+    margin-bottom: 16px;
+    filter: grayscale(1);
+}
+
+.api-card-header h3 {
+    font-family: "Syne", sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.05em;
+    color: #f5f0e8;
+    margin-bottom: 8px;
+}
+
+.silver-subtext {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+}
+
+/* ─── Neutral Form Elements ─────────────────────────────────────────────── */
+
+.api-form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.neutral-input {
+    background: #161616;
+    border: 1px solid #333;
+    padding: 14px;
+    border-radius: 8px;
+    color: #c0c0c0; /* Silver text */
+    font-family: "DM Mono", monospace;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.neutral-input:focus {
+    border-color: #555;
+    background: #1a1a1a;
+}
+
+.warning-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed #333;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.warning-text {
+    font-size: 10px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: block;
+    text-align: center;
+}
+
+/* ─── Neutral & Green Buttons ────────────────────────────────────────────── */
+
+.api-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.neutral-btn {
+    padding: 14px;
+    border: 1px solid;
+    border-radius: 8px;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.grey-btn {
+    background: #2a2a2a;
+    border-color: #3a3a3a;
+    color: #888;
+}
+
+.grey-btn:hover {
+    background: #333;
+    color: #c0c0c0;
+}
+
+.confirm-btn {
+    background: transparent;
+    border-color: #c8f04a; /* Neon Green */
+    color: #c8f04a;
+}
+
+.confirm-btn:hover {
+    background: rgba(200, 240, 74, 0.1);
+    box-shadow: 0 0 15px rgba(200, 240, 74, 0.2);
+}
+
+/* ─── Typography Helpers ────────────────────────────────────────────────── */
+
+.silver-text {
+    color: #c0c0c0 !important;
+}
+
+@media (max-width: 480px) {
+    .api-card {
+        padding: 24px;
+    }
+    .api-actions {
+        grid-template-columns: 1fr;
+    }
+}

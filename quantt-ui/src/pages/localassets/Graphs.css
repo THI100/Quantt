@@ -1,0 +1,146 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
+
+/* ─── Layout & Containers ────────────────────────────────────────────────── */
+
+.graph-feed-container {
+    height: 60vh;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-top: 40px;
+    /* Custom Scrollbar for that pro look */
+}
+
+.graph-feed-container::-webkit-scrollbar {
+    width: 4px;
+}
+.graph-feed-container::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+.graph-feed-container::-webkit-scrollbar-thumb {
+    background: #2a2a2a;
+    border-radius: 10px;
+}
+
+.sub-section-title {
+    font-family: "Syne", sans-serif;
+    font-size: 14px;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    margin-bottom: 20px;
+}
+
+/* ─── Graph Cards ────────────────────────────────────────────────────────── */
+
+.infinite-graph-list {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.graph-item-card {
+    background: #111111;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 20px;
+    transition: border-color 0.3s ease;
+}
+
+.graph-item-card:hover {
+    border-color: #444;
+}
+
+.graph-item-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.graph-item-header h4 {
+    font-size: 14px;
+    color: #f5f0e8;
+    flex: 1;
+}
+
+.graph-content-area {
+    width: 100%;
+    height: 300px;
+    background: #0a0a0a;
+    border-radius: 8px;
+    border: 1px dashed #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.graph-item-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+/* ─── Skeletons & Visual Effects ────────────────────────────────────────── */
+
+.graph-skeleton-box {
+    margin-top: 15px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.blue-tint {
+    border-bottom: 2px solid #2563eb;
+}
+.purple-tint {
+    border-bottom: 2px solid #8a5cf6;
+}
+
+.skeleton-label {
+    position: absolute;
+    bottom: 4px;
+    right: 8px;
+    font-size: 9px;
+    color: #444;
+}
+
+.loading-trigger {
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: #555;
+    font-size: 11px;
+}
+
+/* ─── Indicators ─────────────────────────────────────────────────────────── */
+
+.blue-bg {
+    background-color: #2563eb;
+    box-shadow: 0 0 8px #2563eb;
+}
+.purple-bg {
+    background-color: #8a5cf6;
+    box-shadow: 0 0 8px #8a5cf6;
+}
+.silver-text {
+    color: #c0c0c0;
+}
+
+/* ─── Control Bar Overrides ──────────────────────────────────────────────── */
+
+.highlight-silver-bg {
+    background-color: #c0c0c0 !important;
+}
+
+/* ─── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .graph-content-area {
+        height: 200px;
+    }
+}

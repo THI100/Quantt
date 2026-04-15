@@ -1,9 +1,193 @@
-function Setup() {
+import React, { useState } from "react";
+import "../localassets/Setup.css";
+
+export default function Setup() {
+  // State for Trading Config
+  const [trading, setTrading] = useState({
+    is_demo_enabled: true,
+    timeframe: "15m",
+    exchange: "binance",
+    future_spot: "future",
+    list_of_interest: ["BTC/USDT", "ETH/USDT", "BNB/USDT"],
+  });
+
+  // State for Risk Config
+  const [risk, setRisk] = useState({
+    risk_reward_ratio: 2.0,
+    acceptable_confidence: 40,
+    atr_multiplier: 0.4,
+    maximum_loss: 0.15,
+    percentage_of_capital_per_trade: 0.02,
+    leverage: 50,
+    cross_isolated: "cross",
+  });
+
   return (
-    <>
-      <h1>Coming soon...</h1>
-    </>
+    <div className="home-container">
+      <div className="section-header">
+        <h2 className="section-title">System Configuration</h2>
+        <span className="activity-count">V2.4.0-STABLE</span>
+      </div>
+
+      <div className="setup-grid">
+        {/* Panel 1: Trading Configuration (Blue Theme) */}
+        <div className="config-panel highlight-blue-border">
+          <div className="panel-header">
+            <span className="panel-icon blue-text">◈</span>
+            <h3>Trading Engine</h3>
+          </div>
+
+          <form className="setup-form">
+            <div className="input-group">
+              <label>Execution Mode</label>
+              <div className="toggle-wrapper">
+                <input
+                  type="checkbox"
+                  checked={trading.is_demo_enabled}
+                  onChange={(e) =>
+                    setTrading({
+                      ...trading,
+                      is_demo_enabled: e.target.checked,
+                    })
+                  }
+                />
+                <span className="toggle-label">Demo / Paper Trading</span>
+              </div>
+            </div>
+
+            <div className="input-row">
+              <div className="input-group">
+                <label>Timeframe</label>
+                <input
+                  type="text"
+                  value={trading.timeframe}
+                  className="terminal-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Market</label>
+                <select value={trading.future_spot} className="terminal-input">
+                  <option value="future">Future</option>
+                  <option value="spot">Spot</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label>Exchange Entity</label>
+              <select value={trading.exchange} className="terminal-input">
+                <option value="binance">Binance</option>
+                <option value="bybit">Bybit</option>
+                <option value="okx">OKX</option>
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label>Assets of Interest (Comma separated)</label>
+              <textarea
+                className="terminal-input"
+                defaultValue={trading.list_of_interest.join(", ")}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="control-btn restart-btn full-width"
+            >
+              Patch Engine
+            </button>
+          </form>
+        </div>
+
+        {/* Panel 2: Risk Configuration (Purple Theme) */}
+        <div className="config-panel highlight-purple-border">
+          <div className="panel-header">
+            <span className="panel-icon purple-text">🛡</span>
+            <h3>Risk Parameters</h3>
+          </div>
+
+          <form className="setup-form">
+            <div className="input-row">
+              <div className="input-group">
+                <label>Risk/Reward</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={risk.risk_reward_ratio}
+                  className="terminal-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Leverage</label>
+                <input
+                  type="number"
+                  value={risk.leverage}
+                  className="terminal-input"
+                />
+              </div>
+            </div>
+
+            <div className="input-row">
+              <div className="input-group">
+                <label>Max Loss (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={risk.maximum_loss}
+                  className="terminal-input"
+                />
+              </div>
+              <div className="input-group">
+                <label>Margin Type</label>
+                <select value={risk.cross_isolated} className="terminal-input">
+                  <option value="cross">Cross</option>
+                  <option value="isolated">Isolated</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label>
+                Confidence Threshold ({risk.acceptable_confidence}%)
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={risk.acceptable_confidence}
+                className="terminal-slider"
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Capital Per Trade</label>
+              <input
+                type="number"
+                step="0.01"
+                value={risk.percentage_of_capital_per_trade}
+                className="terminal-input"
+              />
+            </div>
+
+            <button type="button" className="control-btn start-btn full-width">
+              Patch Risk Profile
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {/* Bottom Global Actions */}
+      <div className="control-bar">
+        <div className="control-status">
+          <div className="status-indicator pulse highlight-silver-bg"></div>
+          <span className="status-text">
+            Ready to <strong>Commit Changes</strong>
+          </span>
+        </div>
+        <div className="control-actions">
+          <button className="control-btn stop-btn">Reset to Defaults</button>
+        </div>
+      </div>
+    </div>
   );
 }
-
-export default Setup;
