@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "../localassets/Home.css";
 import {
   Activity,
@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 
 import api from "../../../api/axiosInstance.js";
+import { getSummary } from "../../../api/services/Info.ts";
+import { getPositions } from "../../../api/services/Positions.ts";
 
 interface Trade {
   id: string;
@@ -30,59 +32,77 @@ interface BotResponse {
   status: string;
 }
 
-type BotStatus = "online" | "offline" | "warning" | "error";
+type BotStatus = "Online" | "Offline" | "Restarted" | "Error";
 
 function Home() {
-  const [botStatus, setBotStatus] = useState<BotStatus>("offline");
+  const [botStatus, setBotStatus] = useState<BotStatus>("Connecting...");
   const [metrics, setMetrics] = useState<Metrics>({
-    pnl: 2847.32,
-    totalTrades: 1247,
-    marginHealth: 78.5,
-    maxDrawdown: -12.3,
+    pnl: 0,
+    totalTrades: 0,
+    marginHealth: 0,
+    maxDrawdown: 0,
   });
 
   const [recentTrades, setRecentTrades] = useState<Trade[]>([
     {
-      id: "1",
-      coin: "BTC/USDT",
-      type: "BUY",
-      price: 43250.5,
-      profit: 125.8,
-      timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    },
-    {
-      id: "2",
-      coin: "ETH/USDT",
-      type: "SELL",
-      price: 2280.3,
-      profit: -32.15,
-      timestamp: new Date(Date.now() - 1000 * 60 * 12),
-    },
-    {
-      id: "3",
-      coin: "SOL/USDT",
-      type: "BUY",
-      price: 98.75,
-      profit: 45.6,
-      timestamp: new Date(Date.now() - 1000 * 60 * 18),
-    },
-    {
-      id: "4",
-      coin: "BNB/USDT",
-      type: "SELL",
-      price: 312.4,
-      profit: 78.2,
-      timestamp: new Date(Date.now() - 1000 * 60 * 25),
-    },
-    {
-      id: "5",
-      coin: "ADA/USDT",
-      type: "BUY",
-      price: 0.52,
-      profit: -8.5,
-      timestamp: new Date(Date.now() - 1000 * 60 * 33),
+      id: "0",
+      coin: "x",
+      type: "x",
+      price: 0,
+      profit: 0,
+      timestamp: new Date(Date.now()),
     },
   ]);
+
+  const hasRun = useRef(false);
+
+  const settingData = async () => {
+    try {
+      // 1. Fetch raw data
+      const summaryRaw = await getSummary();
+      const positionsRaw = await getPositions(1, 5);
+
+      // 2. Map Summary Data (Snake Case -> Camel Case)
+      const mappedMetrics: Metrics = {
+        pnl: summaryRaw.total_pnl,
+        totalTrades: summaryRaw.total_trades,
+        marginHealth: summaryRaw.USDT,
+        maxDrawdown: summaryRaw.max_drawdown_abs,
+      };
+
+      // 3. Map Trades Data
+      // Note: Backend 'trades' is an array inside an object
+      const mappedTrades: Trade[] = positionsRaw.trades.map(
+        (t: any, index: number) => ({
+          id: String(index), // Using index since ID isn't in JSON, or use a UUID
+          coin: t.symbol.split("/")[0], // Converts "ADA/USDT" to "ADA"
+          type: t.side.toUpperCase() as "BUY" | "SELL",
+          price: t.entry_price,
+          profit: t.pnl,
+          timestamp: new Date(t.exit_time),
+        }),
+      );
+
+      // 4. Set State
+      setMetrics(mappedMetrics);
+      setRecentTrades(mappedTrades);
+    } catch (error) {
+      console.error("Error mapping dashboard data:", error);
+    }
+  };
+
+  const handleStatus = async () => {
+    try {
+      const response = await api.get<BotResponse>("/bot/status");
+      const statusFromServer = response.data.status;
+
+      setBotStatus(statusFromServer);
+    } catch (error: any) {
+      console.error("Error Starting the bot:", error);
+
+      setBotStatus("Error");
+    }
+  };
 
   const handleStart = async () => {
     try {
@@ -104,15 +124,13 @@ function Home() {
       const response = await api.post<BotResponse>("/bot/restart");
       const statusFromServer = response.data.status;
 
-      console.log(statusFromServer);
-
       setBotStatus(statusFromServer);
     } catch (error: any) {
       console.error("Error Starting the bot:", error);
 
       setBotStatus("Error");
     }
-    setTimeout(() => setBotStatus("online"), 2000);
+    setTimeout(() => setBotStatus("Online"), 2000);
   };
 
   const handleStop = async () => {
@@ -160,6 +178,15 @@ function Home() {
     if (health >= 40) return "#f0a04a";
     return "#f04a4a";
   };
+
+  useEffect(() => {
+    if (hasRun.current) return;
+
+    handleStatus();
+    settingData();
+
+    hasRun.current = true;
+  }, []);
 
   return (
     <div className="home-container">

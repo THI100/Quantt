@@ -8,7 +8,6 @@ from execution.position_manager import manage_open_symbols as mos
 route = APIRouter()
 bot = TradingBot()
 bot_thread = None
-is_paused = False
 
 # ------------------------------------------------------------------ #
 #  Helper                                                              #
@@ -30,11 +29,7 @@ def start_trigger():
     if bot.is_running:
         return {"status": "Online"}
 
-    bot_thread = threading.Thread(
-        target=bot.start,
-        args=(lambda: is_paused,),
-        daemon=True
-    )
+    bot_thread = threading.Thread(target=bot.start, daemon=True)
     bot_thread.start()
     return {"status": "Online"}
 
@@ -59,4 +54,4 @@ def restart_trigger():
 def get_status():
     if not bot.is_running:
         return {"status": "Offline"}
-    return {"status": "Offline" if is_paused else "Online"}
+    return {"status": "Online"}

@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../localassets/Topbar.css";
 import Sidebar from "./Sidebar.tsx";
+import api from "../../../api/axiosInstance.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type BotStatus = "online" | "offline" | "connecting";
+type BotStatus = "Online" | "Offline" | "Restarted" | "Error";
+
+type ActiveExchange = "Bybit" | "Binance" | "Okx" | "None";
 
 interface TopbarProps {
   botStatus?: BotStatus;
-  activeExchange?: string;
-  onApiManagement?: () => void;
-  onStatusClick?: () => void;
+  activeExchange?: ActiveExchange;
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -88,9 +89,11 @@ const STATUS_CONFIG: Record<
   BotStatus,
   { label: string; color: string; pulse: boolean }
 > = {
-  online: { label: "Online", color: "#4ade80", pulse: true },
-  offline: { label: "Offline", color: "#f87171", pulse: false },
-  connecting: { label: "Connecting", color: "#94a3b8", pulse: true },
+  Online: { label: "Online", color: "#4ade80", pulse: true },
+  Offline: { label: "Offline", color: "#f87171", pulse: false },
+  Restarted: { label: "Restarted", color: "#60a5fa", pulse: true },
+  Error: { label: "Error", color: "#ef4444", pulse: false },
+  Connecting: { label: "Connecting", color: "#666", pulse: false },
 };
 
 function useTime() {
@@ -119,19 +122,49 @@ const formatDate = (date: Date) =>
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Topbar({
-  botStatus = "offline",
-  activeExchange = "Binance",
-  onStatusClick,
+  botStatus: initialBotStatus = "Connecting...",
+  activeExchange: initialExchange = "Binance",
 }: TopbarProps) {
+  const [botStatus, setBotStatus] = useState<BotStatus>(initialBotStatus);
+  const [activeExchange, setActiveExchange] =
+    useState<ActiveExchange>(initialExchange);
+
   const now = useTime();
-  const status = STATUS_CONFIG[botStatus];
+
+  const hasRun = useRef(false);
+
+  const status =
+    STATUS_CONFIG[botStatus as keyof typeof STATUS_CONFIG] ||
+    STATUS_CONFIG.Connecting;
+
   const navigate = useNavigate();
 
-  const handleBotStatus = () => {};
+  const onStatusClick = async () => {
+    try {
+      const response = await api.get<BotResponse>("/bot/status");
+      const statusFromServer = response.data.status;
+
+      console.log(statusFromServer);
+
+      setBotStatus(statusFromServer);
+    } catch (error: any) {
+      console.error("Error Starting the bot:", error);
+
+      setBotStatus("Error");
+    }
+  };
 
   const handleClick = () => {
     navigate("/Management/Api");
   };
+
+  useEffect(() => {
+    if (hasRun.current) return;
+
+    onStatusClick();
+
+    hasRun.current = true;
+  }, []);
 
   return (
     <header className="topbar">
@@ -142,7 +175,7 @@ export default function Topbar({
 
         <button
           className="topbar-status-btn"
-          onClick={onStatusClick}
+          onClick={onStatusClick} // Use the prop here
           style={{ "--status-color": status.color } as React.CSSProperties}
         >
           <span className={`status-dot${status.pulse ? " pulse" : ""}`} />

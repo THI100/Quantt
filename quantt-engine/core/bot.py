@@ -69,7 +69,6 @@ class TradingBot:
         b = self.check_bal()
         dic = {}
         for c in b:
-            print(c)
             margin_health = scale_0_100(c["used"], c["total"])
             dic.update({c["coin"]: margin_health})
         return dic
