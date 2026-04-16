@@ -166,3 +166,100 @@
     border-color: #8a5cf6;
     color: #8a5cf6;
 }
+
+/* ─── Management Section (Delete Form) ────────────────────────────────── */
+
+.management-section {
+    margin-bottom: 32px;
+}
+
+.delete-card {
+    background: #111;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 20px 24px;
+    border-left: 4px solid #f04a4a; /* Red for deletion intent */
+}
+
+.card-header-mini {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.card-header-mini h3 {
+    font-family: "Syne", sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #f5f0e8;
+}
+
+.delete-inline-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.input-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.input-field label {
+    font-size: 10px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.input-field input {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    padding: 10px 14px;
+    border-radius: 6px;
+    color: #c0c0c0;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    outline: none;
+}
+
+.input-field input:focus {
+    border-color: #f04a4a;
+}
+
+/* ─── Position Row Enhancements ────────────────────────────────────────── */
+
+.pos-id-tag {
+    font-size: 10px;
+    color: #444;
+    margin-left: 8px;
+    font-weight: 400;
+}
+
+/* Red Button Style (Matches Home.css naming) */
+.stop-btn {
+    background: transparent;
+    border-color: #f04a4a;
+    color: #f04a4a;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: "DM Mono", monospace;
+    text-transform: uppercase;
+    font-size: 11px;
+    transition: 0.2s;
+}
+
+.stop-btn:hover {
+    background: rgba(240, 74, 74, 0.1);
+    box-shadow: 0 0 15px rgba(240, 74, 74, 0.2);
+}
+
+@media (max-width: 768px) {
+    .delete-inline-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

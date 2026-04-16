@@ -1,12 +1,19 @@
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from config import risk, settings
 from core.bot import TradingBot
+from exchange.awm import ensure_env_file, write_api_credentials, delete_file
 
 s_route = APIRouter()
 bot = TradingBot()
+
+class APIConfig(BaseModel):
+    api_key: str
+    api_secret: str
+    exchange: str
 
 # ------------------------------------------------------------------ #
 #  Config — trading                                                    #
@@ -115,19 +122,41 @@ def get_risk_limits(coin: Optional[str]):
 # ------------------------------------------------------------------ #
 
 @s_route.post("/config/api")
-def post_api(api_key: str, api_secret: str, exchange: str):
+def post_file():
     """
-    Directly writes the new API key and API secret into a .env.
+    Directly creates a new .env file if it doesn't exist.
     """
+    try:
+        return ensure_env_file()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to initialize .env: {str(e)}"
+        )
 
 @s_route.patch("/config/api")
-def update_api(api_key: str, api_secret: str, exchange: str):
+def update_api(config: APIConfig):
     """
-    Directly writes the new API key and API secret into a .env.
+    Updates or adds API key and secret for a specific exchange.
     """
+    try:
+        return write_api_credentials(config.api_key, config.api_secret, config.exchange)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update API credentials: {str(e)}"
+        )
 
 @s_route.delete("/config/api")
-def delete_api(api_key: str, api_secret: str, exchange: str):
+def delete_file_route():
     """
-    Directly writes the new API key and API secret into a .env.
+    Deletes the entire .env file.
     """
+    try:
+        result = remove_env_file()
+        if result["status"] == "error":
+            raise HTTPException(status_code=404, detail=result["message"])
+        return result
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete configuration: {str(e)}"
+        )

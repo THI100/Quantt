@@ -101,7 +101,7 @@ def get_margin_health():
     Get directly from the bot the margin in usage.
     Important for balance control.
     """
-        return bot.check_margin()
+    return bot.check_margin()
 
 
 @r_route.get("/report/best-worst")

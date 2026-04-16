@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import "../localassets/Positions.css";
 
 export default function Positions() {
+  const [deleteForm, setDeleteForm] = useState({ id: "", symbol: "" });
+
   // Simulated state for infinite scroll
   const [positions, setPositions] = useState([
     {
@@ -42,19 +44,63 @@ export default function Positions() {
     },
   ]);
 
-  // Simple scroll handler logic could be added here to fetch more data
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const bottom =
       e.currentTarget.scrollHeight - e.currentTarget.scrollTop ===
       e.currentTarget.clientHeight;
     if (bottom) {
-      console.log("Fetching next page of history...");
-      // appendData();
+      console.log("Fetching next page...");
     }
+  };
+
+  const handleDelete = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(
+      `Calling DELETE /positions/${deleteForm.symbol} with ID: ${deleteForm.id}`,
+    );
+    // Backend integration logic here
   };
 
   return (
     <div className="home-container" onScroll={handleScroll}>
+      {/* Superior Region: Position Management Form */}
+      <div className="management-section">
+        <div className="delete-card">
+          <div className="card-header-mini">
+            <span className="purple-text">◈</span>
+            <h3>Terminator Module</h3>
+            <span className="silver-subtext">Manual Position Deletion</span>
+          </div>
+          <form className="delete-inline-form" onSubmit={handleDelete}>
+            <div className="input-field">
+              <label>Position ID</label>
+              <input
+                type="text"
+                placeholder="Ex: 1024"
+                value={deleteForm.id}
+                onChange={(e) =>
+                  setDeleteForm({ ...deleteForm, id: e.target.value })
+                }
+              />
+            </div>
+            <div className="input-field">
+              <label>Symbol</label>
+              <input
+                type="text"
+                placeholder="BTC/USDT"
+                value={deleteForm.symbol}
+                onChange={(e) =>
+                  setDeleteForm({ ...deleteForm, symbol: e.target.value })
+                }
+              />
+            </div>
+            <button type="submit" className="control-btn stop-btn">
+              Terminate Position
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="section-header">
         <h2 className="section-title">Historical Positions</h2>
         <div className="control-status">
@@ -62,7 +108,6 @@ export default function Positions() {
         </div>
       </div>
 
-      {/* Table Header - Desktop Only */}
       <div className="positions-list-header">
         <span>Asset</span>
         <span>Entry Price</span>
@@ -77,6 +122,7 @@ export default function Positions() {
             <div className="pos-asset">
               <span className="trade-type highlight-silver">Spot</span>
               <span className="asset-name">{pos.coin}</span>
+              <span className="pos-id-tag">#{pos.id}</span>
             </div>
 
             <div className="pos-price">
@@ -102,7 +148,6 @@ export default function Positions() {
         ))}
       </div>
 
-      {/* Fixed Footer Status */}
       <div className="control-bar">
         <div className="control-status">
           <div className="status-indicator pulse highlight-purple-bg"></div>
