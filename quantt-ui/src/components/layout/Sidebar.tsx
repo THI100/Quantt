@@ -2,11 +2,15 @@ import { useState, useRef, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import "../localassets/Sidebar.css";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface NavItem {
   label: string;
   href: string;
   icon: React.ReactNode;
 }
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const IconHome = () => (
   <svg
@@ -205,6 +209,8 @@ const IconMenu = () => (
   </svg>
 );
 
+// ─── NavItems ────────────────────────────────────────────────────────────────────
+
 const navItems: NavItem[] = [
   // Main Navigation
   { label: "Home", href: "/", icon: <IconHome /> },
@@ -219,6 +225,8 @@ const navItems: NavItem[] = [
   { label: "Docs", href: "/Management/Docs", icon: <IconDocs /> },
   { label: "Settings", href: "/Management/Settings", icon: <IconSettings /> },
 ];
+
+// ─── Component ────────────────────────────────────────────────────────────────────
 
 export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -236,6 +244,8 @@ export default function Sidebar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // ─── Component_ ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="sidebar-container" ref={menuRef}>

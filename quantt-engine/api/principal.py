@@ -24,6 +24,15 @@ def _require_running():
 #  Bot control                                                         #
 # ------------------------------------------------------------------ #
 
+@route.post("/")
+def setup():
+    try:
+        bot.setup_environment()
+        return {"status": "success", "message": "Environment set successfully"}
+    except Exception as e:
+        logger.error(f"Setup failed: {e}")
+        return {"status": "error", "message": str(e)}, 500
+
 @route.post("/bot/start")
 def start_trigger():
     if bot.is_running:

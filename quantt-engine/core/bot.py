@@ -20,7 +20,7 @@ class TradingBot:
         self.db_path = "./general.db"
         self.stop_event = threading.Event()
 
-    def _setup_environment(self):
+    def setup_environment(self):
         """Initializes database and exchange settings."""
         if os.path.exists(self.db_path):
             logger.info("Database already exists.")
@@ -28,14 +28,19 @@ class TradingBot:
             logger.info("Initializing database...")
             Base.metadata.create_all(bind=engine)
 
+        self.client.load_markets()
+
         for symbol in settings.TradingConfig().list_of_interest:
-            self.client.set_leverage(risk.RiskConfig().leverage, symbol)
-            logger.debug(f"Leverage set for {symbol}")
+            try:
+                self.client.set_leverage(risk.RiskConfig().leverage, symbol)
+                logger.debug(f"Leverage set for {symbol}")
+            except Exception as err:
+                logger.error(f"Error occured, when setting Leverage: {err}")
 
     @logger.catch
     def start(self, paused_check_func=None):
         """Main execution loop."""
-        self._setup_environment()
+        # self.setup_environment()
         self.is_running = True
         self.stop_event.clear()
         logger.info("Bot started.")

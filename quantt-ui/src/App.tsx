@@ -1,8 +1,10 @@
+import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Topbar from "./components/layout/Topbar";
 import Sidebar from "./components/layout/Sidebar";
 import "./assets/App.css";
 
+import api from "../api/axiosInstance.js";
 import Home from "./pages/Navigation/Home";
 import Resume from "./pages/Navigation/Resume";
 import Setup from "./pages/Navigation/Setup";

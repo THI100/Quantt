@@ -12,6 +12,8 @@ import api from "../../../api/axiosInstance.js";
 import { getSummary } from "../../../api/services/Info.ts";
 import { getPositions } from "../../../api/services/Positions.ts";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface Trade {
   id: string;
   coin: string;
@@ -34,7 +36,11 @@ interface BotResponse {
 
 type BotStatus = "Online" | "Offline" | "Restarted" | "Error";
 
+// ─── Page ────────────────────────────────────────────────────────────────────
+
 function Home() {
+  // ─── Const ────────────────────────────────────────────────────────────────────
+
   const [botStatus, setBotStatus] = useState<BotStatus>("Connecting...");
   const [metrics, setMetrics] = useState<Metrics>({
     pnl: 0,
@@ -56,6 +62,8 @@ function Home() {
 
   const hasRun = useRef(false);
 
+  // ─── Inner-Helpers ────────────────────────────────────────────────────────────────────
+
   const settingData = async () => {
     try {
       // 1. Fetch raw data
@@ -74,8 +82,8 @@ function Home() {
       // Note: Backend 'trades' is an array inside an object
       const mappedTrades: Trade[] = positionsRaw.trades.map(
         (t: any, index: number) => ({
-          id: String(index), // Using index since ID isn't in JSON, or use a UUID
-          coin: t.symbol.split("/")[0], // Converts "ADA/USDT" to "ADA"
+          id: String(index),
+          coin: t.symbol,
           type: t.side.toUpperCase() as "BUY" | "SELL",
           price: t.entry_price,
           profit: t.pnl,
@@ -179,14 +187,43 @@ function Home() {
     return "#f04a4a";
   };
 
+  // ─── useEffect ────────────────────────────────────────────────────────────────────
+
+  const [isInitialized, setIsInitialized] = useState(false);
+  const hasRunA = useRef(false);
+
+  useEffect(() => {
+    // If we've already started the process, don't do it again
+    if (hasRunA.current) return;
+    hasRunA.current = true;
+
+    const initialize = () => {
+      try {
+        api.post("/");
+        setIsInitialized(true);
+      } catch (error) {
+        // If it fails, we reset hasRun so a retry could potentially happen
+        hasRunA.current = false;
+        console.error("Initialization failed:", error);
+      }
+    };
+
+    initialize();
+  }, []);
+
   useEffect(() => {
     if (hasRun.current) return;
 
     handleStatus();
     settingData();
+    // if (botStatus == "Online") {
+    //   settingData();
+    // }
 
     hasRun.current = true;
   }, []);
+
+  // ─── Component ────────────────────────────────────────────────────────────────────
 
   return (
     <div className="home-container">
