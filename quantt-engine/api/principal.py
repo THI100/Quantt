@@ -27,10 +27,14 @@ def _require_running():
 
 @route.post("/bot/start")
 def start_trigger():
-    global bot_thread
     if bot.is_running:
         return {"status": "Online"}
-    bot_thread = threading.Thread(target=bot.start, daemon=True)
+
+    bot_thread = threading.Thread(
+        target=bot.start,
+        args=(lambda: is_paused,),
+        daemon=True
+    )
     bot_thread.start()
     return {"status": "Online"}
 
@@ -38,40 +42,17 @@ def start_trigger():
 @route.post("/bot/stop")
 def stop_trigger():
     if not bot.is_running:
-        return {"status": "Offline"}
-    threading.Thread(target=bot.stop, daemon=True).start()
+        return {"status": "Already Offline"}
+    bot.stop()
     return {"status": "Offline"}
 
 
 @route.post("/bot/restart")
 def restart_trigger():
-    global bot_thread, is_paused
-    if bot.is_running:
-        bot.stop()
-    is_paused = False
-    bot_thread = threading.Thread(target=bot.start, daemon=True)
-    bot_thread.start()
-    return {"status": "Restarted"}
-
-
-@route.post("/bot/pause")
-def pause_trigger():
-    global is_paused
-    _require_running()
-    if is_paused:
-        return {"status": "already_paused"}
-    is_paused = True
-    return {"status": "paused"}
-
-
-@route.post("/bot/resume")
-def resume_trigger():
-    global is_paused
-    _require_running()
-    if not is_paused:
-        return {"status": "already_running"}
-    is_paused = False
-    return {"status": "resumed"}
+    bot.stop()
+    # Give the thread a tiny window to exit the while loop
+    time.sleep(1)
+    return start_trigger()
 
 
 @route.get("/bot/status")

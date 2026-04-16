@@ -127,6 +127,8 @@ export default function Topbar({
   const status = STATUS_CONFIG[botStatus];
   const navigate = useNavigate();
 
+  const handleBotStatus = () => {};
+
   const handleClick = () => {
     navigate("/Management/Api");
   };

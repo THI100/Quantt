@@ -95,17 +95,39 @@ function Home() {
     } catch (error: any) {
       console.error("Error Starting the bot:", error);
 
-      setBotStatus("error");
+      setBotStatus("Error");
     }
   };
 
-  const handleRestart = () => {
-    setBotStatus("warning");
+  const handleRestart = async () => {
+    try {
+      const response = await api.post<BotResponse>("/bot/restart");
+      const statusFromServer = response.data.status;
+
+      console.log(statusFromServer);
+
+      setBotStatus(statusFromServer);
+    } catch (error: any) {
+      console.error("Error Starting the bot:", error);
+
+      setBotStatus("Error");
+    }
     setTimeout(() => setBotStatus("online"), 2000);
   };
 
-  const handleStop = () => {
-    setBotStatus("offline");
+  const handleStop = async () => {
+    try {
+      const response = await api.post<BotResponse>("/bot/stop");
+      const statusFromServer = response.data.status;
+
+      console.log(statusFromServer);
+
+      setBotStatus(statusFromServer);
+    } catch (error: any) {
+      console.error("Error Starting the bot:", error);
+
+      setBotStatus("Error");
+    }
   };
 
   const formatTime = (date: Date): string => {
@@ -122,11 +144,11 @@ function Home() {
 
   const getStatusColor = (): string => {
     switch (botStatus) {
-      case "online":
+      case "Online":
         return "#c8f04a";
-      case "warning":
+      case "Warning":
         return "#f0a04a";
-      case "error":
+      case "Error":
         return "#f04a4a";
       default:
         return "#666";

@@ -1,6 +1,7 @@
 import os
 import time
 from typing import Optional
+import threading
 
 from loguru import logger
 
@@ -17,6 +18,7 @@ class TradingBot:
         self.client = cached_client()
         self.is_running = False
         self.db_path = "./general.db"
+        self.stop_event = threading.Event()
 
     def _setup_environment(self):
         """Initializes database and exchange settings."""
@@ -31,19 +33,29 @@ class TradingBot:
             logger.debug(f"Leverage set for {symbol}")
 
     @logger.catch
-    def start(self):
+    def start(self, paused_check_func=None):
         """Main execution loop."""
         self._setup_environment()
         self.is_running = True
+        self.stop_event.clear()
         logger.info("Bot started.")
 
         try:
             while self.is_running:
+                if paused_check_func and paused_check_func():
+                    time.sleep(5) # Low CPU usage while paused
+                    continue
+
                 manage_open_limit(self.client)
                 e.avaliation_and_place(self.client)
-                time.sleep(90)
+
+                if self.stop_event.wait(timeout=90):
+                    break
+
         except KeyboardInterrupt:
             self.stop()
+        finally:
+            self.is_running = False
 
     def check_bal(self):
         bal = self.client.fetch_balance()
@@ -62,10 +74,10 @@ class TradingBot:
             dic.update({c["coin"]: margin_health})
         return dic
 
-
     def stop(self):
         """Graceful shutdown."""
         self.is_running = False
+        self.stop_event.set()
         logger.info("Loop stopped by user. Cleaning up...")
 
     def close_order(self, symbol: str, id: str):
