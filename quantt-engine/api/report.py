@@ -90,6 +90,7 @@ def get_summary():
             **get_max_drawdown(db),
             **get_sharpe_ratio(db),
             **get_consecutive_wins_losses(db),
+            **bot.check_margin()
         }
     finally:
         db.close()

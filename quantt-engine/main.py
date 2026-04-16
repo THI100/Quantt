@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 import core.bot as bot
 from api import principal, report, set
@@ -7,11 +8,21 @@ from utils import log
 
 app = FastAPI(title="quantt_engine")
 
-# Create instances of logging and TradingBot.
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Create instances of logging and app.
 log.setup_logging()
-my_bot = bot.TradingBot()
-# print(my_bot.check_margin())
-# my_bot.start()
 app.include_router(principal.route)
 app.include_router(report.r_route)
 app.include_router(set.s_route)

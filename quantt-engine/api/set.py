@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 from config import risk, settings
 from core.bot import TradingBot
-from exchange.awm import ensure_env_file, write_api_credentials, delete_file
+from exchange.awm import ensure_env_file, write_api_credentials, remove_env_file
 
 s_route = APIRouter()
 bot = TradingBot()

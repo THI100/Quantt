@@ -29,18 +29,18 @@ def _require_running():
 def start_trigger():
     global bot_thread
     if bot.is_running:
-        return {"status": "already_running"}
+        return {"status": "Online"}
     bot_thread = threading.Thread(target=bot.start, daemon=True)
     bot_thread.start()
-    return {"status": "activating"}
+    return {"status": "Online"}
 
 
 @route.post("/bot/stop")
 def stop_trigger():
     if not bot.is_running:
-        return {"status": "deactivated"}
+        return {"status": "Offline"}
     threading.Thread(target=bot.stop, daemon=True).start()
-    return {"status": "deactivating"}
+    return {"status": "Offline"}
 
 
 @route.post("/bot/restart")
@@ -51,7 +51,7 @@ def restart_trigger():
     is_paused = False
     bot_thread = threading.Thread(target=bot.start, daemon=True)
     bot_thread.start()
-    return {"status": "restarting"}
+    return {"status": "Restarted"}
 
 
 @route.post("/bot/pause")
@@ -77,6 +77,5 @@ def resume_trigger():
 @route.get("/bot/status")
 def get_status():
     if not bot.is_running:
-        return {"status": "deactivated"}
-    markets = mos()
-    return {"status": "paused" if is_paused else "active", "markets": markets}
+        return {"status": "Offline"}
+    return {"status": "Offline" if is_paused else "Online"}
