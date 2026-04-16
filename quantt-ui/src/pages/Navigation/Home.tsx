@@ -8,6 +8,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
+import api from "../../../api/axiosInstance.js";
+
 interface Trade {
   id: string;
   coin: string;
@@ -22,6 +24,10 @@ interface Metrics {
   totalTrades: number;
   marginHealth: number;
   maxDrawdown: number;
+}
+
+interface BotResponse {
+  status: string;
 }
 
 type BotStatus = "online" | "offline" | "warning" | "error";
@@ -78,8 +84,19 @@ function Home() {
     },
   ]);
 
-  const handleStart = () => {
-    setBotStatus("online");
+  const handleStart = async () => {
+    try {
+      const response = await api.post<BotResponse>("/bot/start");
+      const statusFromServer = response.data.status;
+
+      console.log(statusFromServer);
+
+      setBotStatus(statusFromServer);
+    } catch (error: any) {
+      console.error("Error Starting the bot:", error);
+
+      setBotStatus("error");
+    }
   };
 
   const handleRestart = () => {

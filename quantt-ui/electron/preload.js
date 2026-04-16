@@ -20,8 +20,4 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
     }
   },
-
-  // 4. Helper for your Python Backend URL
-  // You can hardcode this or pull from an environment variable
-  API_URL: "http://localhost:8000",
 });
