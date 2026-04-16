@@ -18,6 +18,7 @@ Static (Direct usage):
   @r_route.get("/report/max-drawdown")
   @r_route.get("/report/sharpe")
   @r_route.get("/report/streaks")
+  @r_route.get("/report/margin-health")
   
 Series (graph creation):
   @r_route.get("/report/trades")
@@ -38,3 +39,8 @@ Configuration setup (Risk):
 
 Limits of margin and position (USDT or USDC):
   @s_route.get("/config/risk/limits")
+
+API control:
+  @s_route.post("/config/api")
+  @s_route.patch("/config/api")
+  @s_route.delete("/config/api")

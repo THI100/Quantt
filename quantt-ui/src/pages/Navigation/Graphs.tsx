@@ -40,7 +40,7 @@ export default function Graphs() {
     <div className="home-container">
       <div className="section-header">
         <h2 className="section-title">Visual Analytics</h2>
-        <div className="activity-count">Real-time Stream</div>
+        <div className="activity-count">Pooling Stream</div>
       </div>
 
       {/* Top Fixed Statistics Grid */}

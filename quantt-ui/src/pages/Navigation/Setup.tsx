@@ -26,7 +26,7 @@ export default function Setup() {
     <div className="home-container">
       <div className="section-header">
         <h2 className="section-title">System Configuration</h2>
-        <span className="activity-count">V2.4.0-STABLE</span>
+        <span className="activity-count">V0.0.x-DEV</span>
       </div>
 
       <div className="setup-grid">

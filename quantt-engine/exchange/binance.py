@@ -10,8 +10,8 @@ load_dotenv()
 
 
 def create_client():
-    api_key = os.getenv("API_KEY")
-    api_secret = os.getenv("API_SECRET")
+    api_key = os.getenv("API_KEY_BINANCE")
+    api_secret = os.getenv("API_SECRET_BINANCE")
 
     if not api_key or not api_secret:
         logger.error("Missing API credentials")

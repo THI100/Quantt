@@ -25,7 +25,6 @@ def _require_running():
 #  Bot control                                                         #
 # ------------------------------------------------------------------ #
 
-
 @route.post("/bot/start")
 def start_trigger():
     global bot_thread

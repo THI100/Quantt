@@ -12,8 +12,8 @@ def write_api_credentials(api_key, api_secret, exchange, filepath=".env"):
     ensure_env_file(filepath)
     # Formats keys like BINANCE_API_KEY or COINBASE_API_SECRET
     prefix = exchange.upper().strip()
-    set_key(filepath, f"{prefix}_API_KEY", api_key)
-    set_key(filepath, f"{prefix}_API_SECRET", api_secret)
+    set_key(filepath, f"API_KEY_{prefix}", api_key)
+    set_key(filepath, f"API_SECRET_{prefix}", api_secret)
     return {"status": "success", "message": f"Updated credentials for {prefix}"}
 
 def remove_env_file(filepath=".env"):
