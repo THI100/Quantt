@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import api from "../../../api/axiosInstance.js";
 import "../localassets/Positions.css";
 
 export default function Positions() {
   const [deleteForm, setDeleteForm] = useState({ id: "", symbol: "" });
+  const [selectForm, setSelectForm] = useState({ symbol: "" });
 
   // Simulated state for infinite scroll
   const [positions, setPositions] = useState([
@@ -15,33 +17,6 @@ export default function Positions() {
       sl: "61,000",
       time: "2026-04-14 10:20",
     },
-    {
-      id: 2,
-      coin: "ETH/USDT",
-      price: "3,450.20",
-      pnl: "-2.1%",
-      tp: "3,800",
-      sl: "3,300",
-      time: "2026-04-14 09:15",
-    },
-    {
-      id: 3,
-      coin: "SOL/USDT",
-      price: "145.10",
-      pnl: "+5.7%",
-      tp: "160",
-      sl: "138",
-      time: "2026-04-14 08:45",
-    },
-    {
-      id: 4,
-      coin: "LINK/USDT",
-      price: "18.25",
-      pnl: "+0.8%",
-      tp: "22",
-      sl: "17",
-      time: "2026-04-14 07:30",
-    },
   ]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -53,12 +28,33 @@ export default function Positions() {
     }
   };
 
-  const handleDelete = (e: React.FormEvent) => {
+  const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log(
       `Calling DELETE /positions/${deleteForm.symbol} with ID: ${deleteForm.id}`,
     );
-    // Backend integration logic here
+    try {
+      const deletionRaw = await api.delete("/positions", {
+        params: { symbol: deleteForm.symbol, id: deleteForm.id },
+      });
+      console.log("Status:", deletionRaw);
+    } catch (error) {
+      console.error(
+        `Error happened with Deletion of ${deleteForm.symbol} and ${deleteForm.id}:`,
+        error,
+      );
+    }
+  };
+
+  const handleSelection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const positionsRaw = await api.get("/positions", {
+        params: { symbol: selectForm.symbol },
+      });
+    } catch (error) {
+      console.error("Error happened with selection of symbol:", error);
+    }
   };
 
   return (
@@ -103,9 +99,22 @@ export default function Positions() {
 
       <div className="section-header">
         <h2 className="section-title">Historical Positions</h2>
-        <div className="control-status">
-          <span className="activity-count">Total: {positions.length}</span>
-        </div>
+        <form className="delete-inline-form" onSubmit={handleDelete}>
+          <div className="input-field">
+            <label>Symbol</label>
+            <input
+              type="text"
+              placeholder="BTC/USDT"
+              value={selectForm.symbol}
+              onChange={(e) =>
+                setDeleteForm({ ...selectForm, symbol: e.target.value })
+              }
+            />
+          </div>
+          <button type="submit" className="control-btn">
+            Search
+          </button>
+        </form>
       </div>
 
       <div className="positions-list-header">

@@ -39,8 +39,8 @@ def _require_running():
 # ------------------------------------------------------------------ #
 
 
-@r_route.get("/positions/{symbol}")
-def get_position(symbol: str, id: str):
+@r_route.get("/positions")
+def get_position(symbol: str, id: Optional[str] = None):
     """Return details for a single open position."""
     _require_running()
     position = bot.fet_order(symbol, id)
@@ -49,7 +49,7 @@ def get_position(symbol: str, id: str):
     return position
 
 
-@r_route.delete("/positions/{symbol}")
+@r_route.delete("/positions")
 def close_position(symbol: str, id: str):
     """Force-close a position by symbol, sending a market order."""
     _require_running()

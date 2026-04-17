@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import "../localassets/Resume.css";
 import { getSummary } from "../../../api/services/Info";
 import { getPositions } from "../../../api/services/Positions";
@@ -24,6 +24,15 @@ export default function Resume() {
     streaks: { winning: 0, losing: 0 },
   });
 
+  const hasRun = useRef(false);
+
+  const convertToReadableTime = (totalMinutes) => {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.round(totalMinutes % 60);
+
+    return `${hours}h ${minutes}m`;
+  };
+
   const handleRefresh = async () => {
     try {
       // 1. Fetch raw data
@@ -40,7 +49,7 @@ export default function Resume() {
 
       const mappedData: Data = {
         summary: {
-          totalTrades: summaryRaw.total_trades.toFixed(2),
+          totalTrades: summaryRaw.total_trades,
           netProfit: summaryRaw.total_pnl.toFixed(2),
         },
         bestWorst: {
@@ -63,6 +72,14 @@ export default function Resume() {
     }
   };
 
+  useEffect(() => {
+    if (hasRun.current) return;
+
+    handleRefresh();
+
+    hasRun.current = true;
+  }, []);
+
   return (
     <div className="home-container">
       <div className="activity-section">
@@ -79,7 +96,7 @@ export default function Resume() {
               <i className="metric-icon positive">↗</i>
             </div>
             <div className="metric-value">
-              <span>{data.summary.netProfit}</span>
+              <span>${data.summary.netProfit}</span>
             </div>
             <div className="metric-subtext">
               {data.summary.totalTrades} Executed Trades
@@ -92,7 +109,7 @@ export default function Resume() {
               <i className="metric-icon positive">★</i>
             </div>
             <div className="metric-value">
-              <span className="positive">{data.winRate}</span>
+              <span className="positive">{data.winRate * 100}%</span>
             </div>
             <div className="metric-subtext">Success Probability</div>
           </div>
@@ -117,7 +134,7 @@ export default function Resume() {
           <div className="trade-item">
             <div className="trade-left">
               <span className="trade-type buy">Best Trade</span>
-              <span className="trade-coin">{data.bestWorst.best}</span>
+              <span className="trade-coin">${data.bestWorst.best}</span>
             </div>
             <div className="trade-middle">
               <span className="trade-price">Peak Execution</span>
@@ -130,7 +147,7 @@ export default function Resume() {
           <div className="trade-item">
             <div className="trade-left">
               <span className="trade-type sell">Worst Trade</span>
-              <span className="trade-coin">{data.bestWorst.worst}</span>
+              <span className="trade-coin">${data.bestWorst.worst}</span>
             </div>
             <div className="trade-middle">
               <span className="trade-price">Stop Loss Triggered</span>
@@ -146,7 +163,9 @@ export default function Resume() {
               <span className="trade-coin">{data.maxDrawdown}</span>
             </div>
             <div className="trade-middle">
-              <span className="trade-price">Avg Hold: {data.holdTime}</span>
+              <span className="trade-price">
+                Avg Hold: {convertToReadableTime(data.holdTime)}
+              </span>
             </div>
             <div className="trade-right">
               <div className="trade-profit" style={{ color: "#888" }}>

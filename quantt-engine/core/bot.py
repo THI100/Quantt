@@ -92,7 +92,7 @@ class TradingBot:
                 f"Due to {err}, it wasnt possible to close/cancel order: {id}, {symbol}"
             )
 
-    def fet_order(self, symbol: str, id: Optional[str]):
+    def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
                 self.client.fetch_open_order(id, symbol)

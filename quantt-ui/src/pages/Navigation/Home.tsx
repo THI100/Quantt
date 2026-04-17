@@ -117,8 +117,6 @@ function Home() {
       const response = await api.post<BotResponse>("/bot/start");
       const statusFromServer = response.data.status;
 
-      console.log(statusFromServer);
-
       setBotStatus(statusFromServer);
     } catch (error: any) {
       console.error("Error Starting the bot:", error);
@@ -145,8 +143,6 @@ function Home() {
     try {
       const response = await api.post<BotResponse>("/bot/stop");
       const statusFromServer = response.data.status;
-
-      console.log(statusFromServer);
 
       setBotStatus(statusFromServer);
     } catch (error: any) {
@@ -250,7 +246,7 @@ function Home() {
                 })}
               </span>
             </div>
-            <div className="metric-subtext">Total unrealized</div>
+            <div className="metric-subtext">Total realized</div>
           </div>
 
           {/* Total Trades Card */}
