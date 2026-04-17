@@ -30,11 +30,11 @@ def avaliation_and_place(client):
             nn = risk_manager.smart_amount(symbol)
             p = risk_manager.blp(symbol, s, nn)
 
-            if p <= ls or p >= tp:
-                logger.info(
-                    f"Seems like this possible order would return a error... as its price is bigger than take profit or lower than stop loss."
-                )
-                continue
+            # if p <= ls or p >= tp:
+            #     logger.info(
+            #         f"Seems like this possible order would return a error... as its price is bigger than take profit or lower than stop loss."
+            #     )
+            #     continue
 
             if nn < 0.01:
                 logger.info(

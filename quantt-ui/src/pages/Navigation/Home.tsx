@@ -74,7 +74,7 @@ function Home() {
       const mappedMetrics: Metrics = {
         pnl: summaryRaw.total_pnl,
         totalTrades: summaryRaw.total_trades,
-        marginHealth: summaryRaw.USDT,
+        marginHealth: 100 - summaryRaw.USDT,
         maxDrawdown: summaryRaw.max_drawdown_abs,
       };
 
@@ -197,9 +197,9 @@ function Home() {
     if (hasRunA.current) return;
     hasRunA.current = true;
 
-    const initialize = () => {
+    const initialize = async () => {
       try {
-        api.post("/");
+        await api.post("/");
         setIsInitialized(true);
       } catch (error) {
         // If it fails, we reset hasRun so a retry could potentially happen
@@ -216,6 +216,7 @@ function Home() {
 
     handleStatus();
     settingData();
+
     // if (botStatus == "Online") {
     //   settingData();
     // }
