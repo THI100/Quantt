@@ -1,17 +1,67 @@
 import React, { useEffect, useState } from "react";
 import "../localassets/Resume.css";
+import { getSummary } from "../../../api/services/Info";
+import { getPositions } from "../../../api/services/Positions";
+
+interface Data {
+  summary: { totalTrades: number; netProfit: number };
+  bestWorst: { best: number; worst: number };
+  winRate: number;
+  holdTime: number;
+  maxDrawdown: number;
+  sharpe: number;
+  streaks: { winning: number; losing: number };
+}
 
 export default function Resume() {
-  // Mock state - in a real app, you'd fetch from your @r_route endpoints
-  const [data, setData] = useState({
-    summary: { totalTrades: 154, netProfit: "+$12,450.00" },
-    bestWorst: { best: "+$1,200", worst: "-$450" },
-    winRate: "68.5%",
-    holdTime: "4h 22m",
-    maxDrawdown: "4.2%",
-    sharpe: "2.1",
-    streaks: { winning: 8, losing: 2 },
+  const [data, setData] = useState<Data>({
+    summary: { totalTrades: 0, netProfit: 0 },
+    bestWorst: { best: 0, worst: 0 },
+    winRate: 0,
+    holdTime: 0,
+    maxDrawdown: 0,
+    sharpe: 0,
+    streaks: { winning: 0, losing: 0 },
   });
+
+  const handleRefresh = async () => {
+    try {
+      // 1. Fetch raw data
+      const summaryRaw = await getSummary();
+      const positionsRaw = await getPositions(1, 30);
+
+      // 2. Access the 'trades' array specifically
+      const trades = positionsRaw?.trades || [];
+      const pnlValues = trades.map((t: any) => t.pnl);
+
+      // 3. Calculate best and worst, if trades is empty, we default to 0
+      const bestPnL = trades.length > 0 ? Math.max(...pnlValues) : 0;
+      const worstPnL = trades.length > 0 ? Math.min(...pnlValues) : 0;
+
+      const mappedData: Data = {
+        summary: {
+          totalTrades: summaryRaw.total_trades.toFixed(2),
+          netProfit: summaryRaw.total_pnl.toFixed(2),
+        },
+        bestWorst: {
+          best: bestPnL.toFixed(2),
+          worst: worstPnL.toFixed(2),
+        },
+        winRate: summaryRaw.win_rate.toFixed(2),
+        holdTime: summaryRaw.avg_hold_minutes.toFixed(2),
+        maxDrawdown: summaryRaw.max_drawdown_abs.toFixed(2),
+        sharpe: summaryRaw.sharpe_ratio.toFixed(2),
+        streaks: {
+          winning: summaryRaw.max_consecutive_wins,
+          losing: summaryRaw.max_consecutive_losses,
+        },
+      };
+
+      setData(mappedData);
+    } catch (error) {
+      console.error("Error mapping dashboard data:", error);
+    }
+  };
 
   return (
     <div className="home-container">
@@ -138,7 +188,9 @@ export default function Resume() {
         </div>
         <div className="control-actions">
           <button className="control-btn restart-btn">Export PDF</button>
-          <button className="control-btn start-btn">Refresh Data</button>
+          <button className="control-btn start-btn" onClick={handleRefresh}>
+            Refresh Data
+          </button>
         </div>
       </div>
     </div>

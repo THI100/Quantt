@@ -62,6 +62,6 @@ def blp(market: str, side: str, amount: float):
             if price_deviation > 0.005:
                 # Move price 0.1% offset from Last Price instead of deep book level
                 offset = 0.001 if side == "buy" else -0.001
-                chosen_price = last_price * (1 - offset)
+                chosen_price = lp * (1 - offset)
 
     return chosen_price
