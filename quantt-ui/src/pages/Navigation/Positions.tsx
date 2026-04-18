@@ -1,64 +1,110 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import api from "../../../api/axiosInstance.js";
 import "../localassets/Positions.css";
 
 export default function Positions() {
   const [deleteForm, setDeleteForm] = useState({ id: "", symbol: "" });
   const [selectForm, setSelectForm] = useState({ symbol: "" });
+  const [positions, setPositions] = useState([]);
 
-  // Simulated state for infinite scroll
-  const [positions, setPositions] = useState([
-    {
-      id: 1,
-      coin: "BTC/USDT",
-      price: "64,230.50",
-      pnl: "+12.4%",
-      tp: "68,000",
-      sl: "61,000",
-      time: "2026-04-14 10:20",
-    },
-  ]);
+  // Pagination & Loading States
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const bottom =
-      e.currentTarget.scrollHeight - e.currentTarget.scrollTop ===
-      e.currentTarget.clientHeight;
-    if (bottom) {
-      console.log("Fetching next page...");
+  /**
+   * Fetch Positions Logic
+   * Wrapped in useCallback to prevent unnecessary re-renders
+   */
+  const fetchPositions = useCallback(async (pageNum, symbol = "") => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get("/report/trades", {
+        params: {
+          symbol: symbol || undefined,
+          page: pageNum,
+          page_size: 20,
+        },
+      });
+
+      const newTrades = response.data.trades || [];
+      const totalPages = response.data.pages || 1;
+
+      setPositions((prev) =>
+        pageNum === 1 ? newTrades : [...prev, ...newTrades],
+      );
+      setHasMore(pageNum < totalPages);
+    } catch (err) {
+      setError("Failed to load positions.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // 2. Initial load useEffect: Only runs ONCE on mount
+  useEffect(() => {
+    fetchPositions(1);
+  }, [fetchPositions]);
+
+  /**
+   * Infinite Scroll Logic
+   */
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Trigger when user is 10px from the bottom
+    const isNearBottom = scrollHeight - scrollTop <= clientHeight + 10;
+
+    if (isNearBottom && hasMore && !loading) {
+      const nextPage = page + 1;
+      setPage(nextPage);
+      fetchPositions(nextPage, selectForm.symbol);
     }
   };
 
-  const handleDelete = async (e: React.FormEvent) => {
+  /**
+   * Delete Logic
+   */
+  const handleDelete = async (e) => {
     e.preventDefault();
-    console.log(
-      `Calling DELETE /positions/${deleteForm.symbol} with ID: ${deleteForm.id}`,
-    );
+    if (!deleteForm.id || !deleteForm.symbol)
+      return alert("Please provide ID and Symbol");
+
     try {
-      const deletionRaw = await api.delete("/positions", {
+      await api.delete("/positions", {
         params: { symbol: deleteForm.symbol, id: deleteForm.id },
       });
-      console.log("Status:", deletionRaw);
-    } catch (error) {
-      console.error(
-        `Error happened with Deletion of ${deleteForm.symbol} and ${deleteForm.id}:`,
-        error,
+      // Remove from UI upon success
+      setPositions(
+        positions.filter((p) => p.id.toString() !== deleteForm.id.toString()),
       );
+      setDeleteForm({ id: "", symbol: "" });
+      alert("Position terminated successfully.");
+    } catch (error) {
+      console.error("Deletion error:", error);
+      alert("Failed to terminate position.");
     }
   };
 
-  const handleSelection = async (e: React.FormEvent) => {
+  /**
+   * Search Logic
+   */
+  const handleSelection = async (e) => {
     e.preventDefault();
-    try {
-      const positionsRaw = await api.get("/positions", {
-        params: { symbol: selectForm.symbol },
-      });
-    } catch (error) {
-      console.error("Error happened with selection of symbol:", error);
-    }
+    setPage(1);
+    setHasMore(true);
+    fetchPositions(1, selectForm.symbol);
   };
 
   return (
-    <div className="home-container" onScroll={handleScroll}>
+    <div
+      className="home-container"
+      onScroll={handleScroll}
+      style={{ overflowY: "auto", height: "100vh" }}
+    >
       {/* Superior Region: Position Management Form */}
       <div className="management-section">
         <div className="delete-card">
@@ -99,7 +145,8 @@ export default function Positions() {
 
       <div className="section-header">
         <h2 className="section-title">Historical Positions</h2>
-        <form className="delete-inline-form" onSubmit={handleDelete}>
+        {/* Fixed: changed onSubmit to handleSelection and corrected the onChange target */}
+        <form className="delete-inline-form" onSubmit={handleSelection}>
           <div className="input-field">
             <label>Symbol</label>
             <input
@@ -107,12 +154,12 @@ export default function Positions() {
               placeholder="BTC/USDT"
               value={selectForm.symbol}
               onChange={(e) =>
-                setDeleteForm({ ...selectForm, symbol: e.target.value })
+                setSelectForm({ ...selectForm, symbol: e.target.value })
               }
             />
           </div>
-          <button type="submit" className="control-btn">
-            Search
+          <button type="submit" className="control-btn" disabled={loading}>
+            {loading ? "Searching..." : "Search"}
           </button>
         </form>
       </div>
@@ -126,42 +173,64 @@ export default function Positions() {
       </div>
 
       <div className="infinite-scroll-area">
-        {positions.map((pos) => (
-          <div key={pos.id} className="position-row-card">
-            <div className="pos-asset">
-              <span className="trade-type highlight-silver">Spot</span>
-              <span className="asset-name">{pos.coin}</span>
-              <span className="pos-id-tag">#{pos.id}</span>
-            </div>
+        {positions && positions.length > 0
+          ? positions.map((pos, index) => (
+              // Using a composite key because IDs aren't in your sample JSON
+              <div
+                key={`${pos.symbol}-${pos.entry_time}-${index}`}
+                className="position-row-card"
+              >
+                <div className="pos-asset">
+                  <span className="trade-type highlight-silver">
+                    {pos.side.toUpperCase()}
+                  </span>
+                  <span className="asset-name">{pos.symbol}</span>
+                </div>
 
-            <div className="pos-price">
-              <span className="label-mobile">Entry:</span>
-              <span className="mono-value"> ${pos.price}</span>
-            </div>
+                <div className="pos-price">
+                  <span className="label-mobile">Entry:</span>
+                  <span className="mono-value">
+                    {" "}
+                    ${pos.entry_price.toLocaleString()}
+                  </span>
+                </div>
 
-            <div className="pos-targets">
-              <div className="target-group">
-                <span className="tp-text">TP: {pos.tp}</span>
-                <span className="sl-text">SL: {pos.sl}</span>
+                <div className="pos-targets">
+                  <div className="target-group">
+                    {/* Using exit_price as a placeholder since sample lacks TP/SL */}
+                    <span className="tp-text">Exit: {pos.exit_price}</span>
+                    <span className="sl-text">
+                      Hold: {Math.round(pos.hold_time_sec)}s
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  className={`pos-pnl ${pos.pnl >= 0 ? "positive" : "negative"}`}
+                >
+                  {pos.pnl >= 0 ? `+${pos.pnl.toFixed(2)}` : pos.pnl.toFixed(2)}
+                </div>
+
+                <div className="pos-time">
+                  {new Date(pos.entry_time).toLocaleString([], {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
+                </div>
               </div>
-            </div>
-
-            <div
-              className={`pos-pnl ${pos.pnl.startsWith("+") ? "positive" : "negative"}`}
-            >
-              {pos.pnl}
-            </div>
-
-            <div className="pos-time">{pos.time}</div>
-          </div>
-        ))}
+            ))
+          : !loading && (
+              <div className="empty-state">No historical trades found.</div>
+            )}
       </div>
 
       <div className="control-bar">
         <div className="control-status">
-          <div className="status-indicator pulse highlight-purple-bg"></div>
+          <div
+            className={`status-indicator ${loading ? "pulse highlight-purple-bg" : ""}`}
+          ></div>
           <span className="status-text">
-            Syncing <strong>History</strong>...
+            {loading ? "Syncing History..." : "System Ready"}
           </span>
         </div>
         <div className="control-actions">

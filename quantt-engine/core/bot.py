@@ -95,15 +95,19 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                self.client.fetch_open_order(id, symbol)
+                print("hi2")
+                return self.client.fetch_order(id, symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open order: {id}, {symbol}"
                 )
+                return []
         else:
             try:
-                self.client.fetch_open_orders(symbol)
+                print("hi")
+                return self.client.fetch_orders(symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open orders of {symbol}"
                 )
+                return []

@@ -23,16 +23,6 @@ from reporting_portfolio.static import (
 r_route = APIRouter()
 bot = TradingBot()
 
-# ------------------------------------------------------------------ #
-#  Helper                                                              #
-# ------------------------------------------------------------------ #
-
-
-def _require_running():
-    """Raise 400 if the bot is not active."""
-    if not bot.is_running:
-        raise HTTPException(status_code=400, detail="Bot is not running.")
-
 
 # ------------------------------------------------------------------ #
 #  Positions                                                           #
@@ -42,7 +32,6 @@ def _require_running():
 @r_route.get("/positions")
 def get_position(symbol: str, id: Optional[str] = None):
     """Return details for a single open position."""
-    _require_running()
     position = bot.fet_order(symbol, id)
     if not position:
         raise HTTPException(status_code=404, detail=f"No open position for '{symbol}'.")
@@ -52,7 +41,6 @@ def get_position(symbol: str, id: Optional[str] = None):
 @r_route.delete("/positions")
 def close_position(symbol: str, id: str):
     """Force-close a position by symbol, sending a market order."""
-    _require_running()
     try:
         bot.close_order(symbol, id)
     except Exception as e:
