@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../localassets/Api.css";
+import api from "../../../api/axiosInstance.js";
 
 export default function Api() {
   const [apiData, setApiData] = useState({
@@ -7,6 +8,71 @@ export default function Api() {
     apiKey: "",
     apiSecret: "",
   });
+
+  const [status, setStatus] = useState("Ready");
+  const hasRun = useRef(false);
+
+  const handleSend = async () => {
+    // Basic validation to prevent empty sends
+    if (!apiData.apiKey || !apiData.apiSecret) {
+      setStatus("Error: Fields Missing");
+      return;
+    }
+
+    try {
+      setStatus("Updating...");
+
+      // We map camelCase (frontend) to snake_case (backend Pydantic model)
+      const payload = {
+        api_key: apiData.apiKey,
+        api_secret: apiData.apiSecret,
+        exchange: apiData.exchange,
+      };
+
+      const response = await api.patch("/config/api", payload);
+
+      console.log("Success:", response.data);
+      setStatus("Credentials Updated");
+
+      setApiData({ ...apiData, apiKey: "", apiSecret: "" });
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || "Update Failed";
+      console.error("Backend Error:", errorMsg);
+      setStatus(`Error: ${errorMsg}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Are you sure you want to delete the configuration?"))
+      return;
+
+    try {
+      setStatus("Deleting...");
+      await api.delete("config/api");
+      setApiData({ exchange: "binance", apiKey: "", apiSecret: "" });
+      setStatus("Deleted");
+    } catch (error) {
+      console.error("Error as deleting the .env file:", error);
+      setStatus("Delete Failed");
+    }
+  };
+
+  // useEffect cannot be directly async. Wrapping the logic inside.
+  useEffect(() => {
+    if (hasRun.current) return;
+
+    const initApi = async () => {
+      try {
+        const answer = await api.post("/config/api");
+        console.log("Status on api creation:", answer);
+      } catch (error) {
+        console.error("Error on api .env creation:", error);
+      }
+    };
+
+    initApi();
+    hasRun.current = true;
+  }, []);
 
   return (
     <div className="home-container">
@@ -27,7 +93,7 @@ export default function Api() {
             </p>
           </div>
 
-          <form className="api-form">
+          <form className="api-form" onSubmit={(e) => e.preventDefault()}>
             <div className="input-group">
               <label htmlFor="target-exchange">Target Exchange</label>
               <select
@@ -75,15 +141,23 @@ export default function Api() {
             <div className="warning-box">
               <span className="warning-text">
                 Ensure your API keys have "Spot/Futures Trading" enabled but
-                "Withdrawals" DISABLED.
+                "Withdrawals" <strong>DISABLED</strong>.
               </span>
             </div>
 
             <div className="api-actions">
-              <button type="button" className="neutral-btn grey-btn">
-                Test Connection
+              <button
+                type="button"
+                className="neutral-btn grey-btn"
+                onClick={handleDelete}
+              >
+                Delete file
               </button>
-              <button type="button" className="neutral-btn confirm-btn">
+              <button
+                type="button"
+                className="neutral-btn confirm-btn"
+                onClick={handleSend}
+              >
                 Save to .env
               </button>
             </div>
@@ -96,10 +170,12 @@ export default function Api() {
         <div className="control-status">
           <div
             className="status-indicator"
-            style={{ background: "#888" }}
+            style={{
+              background: status.includes("Error") ? "#ff4d4d" : "#00ff88",
+            }}
           ></div>
           <span className="status-text silver-text">
-            Encryption: <strong>Active</strong>
+            Encryption: <strong>{status}</strong>
           </span>
         </div>
       </div>
