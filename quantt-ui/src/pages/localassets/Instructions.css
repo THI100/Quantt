@@ -1,0 +1,142 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700&display=swap");
+
+/* ─── Documentation Layout ───────────────────────────────────────────────── */
+
+.docs-wrapper {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 40px;
+    margin-top: 24px;
+    align-items: start;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────────────────── */
+
+.docs-sidebar {
+    position: sticky;
+    top: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.group-label {
+    font-size: 10px;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 700;
+}
+
+.nav-item {
+    font-size: 13px;
+    color: #888;
+    text-decoration: none;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    padding-left: 12px;
+}
+
+.nav-item:hover {
+    color: #c0c0c0;
+    border-left-color: #555;
+}
+
+.nav-item.active {
+    color: #2563eb; /* Deep Blue Active State */
+    border-left-color: #2563eb;
+    font-weight: 500;
+}
+
+/* ─── Content Area ───────────────────────────────────────────────────────── */
+
+.docs-content {
+    background: #0e0e0e;
+    border: 1px solid #1e1e1e;
+    border-radius: 16px;
+    padding: 48px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.doc-section {
+    margin-bottom: 48px;
+}
+
+.doc-h3 {
+    font-family: "Syne", sans-serif;
+    font-size: 18px;
+    color: #f5f0e8;
+    margin-bottom: 16px;
+    letter-spacing: 0.05em;
+}
+
+.doc-p {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #999;
+    margin-bottom: 24px;
+}
+
+/* ─── Specialized Callouts ──────────────────────────────────────────────── */
+
+.info-callout {
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    align-items: center;
+}
+
+.highlight-blue-bg {
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    color: #3b82f6;
+}
+
+.callout-icon {
+    font-size: 18px;
+}
+
+.code-block {
+    background: #000;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #222;
+    color: #c8f04a; /* Neon Green Code */
+    font-size: 12px;
+    overflow-x: auto;
+    margin: 20px 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+    .docs-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .docs-sidebar {
+        position: static;
+        flex-direction: row;
+        overflow-x: auto;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #1e1e1e;
+    }
+
+    .sidebar-group {
+        flex-direction: row;
+        white-space: nowrap;
+    }
+
+    .docs-content {
+        padding: 24px;
+    }
+}

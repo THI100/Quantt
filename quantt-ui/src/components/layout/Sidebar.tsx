@@ -222,7 +222,7 @@ const navItems: NavItem[] = [
   { label: "Log", href: "/Log", icon: <IconLog /> },
   // Management
   { label: "Api", href: "/Management/Api", icon: <IconApi /> },
-  { label: "Docs", href: "/Management/Docs", icon: <IconDocs /> },
+  { label: "Docs", href: "/Management/Instructions", icon: <IconDocs /> },
   { label: "Settings", href: "/Management/Settings", icon: <IconSettings /> },
 ];
 

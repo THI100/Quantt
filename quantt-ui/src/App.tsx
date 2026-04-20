@@ -13,7 +13,7 @@ import Graphs from "./pages/Navigation/Graphs";
 import Backtesting from "./pages/Navigation/Backtesting";
 import Log from "./pages/Navigation/Log";
 import Api from "./pages/Management/Api";
-import Docs from "./pages/Management/Docs";
+import Instructions from "./pages/Management/Instructions";
 import Settings from "./pages/Management/Settings";
 
 function App() {
@@ -31,7 +31,7 @@ function App() {
             <Route path="/Backtesting" element={<Backtesting />} />
             <Route path="/Log" element={<Log />} />
             <Route path="/Management/Api" element={<Api />} />
-            <Route path="/Management/Docs" element={<Docs />} />
+            <Route path="/Management/Instructions" element={<Instructions />} />
             <Route path="/Management/Settings" element={<Settings />} />
           </Routes>
         </main>

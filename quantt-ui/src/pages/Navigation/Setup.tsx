@@ -4,22 +4,22 @@ import api from "../../../api/axiosInstance.js";
 
 export default function Setup() {
   const [trading, setTrading] = useState({
-    is_demo_enabled: true,
-    timeframe: "15m",
-    exchange: "binance",
+    is_demo_enabled: false,
+    timeframe: "",
+    exchange: "",
     future_spot: "future",
-    list_of_interest: ["BTC/USDT", "ETH/USDT", "BNB/USDT"],
-    list_of_parameters: ["MACD", "RSI", "EMA", "ATR"],
+    list_of_interest: [],
+    list_of_parameters: [],
   });
 
   const [risk, setRisk] = useState({
-    risk_reward_ratio: 2.0,
-    acceptable_confidence: 40,
-    atr_multiplier: 0.4,
-    maximum_loss: 0.15,
-    percentage_of_capital_per_trade: 0.02,
-    leverage: 50,
-    cross_isolated: "cross",
+    risk_reward_ratio: 0,
+    acceptable_confidence: 0,
+    atr_multiplier: 0,
+    maximum_loss: 0,
+    percentage_of_capital_per_trade: 0,
+    leverage: 1,
+    cross_isolated: "",
   });
 
   // Fixed the immediate execution bug and the messy parameter logic
