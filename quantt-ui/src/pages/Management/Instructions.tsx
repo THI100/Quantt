@@ -34,44 +34,80 @@ export default function Instructions() {
         {/* Content Area */}
         <main className="docs-content">
           <section id="setup" className="doc-section">
-            <h3 className="doc-h3">01. Initialization</h3>
+            <h3 className="doc-h3">01. Informations</h3>
             <p className="doc-p">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-              enim ad minim veniam, quis nostrud exercitation ullamco laboris
-              nisi ut aliquip ex ea commodo consequat.
+              This app is in a version of pre-release, meaning this software may
+              not have the full capacity it was designed to have, may have bugs
+              and "glitches" on a few pages or metrics.
+            </p>
+            <p className="doc-p">
+              As you may have noticed, some pages are empty or features are
+              inexistent, those are still on development, and might appear on
+              the next versions, such as 0.2, 0.3 ... some of the features that
+              are coming by are
+              <b> backtesting, log, AI powered features, and others... </b>
+            </p>
+            <p className="doc-p">
+              Follow the Instructions below for more informations on how to
+              continue, setup and make usage of this bot.
+            </p>
+          </section>
+
+          <section id="init" className="doc-section">
+            <h3 className="doc-h3">02. Initialization</h3>
+            <p className="doc-p">
+              <div className="info-callout highlight-blue-bg">
+                <span className="callout-icon">ℹ</span>
+                <p>
+                  Pro-Tip II: Ensure the backend/engine is online and running on
+                  localhost:8000.
+                </p>
+              </div>
+              <li>
+                Initialize as dev or make usage of the .exe programs, located on
+                the dist folder.
+              </li>
+              <li>
+                Set up your API and share your key and secret on the API page by
+                clicking on the sidebar. For more information follow section 3.
+              </li>
+              <li>Select the Setup page by clicking on the sidebar.</li>
+              <li>
+                Insert your configurations for trading and risk, there will be
+                some initial values.
+              </li>
+              <li>
+                Now go to Home page and click on the start button and relax...
+              </li>
             </p>
             <div className="info-callout highlight-blue-bg">
               <span className="callout-icon">ℹ</span>
               <p>
-                Pro-Tip: Ensure your system clock is synchronized with UTC time
-                for accurate trade execution.
+                Pro-Tip I: Ensure your system clock is synchronized with UTC
+                time for accurate trade execution.
               </p>
             </div>
           </section>
 
           <section id="api" className="doc-section">
-            <h3 className="doc-h3">02. API Permissions</h3>
+            <h3 className="doc-h3">03. API Permissions</h3>
             <p className="doc-p">
-              Duis aute irure dolor in reprehenderit in voluptate velit esse
-              cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-              cupidatat non proident, sunt in culpa qui officia deserunt mollit
-              anim id est laborum.
+              Following for more instructions, for the api setup, you will need
+              to ensure you have an API key and API secret, besides the exchange
+              you want to use. Insert and send them to the backend, now it
+              should all work normal.
             </p>
-            <pre className="code-block">
-              {`// Environment Variables Example\nAPI_KEY=your_key_here\nAPI_SECRET=your_secret_here`}
-            </pre>
           </section>
 
-          <section id="risk" className="doc-section">
-            <h3 className="doc-h3">03. Understanding Drawdown</h3>
+          {/*<section id="risk" className="doc-section">
+            <h3 className="doc-h3">04. Understanding Drawdown</h3>
             <p className="doc-p">
               Sed ut perspiciatis unde omnis iste natus error sit voluptatem
               accusantium doloremque laudantium, totam rem aperiam, eaque ipsa
               quae ab illo inventore veritatis et quasi architecto beatae vitae
               dicta sunt explicabo.
             </p>
-          </section>
+          </section>*/}
         </main>
       </div>
 
@@ -83,10 +119,10 @@ export default function Instructions() {
             Reading Mode: <strong>Default</strong>
           </span>
         </div>
-        <div className="control-actions">
+        {/*<div className="control-actions">
           <button className="control-btn grey-btn">Print Manual</button>
           <button className="control-btn start-btn">Contact Support</button>
-        </div>
+        </div>*/}
       </div>
     </div>
   );
