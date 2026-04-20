@@ -54,8 +54,8 @@ export default function Setup() {
         if (tradingRes.data) setTrading(tradingRes.data);
         if (riskRes.data) setRisk(riskRes.data);
       } catch (error) {
-        stat.current = false;
         console.error("Error loading initial parameters:", error);
+        stat.current = false;
       }
     };
 
@@ -139,18 +139,25 @@ export default function Setup() {
             <div className="parameter-grid-container">
               <label className="group-label">Parameters for Analysis</label>
               <div className="checkbox-grid">
-                {["MACD", "RSI", "TnK", "EMA", "ATR", "DSCP", "SMR"].map(
-                  (p) => (
-                    <label key={p} className="checkbox-item">
-                      <input
-                        type="checkbox"
-                        checked={trading.list_of_parameters.includes(p)}
-                        onChange={() => handleCheckboxChange(p)}
-                      />
-                      <span>{p}</span>
-                    </label>
-                  ),
-                )}
+                {[
+                  "MACD",
+                  "RSI",
+                  "TnK",
+                  "EMA",
+                  "ATR",
+                  "DSCP",
+                  "SMR",
+                  "Ichimoku",
+                ].map((p) => (
+                  <label key={p} className="checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={trading.list_of_parameters.includes(p)}
+                      onChange={() => handleCheckboxChange(p)}
+                    />
+                    <span>{p}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -181,15 +188,21 @@ export default function Setup() {
                   step="0.1"
                   value={risk.risk_reward_ratio}
                   className="terminal-input"
+                  onChange={(e) =>
+                    setRisk({ ...risk, risk_reward_ratio: e.target.value })
+                  }
                 />
               </div>
               <div className="input-group">
-                <label htmlFor="leverage">Leverage</label>
+                <label htmlFor="leverage">Leverage (x)</label>
                 <input
                   id="leverage"
                   type="number"
                   value={risk.leverage}
                   className="terminal-input"
+                  onChange={(e) =>
+                    setRisk({ ...risk, leverage: e.target.value })
+                  }
                 />
               </div>
             </div>
@@ -203,6 +216,9 @@ export default function Setup() {
                   step="0.01"
                   value={risk.maximum_loss}
                   className="terminal-input"
+                  onChange={(e) =>
+                    setRisk({ ...risk, maximum_loss: e.target.value })
+                  }
                 />
               </div>
               <div className="input-group">
@@ -211,6 +227,9 @@ export default function Setup() {
                   id="margin-type"
                   value={risk.cross_isolated}
                   className="terminal-input"
+                  onChange={(e) =>
+                    setRisk({ ...risk, cross_isolated: e.target.value })
+                  }
                 >
                   <option value="cross">Cross</option>
                   <option value="isolated">Isolated</option>
@@ -229,17 +248,26 @@ export default function Setup() {
                 max="100"
                 value={risk.acceptable_confidence}
                 className="terminal-slider"
+                onChange={(e) =>
+                  setRisk({ ...risk, acceptable_confidence: e.target.value })
+                }
               />
             </div>
 
             <div className="input-group">
-              <label htmlFor="capital-per-trade">Capital Per Trade</label>
+              <label htmlFor="capital-per-trade">Capital Per Trade (%)</label>
               <input
                 id="capital-per-trade"
                 type="number"
                 step="0.01"
                 value={risk.percentage_of_capital_per_trade}
                 className="terminal-input"
+                onChange={(e) =>
+                  setRisk({
+                    ...risk,
+                    percentage_of_capital_per_trade: e.target.value,
+                  })
+                }
               />
             </div>
 
