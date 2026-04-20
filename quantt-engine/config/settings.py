@@ -31,7 +31,7 @@ class TradingConfig(BaseModel):
         "ETC/USDT",
         "LINK/USDT",
     ]  # Field(default_factory=list)
-    list_of_params: list[str] = [
+    list_of_parameters: list[str] = [
         "MACD",
         "RSI",
         "SMR",

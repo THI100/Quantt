@@ -3,26 +3,15 @@ import "../localassets/Setup.css";
 import api from "../../../api/axiosInstance.js";
 
 export default function Setup() {
-  // State for Trading Config
   const [trading, setTrading] = useState({
     is_demo_enabled: true,
     timeframe: "15m",
     exchange: "binance",
     future_spot: "future",
     list_of_interest: ["BTC/USDT", "ETH/USDT", "BNB/USDT"],
-    list_of_parameters: [
-      "MACD",
-      "RSI",
-      "SMR",
-      "TnK",
-      "EMA",
-      "ATR",
-      "DSCP",
-      "SMR",
-    ],
+    list_of_parameters: ["MACD", "RSI", "EMA", "ATR"],
   });
 
-  // State for Risk Config
   const [risk, setRisk] = useState({
     risk_reward_ratio: 2.0,
     acceptable_confidence: 40,
@@ -33,35 +22,45 @@ export default function Setup() {
     cross_isolated: "cross",
   });
 
-  const handleUpdate = async (mode: string) => {
+  // Fixed the immediate execution bug and the messy parameter logic
+  const handleUpdate = (mode: "trading" | "risk") => async () => {
     try {
-      const raw = api.put("/config/${mode}", { params: mode });
+      const payload = mode === "trading" ? trading : risk;
+      await api.put(`/config/${mode}`, payload);
+      console.log(`${mode} configuration updated successfully.`);
     } catch (error) {
-      console.error(
-        "The reason that prevented the system from updating the initial parameters:",
-        error,
-      );
+      console.error(`Failed to update ${mode} parameters:`, error);
     }
   };
 
-  const hasRun = useRef(false);
+  const handleCheckboxChange = (param: string) => {
+    const updatedList = trading.list_of_parameters.includes(param)
+      ? trading.list_of_parameters.filter((p) => p !== param)
+      : [...trading.list_of_parameters, param];
+
+    setTrading({ ...trading, list_of_parameters: updatedList });
+  };
+
+  const stat = useRef(false);
 
   useEffect(() => {
-    if (hasRun.current) return;
+    if (stat.current) return;
 
-    const createProfiles = async (mode: string) => {
+    const fetchConfig = async () => {
       try {
-        const raw = api.get("/config/${mode}");
-        hasRun.current = true;
+        stat.current = true;
+        const tradingRes = await api.get("/config/trading");
+        const riskRes = await api.get("/config/risk");
+        if (tradingRes.data) setTrading(tradingRes.data);
+        if (riskRes.data) setRisk(riskRes.data);
       } catch (error) {
-        console.error(
-          "The reason that prevented the system from loading the initial parameters:",
-          error,
-        );
-        hasRun.current = false;
+        stat.current = false;
+        console.error("Error loading initial parameters:", error);
       }
     };
-  });
+
+    fetchConfig();
+  }, []); // Empty array ensures this only runs once
 
   return (
     <div className="home-container">
@@ -71,7 +70,7 @@ export default function Setup() {
       </div>
 
       <div className="setup-grid">
-        {/* Panel 1: Trading Configuration (Blue Theme) */}
+        {/* Panel 1: Trading Configuration */}
         <div className="config-panel highlight-blue-border">
           <div className="panel-header">
             <span className="panel-icon blue-text">◈</span>
@@ -80,10 +79,9 @@ export default function Setup() {
 
           <form className="setup-form">
             <div className="input-group">
-              <label htmlFor="execution-mode">Execution Mode</label>
+              <label>Execution Mode</label>
               <div className="toggle-wrapper">
                 <input
-                  id="execution-mode"
                   type="checkbox"
                   checked={trading.is_demo_enabled}
                   onChange={(e) =>
@@ -99,20 +97,24 @@ export default function Setup() {
 
             <div className="input-row">
               <div className="input-group">
-                <label htmlFor="timeframe">Timeframe</label>
+                <label>Timeframe</label>
                 <input
-                  id="timeframe"
                   type="text"
                   value={trading.timeframe}
                   className="terminal-input"
+                  onChange={(e) =>
+                    setTrading({ ...trading, timeframe: e.target.value })
+                  }
                 />
               </div>
               <div className="input-group">
-                <label htmlFor="market">Market</label>
+                <label>Market</label>
                 <select
-                  id="market"
                   value={trading.future_spot}
                   className="terminal-input"
+                  onChange={(e) =>
+                    setTrading({ ...trading, future_spot: e.target.value })
+                  }
                 >
                   <option value="future">Future</option>
                   <option value="spot">Spot</option>
@@ -121,81 +123,35 @@ export default function Setup() {
             </div>
 
             <div className="input-group">
-              <label htmlFor="exchange-entity">Exchange Entity</label>
-              <select
-                id="exchange-entity"
-                value={trading.exchange}
-                className="terminal-input"
-              >
-                <option value="binance">Binance</option>
-                <option value="bybit">Bybit</option>
-                <option value="okx">OKX</option>
-              </select>
-            </div>
-
-            <div className="input-group">
-              <label htmlFor="assets-of-interest">
-                Assets of Interest (Comma separated)
-              </label>
+              <label>Assets (Comma separated)</label>
               <textarea
-                id="assets-of-interest"
                 className="terminal-input"
-                defaultValue={trading.list_of_interest.join(", ")}
+                value={trading.list_of_interest.join(", ")}
+                onChange={(e) =>
+                  setTrading({
+                    ...trading,
+                    list_of_interest: e.target.value.split(", "),
+                  })
+                }
               />
             </div>
 
-            <div className="">
-              <label htmlFor="configuration-of-analysis">
-                Parameters for Analysis
-              </label>
-              <input
-                id="macd"
-                type="checkbox"
-                value="MACD"
-                className="macd_check"
-              />
-              <input
-                id="ichimoku"
-                type="checkbox"
-                value="Ichimoku"
-                className="ichimoku_check"
-              />
-              <input
-                id="rsi"
-                type="checkbox"
-                value="RSI"
-                className="rsi_check"
-              />
-              <input
-                id="tnk"
-                type="checkbox"
-                value="TnK"
-                className="tnk_check"
-              />
-              <input
-                id="ema"
-                type="checkbox"
-                value="EMA"
-                className="ema_check"
-              />
-              <input
-                id="atr"
-                type="checkbox"
-                value="ATR"
-                className="atr_check"
-              />
-              <input
-                id="dcsp"
-                type="checkbox"
-                value="DCSP"
-                className="dscp_check"
-              />
-              <input
-                id="smr"
-                type="checkbox"
-                value="SMR"
-                className="smr_check"
-              />
+            <div className="parameter-grid-container">
+              <label className="group-label">Parameters for Analysis</label>
+              <div className="checkbox-grid">
+                {["MACD", "RSI", "TnK", "EMA", "ATR", "DSCP", "SMR"].map(
+                  (p) => (
+                    <label key={p} className="checkbox-item">
+                      <input
+                        type="checkbox"
+                        checked={trading.list_of_parameters.includes(p)}
+                        onChange={() => handleCheckboxChange(p)}
+                      />
+                      <span>{p}</span>
+                    </label>
+                  ),
+                )}
+              </div>
             </div>
 
             <button

@@ -213,10 +213,6 @@ function Home() {
     handleStatus();
     settingData();
 
-    // if (botStatus == "Online") {
-    //   settingData();
-    // }
-
     hasRun.current = true;
   }, []);
 

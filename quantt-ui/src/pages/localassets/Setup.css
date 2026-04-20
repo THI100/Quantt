@@ -120,6 +120,56 @@
     background: #c0c0c0 !important;
 }
 
+/* ─── Parameter Analysis Grid ───────────────────────────────────────────── */
+
+.parameter-grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: #0a0a0a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+}
+
+.group-label {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-family: "DM Mono", monospace;
+    font-size: 12px;
+    color: #f5f0e8;
+}
+
+.checkbox-item input[type="checkbox"] {
+    accent-color: #2563eb;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+}
+
+.checkbox-item span {
+    transition: color 0.2s;
+}
+
+.checkbox-item:hover span {
+    color: #2563eb;
+}
+
 /* ─── Responsive ────────────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
