@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../localassets/Setup.css";
+import api from "../../../api/axiosInstance.js";
 
 export default function Setup() {
   // State for Trading Config
@@ -9,6 +10,16 @@ export default function Setup() {
     exchange: "binance",
     future_spot: "future",
     list_of_interest: ["BTC/USDT", "ETH/USDT", "BNB/USDT"],
+    list_of_parameters: [
+      "MACD",
+      "RSI",
+      "SMR",
+      "TnK",
+      "EMA",
+      "ATR",
+      "DSCP",
+      "SMR",
+    ],
   });
 
   // State for Risk Config
@@ -20,6 +31,36 @@ export default function Setup() {
     percentage_of_capital_per_trade: 0.02,
     leverage: 50,
     cross_isolated: "cross",
+  });
+
+  const handleUpdate = async (mode: string) => {
+    try {
+      const raw = api.put("/config/${mode}", { params: mode });
+    } catch (error) {
+      console.error(
+        "The reason that prevented the system from updating the initial parameters:",
+        error,
+      );
+    }
+  };
+
+  const hasRun = useRef(false);
+
+  useEffect(() => {
+    if (hasRun.current) return;
+
+    const createProfiles = async (mode: string) => {
+      try {
+        const raw = api.get("/config/${mode}");
+        hasRun.current = true;
+      } catch (error) {
+        console.error(
+          "The reason that prevented the system from loading the initial parameters:",
+          error,
+        );
+        hasRun.current = false;
+      }
+    };
   });
 
   return (
@@ -103,9 +144,64 @@ export default function Setup() {
               />
             </div>
 
+            <div className="">
+              <label htmlFor="configuration-of-analysis">
+                Parameters for Analysis
+              </label>
+              <input
+                id="macd"
+                type="checkbox"
+                value="MACD"
+                className="macd_check"
+              />
+              <input
+                id="ichimoku"
+                type="checkbox"
+                value="Ichimoku"
+                className="ichimoku_check"
+              />
+              <input
+                id="rsi"
+                type="checkbox"
+                value="RSI"
+                className="rsi_check"
+              />
+              <input
+                id="tnk"
+                type="checkbox"
+                value="TnK"
+                className="tnk_check"
+              />
+              <input
+                id="ema"
+                type="checkbox"
+                value="EMA"
+                className="ema_check"
+              />
+              <input
+                id="atr"
+                type="checkbox"
+                value="ATR"
+                className="atr_check"
+              />
+              <input
+                id="dcsp"
+                type="checkbox"
+                value="DCSP"
+                className="dscp_check"
+              />
+              <input
+                id="smr"
+                type="checkbox"
+                value="SMR"
+                className="smr_check"
+              />
+            </div>
+
             <button
               type="button"
               className="control-btn restart-btn full-width"
+              onClick={handleUpdate("trading")}
             >
               Patch Engine
             </button>
@@ -207,7 +303,12 @@ export default function Setup() {
           </span>
         </div>
         <div className="control-actions">
-          <button className="control-btn stop-btn">Reset to Defaults</button>
+          <button
+            className="control-btn stop-btn"
+            onClick={handleUpdate("risk")}
+          >
+            Reset to Defaults
+          </button>
         </div>
       </div>
     </div>
