@@ -11,7 +11,8 @@ import {
 
 interface DataPoint {
   timestamp: string;
-  equity: number;
+  drawdown_abs: number;
+  drawdown_pct: number;
 }
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const abs = payload.find((p: any) => p.dataKey === "drawdown_abs");
+    const pct = payload.find((p: any) => p.dataKey === "drawdown_pct");
     return (
       <div
         style={{
@@ -32,17 +35,24 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           color: "#f5f0e8",
         }}
       >
-        <p style={{ color: "#555", marginBottom: 2 }}>{label}</p>
-        <p style={{ color: "#2563eb" }}>
-          Equity: <strong>{payload[0].value.toFixed(4)}</strong>
-        </p>
+        <p style={{ color: "#555", marginBottom: 4 }}>{label}</p>
+        {abs && (
+          <p style={{ color: "#ef4444" }}>
+            Abs: <strong>{abs.value.toFixed(4)}</strong>
+          </p>
+        )}
+        {pct && (
+          <p style={{ color: "#f97316" }}>
+            Pct: <strong>{pct.value.toFixed(2)}%</strong>
+          </p>
+        )}
       </div>
     );
   }
   return null;
 };
 
-export default function EquityCurveChart({ data }: Props) {
+export default function DrawdownChart({ data }: Props) {
   const formatted = data.map((d) => ({
     ...d,
     label: new Date(d.timestamp).toLocaleDateString("en-US", {
@@ -58,9 +68,9 @@ export default function EquityCurveChart({ data }: Props) {
         margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
       >
         <defs>
-          <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+          <linearGradient id="ddGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#ef4444" stopOpacity={0.25} />
+            <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke="#1a1a1a" vertical={false} />
@@ -89,12 +99,22 @@ export default function EquityCurveChart({ data }: Props) {
         <Tooltip content={<CustomTooltip />} />
         <Area
           type="monotone"
-          dataKey="equity"
-          stroke="#2563eb"
+          dataKey="drawdown_abs"
+          stroke="#ef4444"
           strokeWidth={2}
-          fill="url(#equityGrad)"
+          fill="url(#ddGrad)"
           dot={false}
-          activeDot={{ r: 4, fill: "#2563eb", stroke: "#111", strokeWidth: 2 }}
+          activeDot={{ r: 4, fill: "#ef4444", stroke: "#111", strokeWidth: 2 }}
+        />
+        <Area
+          type="monotone"
+          dataKey="drawdown_pct"
+          stroke="#f97316"
+          strokeWidth={1.5}
+          fill="none"
+          dot={false}
+          strokeDasharray="4 3"
+          activeDot={{ r: 3, fill: "#f97316", stroke: "#111", strokeWidth: 2 }}
         />
       </AreaChart>
     </ResponsiveContainer>

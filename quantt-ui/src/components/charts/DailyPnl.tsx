@@ -1,17 +1,18 @@
 import React from "react";
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Cell,
 } from "recharts";
 
 interface DataPoint {
-  timestamp: string;
-  equity: number;
+  date: string;
+  pnl: number;
 }
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    const val = payload[0].value;
     return (
       <div
         style={{
@@ -33,8 +35,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         }}
       >
         <p style={{ color: "#555", marginBottom: 2 }}>{label}</p>
-        <p style={{ color: "#2563eb" }}>
-          Equity: <strong>{payload[0].value.toFixed(4)}</strong>
+        <p style={{ color: val >= 0 ? "#22c55e" : "#ef4444" }}>
+          PnL:{" "}
+          <strong>
+            {val >= 0 ? "+" : ""}
+            {val.toFixed(4)}
+          </strong>
         </p>
       </div>
     );
@@ -42,10 +48,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function EquityCurveChart({ data }: Props) {
+export default function DailyPnlChart({ data }: Props) {
   const formatted = data.map((d) => ({
     ...d,
-    label: new Date(d.timestamp).toLocaleDateString("en-US", {
+    label: new Date(d.date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     }),
@@ -53,16 +59,10 @@ export default function EquityCurveChart({ data }: Props) {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart
+      <BarChart
         data={formatted}
         margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
       >
-        <defs>
-          <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
-          </linearGradient>
-        </defs>
         <CartesianGrid stroke="#1a1a1a" vertical={false} />
         <XAxis
           dataKey="label"
@@ -87,16 +87,16 @@ export default function EquityCurveChart({ data }: Props) {
           tickFormatter={(v) => v.toFixed(2)}
         />
         <Tooltip content={<CustomTooltip />} />
-        <Area
-          type="monotone"
-          dataKey="equity"
-          stroke="#2563eb"
-          strokeWidth={2}
-          fill="url(#equityGrad)"
-          dot={false}
-          activeDot={{ r: 4, fill: "#2563eb", stroke: "#111", strokeWidth: 2 }}
-        />
-      </AreaChart>
+        <Bar dataKey="pnl" radius={[3, 3, 0, 0]} maxBarSize={24}>
+          {formatted.map((entry, index) => (
+            <Cell
+              key={index}
+              fill={entry.pnl >= 0 ? "#22c55e" : "#ef4444"}
+              fillOpacity={0.85}
+            />
+          ))}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 }

@@ -1,7 +1,7 @@
 import React from "react";
 import {
-  AreaChart,
-  Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -10,8 +10,8 @@ import {
 } from "recharts";
 
 interface DataPoint {
-  timestamp: string;
-  equity: number;
+  date: string;
+  count: number;
 }
 
 interface Props {
@@ -33,8 +33,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         }}
       >
         <p style={{ color: "#555", marginBottom: 2 }}>{label}</p>
-        <p style={{ color: "#2563eb" }}>
-          Equity: <strong>{payload[0].value.toFixed(4)}</strong>
+        <p style={{ color: "#8a5cf6" }}>
+          Trades: <strong>{payload[0].value}</strong>
         </p>
       </div>
     );
@@ -42,10 +42,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export default function EquityCurveChart({ data }: Props) {
+export default function DailyTradeCountChart({ data }: Props) {
   const formatted = data.map((d) => ({
     ...d,
-    label: new Date(d.timestamp).toLocaleDateString("en-US", {
+    label: new Date(d.date).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
     }),
@@ -53,14 +53,14 @@ export default function EquityCurveChart({ data }: Props) {
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <AreaChart
+      <BarChart
         data={formatted}
         margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
       >
         <defs>
-          <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3} />
-            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
+          <linearGradient id="countGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#8a5cf6" stopOpacity={1} />
+            <stop offset="100%" stopColor="#6d28d9" stopOpacity={0.7} />
           </linearGradient>
         </defs>
         <CartesianGrid stroke="#1a1a1a" vertical={false} />
@@ -83,20 +83,17 @@ export default function EquityCurveChart({ data }: Props) {
           }}
           axisLine={false}
           tickLine={false}
-          width={55}
-          tickFormatter={(v) => v.toFixed(2)}
+          width={35}
+          allowDecimals={false}
         />
         <Tooltip content={<CustomTooltip />} />
-        <Area
-          type="monotone"
-          dataKey="equity"
-          stroke="#2563eb"
-          strokeWidth={2}
-          fill="url(#equityGrad)"
-          dot={false}
-          activeDot={{ r: 4, fill: "#2563eb", stroke: "#111", strokeWidth: 2 }}
+        <Bar
+          dataKey="count"
+          fill="url(#countGrad)"
+          radius={[3, 3, 0, 0]}
+          maxBarSize={24}
         />
-      </AreaChart>
+      </BarChart>
     </ResponsiveContainer>
   );
 }
