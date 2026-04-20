@@ -1,0 +1,26 @@
+{
+  "is_demo_enabled": true,
+  "timeframe": "15m",
+  "exchange": "binance",
+  "future_spot": "future",
+  "list_of_interest": [
+    "BTC/USDT",
+    "ETH/USDT",
+    "BNB/USDT",
+    "XRP/USDT",
+    "ADA/USDT",
+    "AVAX/USDT",
+    "ETC/USDT",
+    "LINK/USDT"
+  ],
+  "list_of_parameters": [
+    "MACD",
+    "SMR",
+    "TnK",
+    "EMA",
+    "ATR",
+    "SMR",
+    "RSI",
+    "DSCP"
+  ]
+}

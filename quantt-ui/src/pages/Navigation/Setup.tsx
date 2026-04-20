@@ -243,7 +243,11 @@ export default function Setup() {
               />
             </div>
 
-            <button type="button" className="control-btn start-btn full-width">
+            <button
+              type="button"
+              className="control-btn start-btn full-width"
+              onClick={handleUpdate("risk")}
+            >
               Patch Risk Profile
             </button>
           </form>
@@ -259,12 +263,7 @@ export default function Setup() {
           </span>
         </div>
         <div className="control-actions">
-          <button
-            className="control-btn stop-btn"
-            onClick={handleUpdate("risk")}
-          >
-            Reset to Defaults
-          </button>
+          <button className="control-btn stop-btn">Reset to Defaults</button>
         </div>
       </div>
     </div>
