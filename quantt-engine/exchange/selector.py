@@ -19,5 +19,10 @@ def get_exchange_client(exchange_name: str = settings.TradingConfig().exchange):
 
         return okx_client
 
+    elif exchange_name == "mexc":
+        from exchange.mexc import mx_client
+
+        return okx_client
+
     else:
         logger.error(f"Unsupported exchange: {exchange_name}")

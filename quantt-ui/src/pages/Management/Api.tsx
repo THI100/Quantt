@@ -4,7 +4,7 @@ import api from "../../../api/axiosInstance.js";
 
 export default function Api() {
   const [apiData, setApiData] = useState({
-    exchange: "binance",
+    exchange: "",
     apiKey: "",
     apiSecret: "",
   });
@@ -49,7 +49,7 @@ export default function Api() {
     try {
       setStatus("Deleting...");
       await api.delete("config/api");
-      setApiData({ exchange: "binance", apiKey: "", apiSecret: "" });
+      setApiData({ exchange: "", apiKey: "", apiSecret: "" });
       setStatus("Deleted");
     } catch (error) {
       console.error("Error as deleting the .env file:", error);
@@ -107,6 +107,7 @@ export default function Api() {
                 <option value="binance">Binance (Global/US)</option>
                 <option value="bybit">Bybit</option>
                 <option value="okx">OKX</option>
+                <option value="mexc">Mexc</option>
               </select>
             </div>
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantt-engine"
-version = "0.0.75"
+version = "0.1.0-set"
 description = "Algorithmic trading engine for crypto markets"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,6 +27,7 @@ dependencies = [
     "pydantic-settings>=2.2.0",
     "fastapi>=0.110.0",
     "uvicorn[standard]>=0.29.0"
+    "pyinstaller>=6.19.0"
 ]
 
 # Explicitly tell setuptools what to bundle

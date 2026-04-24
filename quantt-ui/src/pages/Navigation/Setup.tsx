@@ -97,7 +97,7 @@ export default function Setup() {
 
             <div className="input-row">
               <div className="input-group">
-                <label>Timeframe</label>
+                <label>Timeframe (e.g: 30s, 2m, 15m, 1h)</label>
                 <input
                   type="text"
                   value={trading.timeframe}
@@ -120,6 +120,22 @@ export default function Setup() {
                   <option value="spot">Spot</option>
                 </select>
               </div>
+            </div>
+
+            <div className="input-group">
+              <label>Exchange</label>
+              <select
+                value={trading.exchange}
+                className="terminal-input"
+                onChange={(e) =>
+                  setTrading({ ...trading, exchange: e.target.value })
+                }
+              >
+                <option value="binance">Bianance</option>
+                <option value="bybit">Bybit</option>
+                <option value="okx">OKX</option>
+                <option value="mexc">Mexc</option>
+              </select>
             </div>
 
             <div className="input-group">
@@ -209,7 +225,7 @@ export default function Setup() {
 
             <div className="input-row">
               <div className="input-group">
-                <label htmlFor="max-loss">Max Loss (%)</label>
+                <label htmlFor="max-loss">Max Loss (decimal)</label>
                 <input
                   id="max-loss"
                   type="number"
@@ -255,7 +271,9 @@ export default function Setup() {
             </div>
 
             <div className="input-group">
-              <label htmlFor="capital-per-trade">Capital Per Trade (%)</label>
+              <label htmlFor="capital-per-trade">
+                Capital Per Trade (decimal)
+              </label>
               <input
                 id="capital-per-trade"
                 type="number"
