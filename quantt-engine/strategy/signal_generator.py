@@ -203,23 +203,23 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     # 4. Aggregate results
     # Determine Direction & Confidence
-    direction = "NEUTRAL"
+    direction = "neutral"
     confidence = 0.50
 
     if total_signals > 0:
         if bull_votes > bear_votes:
-            direction = "BUY"
+            direction = "bullish"
             confidence = round(bull_votes / total_signals, 2)
         elif bear_votes > bull_votes:
-            direction = "SELL"
+            direction = "bearish"
             confidence = round(bear_votes / total_signals, 2)
         else:
-            direction = "NEUTRAL"
+            direction = "neutral"
             confidence = 0.50
 
     # Determine Strength and Regime
     # ADX > 25 is typically the threshold for a trending market
-    regime = "TREND" if adx_val >= 25.0 else "RANGE"
+    regime = "trend" if adx_val >= 25.0 else "range"
 
     # Calculate overall strength (using ADX normalized as primary, fallback to ATR ratio)
     strength = round(min(adx_val / 50.0, 1.0), 2) if "adx" in parameters_lower else round(atr_ratio, 2)

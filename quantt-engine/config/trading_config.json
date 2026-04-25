@@ -2,6 +2,7 @@
   "is_demo_enabled": true,
   "timeframe": "15m",
   "exchange": "binance",
+  "execution_order": "limit",
   "future_spot": "future",
   "list_of_interest": [
     "BTC/USDT",
@@ -13,5 +14,13 @@
     "ETC/USDT",
     "LINK/USDT"
   ],
-  "list_of_parameters": ["RSI", "TnK", "EMA", "ATR", "DSCP", "SMR"]
+  "list_of_parameters": [
+    "SMR",
+    "EMA",
+    "ROC",
+    "OBV",
+    "VWAP",
+    "ADX",
+    "ATR"
+  ]
 }

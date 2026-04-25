@@ -19,7 +19,8 @@ TRADING_CONFIG_PATH = CONFIG_DIR / "trading_config.json"
 class TradingConfig(BaseModel):
     is_demo_enabled: bool = True
     timeframe: str = "15m"
-    exchange: str = "binance"
+    exchange: Literal["binance", "bybit", "okx", "mexc"] = "binance"
+    execution_order: Literal["market", "limit"] = "limit"
     future_spot: Literal["future", "spot"] = "future"
     list_of_interest: list[str] = [
         "BTC/USDT",

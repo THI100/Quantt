@@ -4,47 +4,62 @@ import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
-from config import risk
-
+from config import risk, settings
 
 def avaliation_and_place(client):
+    # Load configurations once outside the loop for performance
+    trading_config = settings.TradingConfig()
+    risk_threshold = risk.RiskConfig().acceptable_confidence
+
     open_closed = pm.manage_open_symbols()
-    logger.info(open_closed)
+    logger.info(f"Processing markets: {open_closed}")
 
-    for market, status in open_closed.items():
-        if status == "open":
-            symbol = market
-            data = sg.get_overall_market_signal(symbol)
-            s = data[3]
+    for symbol, status in open_closed.items():
+        if status == "closed":
+            continue
+            logger.info(f"Skipped {symbol}")
 
-            if data[0] < risk.RiskConfig().acceptable_confidence:
-                continue
+        # 1. Market Evaluation
+        market_data = sg.avaliation_of_market(symbol, trading_config.list_of_parameters)
 
-            if s == "neutral":
-                continue
+        confidence = market_data.get("confidence")
+        side = market_data.get("regime")  # Assuming 'regime' or 'direction' maps to 's'
 
-            data2 = sg.get_loss_and_profit_stops(symbol, s)
-
-            ls = data2[0]
-            tp = data2[1]
-            nn = risk_manager.smart_amount(symbol)
-            p = risk_manager.blp(symbol, s, nn)
-
-            # if p <= ls or p >= tp:
-            #     logger.info(
-            #         f"Seems like this possible order would return a error... as its price is bigger than take profit or lower than stop loss."
-            #     )
-            #     continue
-
-            if nn < 0.01:
-                logger.info(
-                    f"Is not feasible or safe to execute a order in {market}, due to low amount and constrains."
-                )
-                continue
-
-            order_manager.order(client, symbol, "limit", s, nn, p, ls, tp)
-
-        else:
+        # Validation Checks
+        if confidence < risk_threshold:
+            logger.debug(f"Skipping {symbol}: Low confidence ({confidence})")
             continue
 
-    logger.info("placement completed")
+        if side == "neutral":
+            continue
+
+        # 2. Risk & Pricing Calculations
+        stop_loss, take_profit, _ = sg.get_loss_and_profit_stops(symbol, side)
+
+        amount = risk_manager.smart_amount(symbol)
+
+        if amount < 0.01:
+            logger.info(
+                f"Execution skipped for {symbol}: Amount {amount} below safety constraints."
+            )
+            continue
+
+        entry_price = risk_manager.blp(symbol, side, amount)
+
+        # 3. Execution
+        try:
+            order_manager.order(
+                client,
+                symbol,
+                trading_config.execution_order,
+                side,
+                amount,
+                entry_price,
+                stop_loss,
+                take_profit
+            )
+            logger.info(f"Order placed successfully for {symbol}")
+        except Exception as e:
+            logger.error(f"Failed to place order for {symbol}: {e}")
+
+    logger.info("Placement cycle completed")

@@ -7,7 +7,8 @@ export default function Setup() {
     is_demo_enabled: false,
     timeframe: "",
     exchange: "",
-    future_spot: "future",
+    execution_order: "",
+    future_spot: "",
     list_of_interest: [],
     list_of_parameters: [],
   });
@@ -135,6 +136,20 @@ export default function Setup() {
                 <option value="bybit">Bybit</option>
                 <option value="okx">OKX</option>
                 <option value="mexc">Mexc</option>
+              </select>
+            </div>
+
+            <div className="input-group">
+              <label>Execution Mode</label>
+              <select
+                value={trading.execution_order}
+                className="terminal-input"
+                onChange={(e) =>
+                  setTrading({ ...trading, execution_order: e.target.value })
+                }
+              >
+                <option value="market">Market</option>
+                <option value="limit">Limit</option>
               </select>
             </div>
 
