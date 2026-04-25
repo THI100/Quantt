@@ -1,6 +1,6 @@
 # Quantt
 
-**Version:** 0.0.121
+**Version:** 0.1.0-set
 **Status:** Active (In Development)
 
 ---
@@ -14,7 +14,7 @@ Quantt is a trading bot designed to measure market conditions and provide a loca
 ## Purpose and Scope
 
 **Problem**
-Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, OKX) with multiple strategies to improve execution accuracy.
+Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, OKX, Mexc) with multiple strategies to improve execution accuracy.
 
 **Target Users**
 

@@ -5,7 +5,59 @@ from loguru import logger
 
 import utils.math as smath
 
-# ---------------- TECHNICAL INDICATORS ----------------#
+# ---------------- TECHNICAL INDICATORS ---------------- #
+
+# ---------- VWAP-indicator ----------#
+
+def vwap(
+    candles: List[List[float]],
+    period: int = 14,
+    use_typical_price: bool = True
+):
+    """
+    Returns:
+        vwap_value: float   # last VWAP value
+        vwap_mean:  float   # mean VWAP over the window
+        vwap_series: list   # full series of VWAP values
+    """
+    if len(candles) < period:
+        logger.warning("Not enough candles to compute VWAP")
+
+    candles = np.asarray(candles, dtype=float)
+
+    # OHLC structure
+    highs = candles[:, 2]
+    lows = candles[:, 3]
+    closes = candles[:, 4]
+    volumes = candles[:, 5]
+
+    if use_typical_price:
+        prices = (highs + lows + closes) / 3
+    else:
+        prices = closes
+
+    pv = prices * volumes
+    vwap_series = []
+
+    # Sliding window calculation (non-vectorized)
+    for i in range(period, len(candles) + 1):
+        window_pv = pv[i-period:i]
+        window_vol = volumes[i-period:i]
+
+        sum_vol = np.sum(window_vol)
+
+        if sum_vol == 0:
+            current_vwap = prices[i-1]
+        else:
+            current_vwap = np.sum(window_pv) / sum_vol
+
+        vwap_series.append(current_vwap)
+
+    vwap_value = float(vwap_series[-1])
+    vwap_mean = float(np.mean(vwap_series))
+
+    return vwap_value, vwap_mean, vwap_series
+
 
 # ----------RSI-indicator----------#
 
@@ -101,8 +153,6 @@ def tenkan_and_kijun(
     return tenkan_sen, kijun_sen
 
 
-# ----------------------------------------------------------------------#
-
 # ---------- MACD-indicator ----------#
 
 
@@ -145,6 +195,10 @@ def macd(
             f"price_mode must be 'close', 'hl2', or 'ohlc4' actual price_mode: {price_mode}"
         )
 
+
+# ---------- EMA-indicator ----------#
+
+
     def ema(series, period):
         alpha = 2.0 / (period + 1.0)
         ema_vals = [series[0]]
@@ -174,8 +228,6 @@ def macd(
     )
 
 
-# ----------------------------------------------------------------------#
-
 # ---------- ATR-indicator ----------#
 
 
@@ -192,7 +244,262 @@ def atr(candles, period=14):
     return sum(trs[-period:]) / period
 
 
-# ----------------------------------------------------------------------#
+# ---------- ROC-indicator ----------#
+
+
+def roc(
+    candles: List[List[float]],
+    period: int = 12
+):
+    """
+    Returns:
+        roc_value: float   # last ROC value (percentage)
+        roc_mean:  float   # mean ROC over the window
+        roc_series: list   # full series of ROC values
+    """
+    if len(candles) < period + 1:
+        logger.warning("Not enough candles to compute ROC")
+        return 0.0, 0.0, []
+
+    candles = np.asarray(candles, dtype=float)
+    closes = candles[:, 4]
+
+    # Calculate ROC: ((Current - Past) / Past) * 100
+    # We slice to align the 'current' with the 'past'
+    current_prices = closes[period:]
+    past_prices = closes[:-period]
+
+    roc_series = ((current_prices - past_prices) / past_prices) * 100
+
+    roc_value = float(roc_series[-1])
+    roc_mean = float(np.mean(roc_series))
+
+    return roc_value, roc_mean, roc_series.tolist()
+
+
+# ---------- ST-indicator ----------#
+
+
+def supertrend(
+    candles: List[List[float]],
+    period: int = 10,
+    multiplier: float = 3.0
+) -> Tuple[float, str, list]:
+    """
+    Returns:
+        last_st: float      # Latest SuperTrend value
+        last_dir: str       # Current direction ("up" | "down")
+        st_series: list     # Full series of SuperTrend values
+    """
+    if len(candles) <= period:
+        logger.warning("Not enough candles for SuperTrend")
+        return 0.0, "neutral", []
+
+    candles = np.asarray(candles, dtype=float)
+    highs = candles[:, 2]
+    lows = candles[:, 3]
+    closes = candles[:, 4]
+
+    # 1. Calculate ATR rolling window
+    atr_values = np.zeros(len(candles))
+    for i in range(1, len(candles)):
+        tr = max(highs[i] - lows[i],
+                 abs(highs[i] - closes[i-1]),
+                 abs(lows[i] - closes[i-1]))
+        atr_values[i] = tr
+
+    # Simple Moving Average of TR to get ATR
+    # We'll use a manual rolling mean to stay consistent with your ATR function
+    def get_atr_at_index(idx):
+        return np.mean(atr_values[max(1, idx-period+1):idx+1])
+
+    # 2. Initialize variables
+    st_series = [0.0] * len(candles)
+    direction = [1] * len(candles) # 1 for Up, -1 for Down
+
+    upper_band = np.zeros(len(candles))
+    lower_band = np.zeros(len(candles))
+
+    for i in range(period, len(candles)):
+        current_atr = get_atr_at_index(i)
+        median_price = (highs[i] + lows[i]) / 2
+
+        basic_ub = median_price + (multiplier * current_atr)
+        basic_lb = median_price - (multiplier * current_atr)
+
+        # Final Upper Band (Cannot move up if price is below previous upper band)
+        if basic_ub < upper_band[i-1] or closes[i-1] > upper_band[i-1]:
+            upper_band[i] = basic_ub
+        else:
+            upper_band[i] = upper_band[i-1]
+
+        # Final Lower Band (Cannot move down if price is above previous lower band)
+        if basic_lb > lower_band[i-1] or closes[i-1] < lower_band[i-1]:
+            lower_band[i] = basic_lb
+        else:
+            lower_band[i] = lower_band[i-1]
+
+        # Determine Direction
+        if closes[i] > upper_band[i-1]:
+            direction[i] = 1
+        elif closes[i] < lower_band[i-1]:
+            direction[i] = -1
+        else:
+            direction[i] = direction[i-1]
+
+        st_series[i] = lower_band[i] if direction[i] == 1 else upper_band[i]
+
+    last_st = float(st_series[-1])
+    last_dir = "up" if direction[-1] == 1 else "down"
+
+    return last_st, last_dir, st_series[period:]
+
+
+# ---------- BB-indicator ----------#
+
+
+def bollinger_bands(
+    candles: List[List[float]],
+    period: int = 20,
+    std_dev_multiplier: float = 2.0
+):
+    """
+    Returns:
+        last_bands: tuple   # (upper, middle, lower) for the latest candle
+        bb_mean_width: float # mean bandwidth (volatility proxy)
+        bb_series: dict     # full series for upper, middle, and lower
+    """
+    if len(candles) < period:
+        logger.warning("Not enough candles to compute Bollinger Bands")
+
+    candles = np.asarray(candles, dtype=float)
+    closes = candles[:, 4]
+
+    upper_series = []
+    middle_series = []
+    lower_series = []
+    bandwidth_series = []
+
+    for i in range(period, len(closes) + 1):
+        window = closes[i-period:i]
+
+        sma = np.mean(window)
+        std = np.std(window)
+
+        upper = sma + (std_dev_multiplier * std)
+        lower = sma - (std_dev_multiplier * std)
+
+        upper_series.append(upper)
+        middle_series.append(sma)
+        lower_series.append(lower)
+
+        # Bandwidth is a useful secondary metric: (Upper - Lower) / Middle
+        bandwidth_series.append((upper - lower) / sma)
+
+    last_bands = (float(upper_series[-1]), float(middle_series[-1]), float(lower_series[-1]))
+    bb_mean_width = float(np.mean(bandwidth_series))
+
+    bb_series = {
+        "upper": upper_series,
+        "middle": middle_series,
+        "lower": lower_series
+    }
+
+    return last_bands, bb_mean_width, bb_series
+
+
+# ---------- ADX-indicator ----------#
+
+
+def adx(
+    candles: List[List[float]],
+    period: int = 14
+):
+    """
+    Returns:
+        adx_value: float    # last ADX value
+        adx_mean: float     # mean ADX strength
+        adx_series: list    # full ADX series
+    """
+    if len(candles) < period * 2:
+        logger.warning("Not enough candles to compute ADX")
+
+    candles = np.asarray(candles, dtype=float)
+    highs = candles[:, 2]
+    lows = candles[:, 3]
+    closes = candles[:, 4]
+
+    # Calculate True Range (TR) and Directional Movement (DM)
+    up_move = np.diff(highs)
+    down_move = -np.diff(lows)
+
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
+
+    # Simplified True Range calculation
+    tr = np.maximum(highs[1:] - lows[1:], np.abs(highs[1:] - closes[:-1]))
+    tr = np.maximum(tr, np.abs(lows[1:] - closes[:-1]))
+
+    # Wilder's Smoothing
+    def smooth(data, per):
+        smoothed = np.zeros(len(data))
+        smoothed[per-1] = np.mean(data[:per])
+        for i in range(per, len(data)):
+            smoothed[i] = (smoothed[i-1] * (per - 1) + data[i]) / per
+        return smoothed
+
+    tr_smooth = smooth(tr, period)
+    plus_di = 100 * (smooth(plus_dm, period) / tr_smooth)
+    minus_di = 100 * (smooth(minus_dm, period) / tr_smooth)
+
+    # Calculate DX and ADX
+    dx = 100 * np.abs(plus_di - minus_di) / (plus_di + minus_di + 1e-10) # 1e-10 to avoid div by zero
+    adx_series = smooth(dx, period)
+
+    adx_value = float(adx_series[-1])
+    adx_mean = float(np.mean(adx_series))
+
+    return adx_value, adx_mean, adx_series.tolist()
+
+
+# ---------- ATR-indicator ----------#
+
+
+def obv(
+    candles: List[List[float]]
+):
+    """
+    Returns:
+        obv_value: float    # last OBV value
+        obv_mean:  float    # mean OBV over the series
+        obv_series: list    # full OBV series
+    """
+    if len(candles) < 2:
+        logger.warning("Not enough candles to compute OBV")
+
+    candles = np.asarray(candles, dtype=float)
+
+    closes = candles[:, 4]
+    volumes = candles[:, 5]
+
+    # Calculate price changes
+    # We use np.diff and then pad with a 0 at the start to keep arrays same length
+    price_change = np.diff(closes)
+    price_change = np.insert(price_change, 0, 0)
+
+    # Determine direction: +1 if price up, -1 if price down, 0 if flat
+    direction = np.sign(price_change)
+
+    # Cumulative sum of (direction * volume)
+    obv_series = np.cumsum(direction * volumes)
+
+    obv_value = float(obv_series[-1])
+    obv_mean = float(np.mean(obv_series))
+
+    return obv_value, obv_mean, obv_series.tolist()
+
+
+# --------------------- STRUCTURAL INDICATORS --------------------- #
 
 # ============================================================
 # Candlestick Pattern Reader
@@ -491,3 +798,45 @@ def smr(
             trend = "down"
 
     return events
+
+
+# ============================================================
+# Pivot Points Fibonacci
+# ============================================================
+
+
+def pivot_points_fibonacci(
+    candles: List[List[float]]
+) -> Dict[str, float]:
+    """
+    Calculates Fibonacci Pivot Points based on the most recent completed period.
+    Typically used with Daily candles to find levels for the next day.
+
+    Returns:
+        levels: dict  # Contains PP, R1-R3, and S1-S3
+    """
+    if len(candles) < 1:
+        logger.warning("Not enough data to compute Pivot Points")
+        return {}
+
+    # Use the most recent candle (index -1)
+    last_candle = np.asarray(candles[-1], dtype=float)
+
+    high = last_candle[2]
+    low = last_candle[3]
+    close = last_candle[4]
+
+    pivot_range = high - low
+    pp = (high + low + close) / 3
+
+    levels = {
+        "pp": float(pp),
+        "r1": float(pp + (pivot_range * 0.382)),
+        "r2": float(pp + (pivot_range * 0.618)),
+        "r3": float(pp + (pivot_range * 1.000)),
+        "s1": float(pp - (pivot_range * 0.382)),
+        "s2": float(pp - (pivot_range * 0.618)),
+        "s3": float(pp - (pivot_range * 1.000))
+    }
+
+    return levels

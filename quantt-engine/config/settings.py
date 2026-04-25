@@ -32,7 +32,6 @@ class TradingConfig(BaseModel):
         "LINK/USDT",
     ]  # Field(default_factory=list)
     list_of_parameters: list[str] = [
-        "MACD",
         "RSI",
         "SMR",
         "TnK",

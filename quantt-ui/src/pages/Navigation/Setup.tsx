@@ -131,7 +131,7 @@ export default function Setup() {
                   setTrading({ ...trading, exchange: e.target.value })
                 }
               >
-                <option value="binance">Bianance</option>
+                <option value="binance">Binance</option>
                 <option value="bybit">Bybit</option>
                 <option value="okx">OKX</option>
                 <option value="mexc">Mexc</option>
@@ -163,7 +163,13 @@ export default function Setup() {
                   "ATR",
                   "DSCP",
                   "SMR",
-                  "Ichimoku",
+                  "PPF",
+                  "OBV",
+                  "ADX",
+                  "BB",
+                  "VWAP",
+                  "ST",
+                  "ROC",
                 ].map((p) => (
                   <label key={p} className="checkbox-item">
                     <input
