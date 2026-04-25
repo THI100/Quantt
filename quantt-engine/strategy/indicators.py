@@ -195,10 +195,6 @@ def macd(
             f"price_mode must be 'close', 'hl2', or 'ohlc4' actual price_mode: {price_mode}"
         )
 
-
-# ---------- EMA-indicator ----------#
-
-
     def ema(series, period):
         alpha = 2.0 / (period + 1.0)
         ema_vals = [series[0]]
@@ -226,6 +222,46 @@ def macd(
         signal_line.tolist(),
         histogram.tolist(),
     )
+
+
+# ---------- EMA-indicator ----------#
+
+
+def ema(
+    candles: List[List[float]],
+    period: int = 20
+):
+    """
+    Returns:
+        ema_value: float   # last EMA value
+        ema_mean:  float   # mean EMA over the window
+        ema_series: list   # full series of EMA values
+    """
+    if len(candles) < period:
+        logger.warning("Not enough candles to compute EMA")
+        return 0.0, 0.0, []
+
+    candles = np.asarray(candles, dtype=float)
+    closes = candles[:, 4]
+
+    ema_series = []
+
+    # Initialize with the SMA of the first 'period' candles
+    current_ema = np.mean(closes[:period])
+    ema_series.append(current_ema)
+
+    # Calculate the smoothing multiplier
+    multiplier = 2 / (period + 1)
+
+    # Calculate remaining EMA values
+    for i in range(period, len(closes)):
+        current_ema = (closes[i] - current_ema) * multiplier + current_ema
+        ema_series.append(current_ema)
+
+    ema_value = float(ema_series[-1])
+    ema_mean = float(np.mean(ema_series))
+
+    return ema_value, ema_mean, ema_series
 
 
 # ---------- ATR-indicator ----------#
@@ -672,6 +708,7 @@ def smr(
     swing_right: int = 2,
     volume_period: int = 20,
     min_volume_strength: float = 1.1,
+    min_fvg_size: float = 0.0, # Minimum % size of the gap to be recorded
 ) -> List[Dict]:
 
     candles = np.asarray(candles, dtype=float)
@@ -709,10 +746,35 @@ def smr(
     for i in range(len(candles)):
         volume_strength = volumes[i] / avg_vol if avg_vol > 0 else 1.0
 
+        # -------- FVG Detection (Requires at least 3 candles) --------
+        if i >= 2:
+            # Bullish FVG: Low of candle[i] > High of candle[i-2]
+            if lows[i] > highs[i - 2]:
+                gap_size = (lows[i] - highs[i - 2]) / highs[i - 2] * 100
+                if gap_size > min_fvg_size:
+                    events.append({
+                        "type": "fvg_bullish",
+                        "index": i,
+                        "top": lows[i],
+                        "bottom": highs[i - 2],
+                        "multiplicator": smath.clamp_multiplier(gap_size),
+                        "volume_strength": volume_strength,
+                    })
+
+            # Bearish FVG: High of candle[i] < Low of candle[i-2]
+            elif highs[i] < lows[i - 2]:
+                gap_size = (lows[i - 2] - highs[i]) / lows[i - 2] * 100
+                if gap_size > min_fvg_size:
+                    events.append({
+                        "type": "fvg_bearish",
+                        "index": i,
+                        "top": lows[i - 2],
+                        "bottom": highs[i],
+                        "multiplicator": smath.clamp_multiplier(gap_size),
+                        "volume_strength": volume_strength,
+                    })
+
         # -------- advance swing pointers --------
-        # We process swings as soon as they are confirmed (at index idx + swing_right).
-        # We do this before the volume filter to ensure they are processed at the correct index
-        # and don't cluster on the first high-volume candle.
         while (
             hi_ptr < len(swing_high_idxs) and swing_high_idxs[hi_ptr] + swing_right <= i
         ):
@@ -723,19 +785,13 @@ def smr(
             hi_ptr += 1
 
             if prev_high is not None:
-                mult = (
-                    abs(last_high - prev_high) / prev_high * 100
-                    if prev_high != 0
-                    else 0
-                )
-                events.append(
-                    {
-                        "type": "HH" if last_high > prev_high else "LH",
-                        "index": i,
-                        "multiplicator": smath.clamp_multiplier(mult),
-                        "volume_strength": volume_strength,
-                    }
-                )
+                mult = abs(last_high - prev_high) / prev_high * 100 if prev_high != 0 else 0
+                events.append({
+                    "type": "HH" if last_high > prev_high else "LH",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                })
 
         while (
             lo_ptr < len(swing_low_idxs) and swing_low_idxs[lo_ptr] + swing_right <= i
@@ -748,14 +804,12 @@ def smr(
 
             if prev_low is not None:
                 mult = abs(last_low - prev_low) / prev_low * 100 if prev_low != 0 else 0
-                events.append(
-                    {
-                        "type": "HL" if last_low > prev_low else "LL",
-                        "index": i,
-                        "multiplicator": smath.clamp_multiplier(mult),
-                        "volume_strength": volume_strength,
-                    }
-                )
+                events.append({
+                    "type": "HL" if last_low > prev_low else "LL",
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                })
 
         # -------- volume filter for BOS / CHOCH --------
         if volume_strength < min_volume_strength:
@@ -772,29 +826,23 @@ def smr(
         if last_high and close > last_high:
             event_type = "bos_bullish" if trend == "up" else "choch_bullish"
             mult = (close - last_high) / last_high * 100
-
-            events.append(
-                {
-                    "type": event_type,
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                }
-            )
+            events.append({
+                "type": event_type,
+                "index": i,
+                "multiplicator": smath.clamp_multiplier(mult),
+                "volume_strength": volume_strength,
+            })
             trend = "up"
 
         if last_low and close < last_low:
             event_type = "bos_bearish" if trend == "down" else "choch_bearish"
             mult = (last_low - close) / last_low * 100
-
-            events.append(
-                {
-                    "type": event_type,
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                }
-            )
+            events.append({
+                "type": event_type,
+                "index": i,
+                "multiplicator": smath.clamp_multiplier(mult),
+                "volume_strength": volume_strength,
+            })
             trend = "down"
 
     return events
