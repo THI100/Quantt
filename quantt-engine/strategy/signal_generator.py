@@ -5,214 +5,244 @@ from utils.math import scale_0_100
 
 r = risk.RiskConfig()
 
-
-def get_signal_indicators(market: str):
-
-    market_force_bullish = 0
-    market_force_bearish = 0
-
-    candles42 = cache.cached_p42(market=market)
-
-    # ================= RSI =================
-    rsi_values = indicators.rsi(candles=candles42)
-    actual_movement = ""
-
-    if rsi_values[0] < 30:
-        market_force_bullish += 2
-    elif rsi_values[0] > 70:
-        market_force_bearish += 2
-    elif rsi_values[0] < 50:
-        market_force_bullish += 1
-    elif rsi_values[0] > 50:
-        market_force_bearish += 1
-
-    rsi_gap_mult = rsi_values[0] / rsi_values[1]
-
-    if rsi_gap_mult < 1:
-        market_force_bearish += abs((rsi_gap_mult - 1) * 10)
-    elif rsi_gap_mult > 1:
-        market_force_bullish += abs((rsi_gap_mult - 1) * 10)
-
-    # ================= TENKAN / KIJUN =================
-    tenkan, kijun = indicators.tenkan_and_kijun(candles=candles42)
-
-    atr_value = indicators.atr(candles42, period=14)
-    buffer = r.atr_multiplier * atr_value
-
-    diff = tenkan - kijun
-
-    if diff > buffer:
-        market_force_bullish += 1
-        actual_movement = "bullish"
-    elif diff < -buffer:
-        market_force_bearish += 1
-        actual_movement = "bearish"
-    else:
-        actual_movement = "neutral"
-
-    # ================= MACD =================
-    macd_val, signal_val, hist_val, _, _, _ = indicators.macd(candles=candles42)
-
-    # --- crossover effect ---
-    if macd_val > signal_val:
-        market_force_bullish += 1
-    elif macd_val < signal_val:
-        market_force_bearish += 1
-
-    # --- regime bias (above/below zero) ---
-    if macd_val > 0:
-        market_force_bullish += 0.5
-    else:
-        market_force_bearish += 0.5
-
-    # --- momentum strength ---
-    hist_strength = abs(hist_val)
-
-    # normalize impact (prevents huge spikes)
-    hist_weight = min(hist_strength / 50, 2)
-
-    if hist_val > 0:
-        market_force_bullish += hist_weight
-    elif hist_val < 0:
-        market_force_bearish += hist_weight
-
-    return market_force_bullish, market_force_bearish, actual_movement
-
+# --------------------- Auxiliaries --------------------- #
 
 def get_signal_candlestick_patterns(market: str):
-    market_force_bullish = 0.0
-    market_force_bearish = 0.0
-    bullish_confidence = 0
-    bearish_confidence = 0
-
     candles = cache.cached_p14(market=market)
     patterns = indicators.detect_candlestick_patterns(candles=candles)
 
+    m_force_bull, m_force_bear = 0.0, 0.0
+    conf_bull, conf_bear = 0, 0
+    total_len = len(candles)
+
     for p in patterns:
         mult = p["multiplicator"]
-        strength = p["volume_strength"]
-
-        impact = abs(mult) * min(strength, 2.0)
+        # Linear time decay: more recent patterns have more weight
+        recency_weight = p["index"] / total_len if total_len > 0 else 1.0
+        impact = abs(mult) * min(p["volume_strength"], 2.0) * recency_weight
 
         if mult > 0:
-            market_force_bullish += impact
-            bullish_confidence += 1
+            m_force_bull += impact
+            conf_bull += 1
         elif mult < 0:
-            market_force_bearish += impact
-            bearish_confidence += 1
+            m_force_bear += impact
+            conf_bear += 1
 
-    return (
-        market_force_bullish,
-        market_force_bearish,
-        bullish_confidence,
-        bearish_confidence,
-    )
+    return m_force_bull, m_force_bear, conf_bull, conf_bear
 
 
 def get_signal_smr(market: str):
-    market_force_bullish = 0.0
-    market_force_bearish = 0.0
-    bullish_confidence = 0
-    bearish_confidence = 0
-
-    candles = cache.cached_p28(market=market)
+    candles = cache.cached_p42(market=market)
     smr_events = indicators.smr(candles=candles)
+
+    m_force_bull, m_force_bear = 0.0, 0.0
+    conf_bull, conf_bear = 0, 0
+    total_len = len(candles)
+
+    # Weight config for easier tuning
+    WEIGHTS = {
+        "bos_bullish": 1.5, "bos_bearish": 1.5,
+        "choch_bullish": 2.0, "choch_bearish": 2.0,
+        "fvg_bullish": 0.7, "fvg_bearish": 0.7
+    }
 
     for e in smr_events:
         etype = e["type"]
-        mult = e["multiplicator"]
-        strength = min(e["volume_strength"], 2.0)
+        if etype not in WEIGHTS:
+            continue
 
-        impact = abs(mult) * strength
+        weight = WEIGHTS[etype]
+        # Decay factor: makes older SMR events less relevant than fresh breakouts
+        recency_weight = e["index"] / total_len if total_len > 0 else 1.0
+        impact = abs(e["multiplicator"]) * min(e["volume_strength"], 2.0) * weight * recency_weight
 
-        # ---------------- Bullish events ----------------
-        if etype in ("bos_bullish", "choch_bullish", "bullish_fvg"):
-            bullish_confidence += 1
+        if "bullish" in etype:
+            conf_bull += 1
+            m_force_bull += impact
+            if etype == "choch_bullish":
+                m_force_bear *= 0.5  # Dampen bearish force on trend reversal
 
-            if etype == "bos_bullish":
-                market_force_bullish += impact * 1.5
-            elif etype == "choch_bullish":
-                market_force_bullish += impact * 2.0
-                market_force_bearish *= 0.5
-            elif etype == "bullish_fvg":
-                market_force_bullish += impact * 0.7
+        elif "bearish" in etype:
+            conf_bear += 1
+            m_force_bear += impact
+            if etype == "choch_bearish":
+                m_force_bull *= 0.5  # Dampen bullish force on trend reversal
 
-        # ---------------- Bearish events ----------------
-        elif etype in ("bos_bearish", "choch_bearish", "bearish_fvg"):
-            bearish_confidence += 1
-
-            if etype == "bos_bearish":
-                market_force_bearish += impact * 1.5
-            elif etype == "choch_bearish":
-                market_force_bearish += impact * 2.0
-                market_force_bullish *= 0.5
-            elif etype == "bearish_fvg":
-                market_force_bearish += impact * 0.7
-
-    return (
-        market_force_bullish,
-        market_force_bearish,
-        bullish_confidence,
-        bearish_confidence,
-    )
+    return m_force_bull, m_force_bear, conf_bull, conf_bear
 
 
-def get_overall_market_signal(market: str):
-    """
-    This function returns a general market signal based on multiple strategies.
-    It combines signals from indicators, candlestick patterns, and SMC analysis
-    to determine the overall market sentiment.
-     - Returns:
-        - real_confidence (float): Confidence level of the signal (0-100).
-        - real_strength (float): Strength of the signal (0-100).
-        - actual_movement (str): Actual market movement ("bullish", "bearish", "neutral").
-        - direction (str): Overall market direction ("bullish", "bearish", "neutral").
-    """
-    mbull2, mbear2, actual_movement = get_signal_indicators(market)
-    mbull1, mbear1, cbull1, cbear1 = get_signal_candlestick_patterns(market)
-    mbull3, mbear3, cbull3, cbear3 = get_signal_smr(market)
+# --------------------- FINAL AVALIATION --------------------- #
 
-    bullish = mbull1 + mbull2 + mbull3
-    bearish = mbear1 + mbear2 + mbear3
 
-    conf_bull = cbull1 + cbull3
-    conf_bear = cbear1 + cbear3
+def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
+    candles = cache.cached_p42(market=Market)
 
-    real_strength_raw = bullish - bearish
+    bull_votes = 0
+    bear_votes = 0
+    total_signals = 0
 
-    direction = (
-        "bullish"
-        if real_strength_raw > 0
-        else "bearish"
-        if real_strength_raw < 0
-        else "neutral"
-    )
+    # Track raw normalized scores (0.0 to 1.0) for each category
+    category_scores = {
+        "trend": [],
+        "momentum": [],
+        "volume": [],
+        "structure": []
+    }
 
-    real_confidence_raw = (
-        conf_bull
-        if real_strength_raw > 0
-        else conf_bear
-        if real_strength_raw < 0
-        else 0
-    )
+    # Regime and Strength specific trackers
+    adx_val = 20.0 # Default fallback
+    atr_ratio = 0.5
 
-    max_strength = bullish + bearish
-    max_confidence = conf_bull + conf_bear
+    # 3. Process each indicator if present in parameters
+    parameters_lower = [p.lower() for p in parameters]
 
-    if real_strength_raw and max_strength > 1:
-        real_strength = scale_0_100(real_strength_raw, max_strength)
-    else:
-        real_strength = 0
-    if real_confidence_raw and max_confidence > 1:
-        real_confidence = scale_0_100(real_confidence_raw, max_confidence)
-    else:
-        real_confidence = 0
+    if "vwap" in parameters_lower:
+        vwap_value, vwap_mean, vwap_series = indicators.vwap(candles)
+        score = 1.0 if vwap_value > vwap_mean else 0.0
+        category_scores["trend"].append(score)
+        if score > 0.5: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
 
-    if real_confidence == 0:
-        direction = "neutral"
+    if "rsi" in parameters_lower:
+        rsi_value, rsi_mean, rsi_series = indicators.rsi(candles)
+        score = rsi_value / 100.0 # Normalize 0-100 to 0.0-1.0
+        category_scores["momentum"].append(score)
+        if rsi_value > 50: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
 
-    return real_confidence, real_strength, actual_movement, direction
+    if "tnk" in parameters_lower:
+        tenkan_sen, kijun_sen = indicators.tenkan_and_kijun(candles)
+        score = 1.0 if tenkan_sen > kijun_sen else 0.0
+        category_scores["trend"].append(score)
+        if score > 0.5: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
 
+    if "macd" in parameters_lower:
+        macd_value, signal_value, hist_value, macd_series, signal_series, hist_series = indicators.macd(candles)
+        score = 1.0 if hist_value > 0 else 0.0
+        category_scores["momentum"].append(score)
+        if hist_value > 0: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
+
+    if "ema" in parameters_lower:
+        ema_value, ema_mean, ema_series = indicators.ema(candles)
+        score = 1.0 if ema_value > ema_mean else 0.0
+        category_scores["trend"].append(score)
+        if score > 0.5: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
+
+    if "atr" in parameters_lower:
+        atr_value, atr_mean, atr_series = indicators.atr(candles)
+        atr_ratio = min(atr_value / (atr_mean + 1e-9), 1.0) # Avoid div by zero
+        category_scores["structure"].append(atr_ratio) # High ATR = high volatility structure
+
+    if "roc" in parameters_lower:
+        roc_value, roc_mean, roc_series = indicators.roc(candles)
+        score = 1.0 if roc_value > 0 else 0.0
+        category_scores["momentum"].append(score)
+        if roc_value > 0: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
+
+    if "st" in parameters_lower:
+        last_st, last_dir, st_series = indicators.supertrend(candles)
+        score = 1.0 if last_dir == "up" else 0.0
+        category_scores["trend"].append(score)
+        if last_dir == "up": bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
+
+    if "bb" in parameters_lower:
+        last_bands, bb_mean_width, bb_series = indicators.bollinger_bands(candles)
+        upper, middle, lower = last_bands
+        # Position of price relative to bands (estimating price is near middle for safe proxy)
+        # Using bandwidth squeeze as a structure metric
+        bb_width = upper - lower
+        squeeze_ratio = min(bb_width / (bb_mean_width + 1e-9), 1.0)
+        category_scores["structure"].append(squeeze_ratio)
+
+    if "adx" in parameters_lower:
+        adx_value, adx_mean, adx_series = indicators.adx(candles)
+        adx_val = adx_value
+        score = min(adx_value / 50.0, 1.0) # ADX > 25 is strong trend, cap at 50 for max score
+        category_scores["trend"].append(score)
+
+    if "obv" in parameters_lower:
+        obv_value, obv_mean, obv_series = indicators.obv(candles)
+        score = 1.0 if obv_value > obv_mean else 0.0
+        category_scores["volume"].append(score)
+        if obv_value > obv_mean: bull_votes += 1
+        else: bear_votes += 1
+        total_signals += 1
+
+    # Note: These two functions take 'Market' directly, not 'candles'
+    if "dscp" in parameters_lower:
+        m_force_bull, m_force_bear, conf_bull, conf_bear = get_signal_candlestick_patterns(Market)
+        if m_force_bull > m_force_bear:
+            bull_votes += 1
+            category_scores["structure"].append(min(m_force_bull + conf_bull, 1.0))
+        elif m_force_bear > m_force_bull:
+            bear_votes += 1
+            category_scores["structure"].append(max(0.0, 1.0 - (m_force_bear + conf_bear)))
+        total_signals += 1
+
+    if "smr" in parameters_lower:
+        m_force_bull, m_force_bear, conf_bull, conf_bear = get_signal_smr(Market)
+        if m_force_bull > m_force_bear:
+            bull_votes += 1
+            category_scores["structure"].append(min(m_force_bull + conf_bull, 1.0))
+        elif m_force_bear > m_force_bull:
+            bear_votes += 1
+            category_scores["structure"].append(max(0.0, 1.0 - (m_force_bear + conf_bear)))
+        total_signals += 1
+
+    # 4. Aggregate results
+    # Determine Direction & Confidence
+    direction = "NEUTRAL"
+    confidence = 0.50
+
+    if total_signals > 0:
+        if bull_votes > bear_votes:
+            direction = "BUY"
+            confidence = round(bull_votes / total_signals, 2)
+        elif bear_votes > bull_votes:
+            direction = "SELL"
+            confidence = round(bear_votes / total_signals, 2)
+        else:
+            direction = "NEUTRAL"
+            confidence = 0.50
+
+    # Determine Strength and Regime
+    # ADX > 25 is typically the threshold for a trending market
+    regime = "TREND" if adx_val >= 25.0 else "RANGE"
+
+    # Calculate overall strength (using ADX normalized as primary, fallback to ATR ratio)
+    strength = round(min(adx_val / 50.0, 1.0), 2) if "adx" in parameters_lower else round(atr_ratio, 2)
+
+    # Calculate average grades per category (fallback to 0.5 if category had no indicators triggered)
+    grades = {}
+    for cat, scores in category_scores.items():
+        if scores:
+            grades[cat] = round(sum(scores) / len(scores), 2)
+        else:
+            grades[cat] = 0.50 # Default neutral grade if not evaluated
+
+    # 5. Return final dictionary
+    return {
+        "direction": direction,
+        "confidence": confidence,
+        "strength": strength,
+        "regime": regime,
+        "grades": grades
+    }
+
+
+# --------------------- LOSS AND PROFIT STOPS --------------------- #
 
 def get_loss_and_profit_stops(market: str, direction: str):
     """

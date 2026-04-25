@@ -267,17 +267,45 @@ def ema(
 # ---------- ATR-indicator ----------#
 
 
-def atr(candles, period=14):
-    trs = []
-    for i in range(1, len(candles)):
-        high = candles[i][2]
-        low = candles[i][3]
-        prev_close = candles[i - 1][4]
+def atr(
+    candles: List[List[float]],
+    period: int = 14
+) -> Tuple[float, float, list]:
+    """
+    Returns:
+        atr_value: float    # last ATR value
+        atr_mean:  float    # mean ATR over the window
+        atr_series: list    # full series of ATR values
+    """
+    if len(candles) < period + 1:
+        logger.warning("Not enough candles to compute ATR")
+        return 0.0, 0.0, []
 
-        tr = max(high - low, abs(high - prev_close), abs(low - prev_close))
-        trs.append(tr)
+    candles = np.asarray(candles, dtype=float)
+    highs = candles[:, 2]
+    lows = candles[:, 3]
+    closes = candles[:, 4]
 
-    return sum(trs[-period:]) / period
+    tr1 = highs[1:] - lows[1:]
+    tr2 = np.abs(highs[1:] - closes[:-1])
+    tr3 = np.abs(lows[1:] - closes[:-1])
+
+    tr = np.maximum(tr1, np.maximum(tr2, tr3))
+
+    # The first ATR value is the SMA of the first 'period' TRs
+    atr_series = []
+    current_atr = np.mean(tr[:period])
+    atr_series.append(current_atr)
+
+    # Subsequent values use Wilder's: (Prev_ATR * (n-1) + Current_TR) / n
+    for i in range(period, len(tr)):
+        current_atr = (current_atr * (period - 1) + tr[i]) / period
+        atr_series.append(current_atr)
+
+    atr_value = float(atr_series[-1])
+    atr_mean = float(np.mean(atr_series))
+
+    return atr_value, atr_mean, atr_series
 
 
 # ---------- ROC-indicator ----------#
