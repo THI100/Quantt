@@ -22,14 +22,12 @@ def order(
     take_profit: Optional[float] = None,
 ):
     # 1. Determine Entry and Exit Sides
-    if sell_buy == "bullish":
-        entry_side = "buy"
+    entry_side = sell_buy
+
+    if entry_side == "buy":
         exit_side = "sell"
-    elif sell_buy == "bearish":
-        entry_side = "sell"
-        exit_side = "buy"
     else:
-        logger.error(f"Invalid side, actual side: {sell_buy}")
+        exit_side = "buy"
 
     # 2. Place the Main Entry Order
     # Using entry_side ('buy' for bullish)

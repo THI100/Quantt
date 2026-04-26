@@ -208,10 +208,10 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if total_signals > 0:
         if bull_votes > bear_votes:
-            direction = "bullish"
+            direction = "buy"
             confidence = round(bull_votes / total_signals, 2)
         elif bear_votes > bull_votes:
-            direction = "bearish"
+            direction = "sell"
             confidence = round(bear_votes / total_signals, 2)
         else:
             direction = "neutral"
