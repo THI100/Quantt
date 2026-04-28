@@ -1,12 +1,14 @@
 import threading
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
 from core.bot import TradingBot
-from execution.position_manager import manage_open_symbols as mos
+from utils import stream_manager
 
 route = APIRouter()
 bot = TradingBot()
+log_stream = stream_manager.SyncLogStreamer()
 bot_thread = None
 
 # ------------------------------------------------------------------ #
@@ -24,6 +26,7 @@ def _require_running():
 #  Bot control                                                         #
 # ------------------------------------------------------------------ #
 
+
 @route.post("/")
 def setup():
     try:
@@ -32,6 +35,7 @@ def setup():
     except Exception as e:
         logger.error(f"Setup failed: {e}")
         return {"status": "error", "message": str(e)}, 500
+
 
 @route.post("/bot/start")
 def start_trigger():
@@ -64,3 +68,8 @@ def get_status():
     if not bot.is_running:
         return {"status": "Offline"}
     return {"status": "Online"}
+
+
+@route.get("/bot/logging")
+def log_sink():
+    return StreamingResponse(log_stream.generator(), media_type="text/event-stream")

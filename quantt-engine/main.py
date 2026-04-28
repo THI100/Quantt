@@ -2,11 +2,11 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.bot import TradingBot
 from api import principal, report, set
-from utils import log
+from utils import log, stream_manager
 
 app = FastAPI(title="quantt_engine")
+log_stream = stream_manager.SyncLogStreamer()
 
 origins = [
     "http://localhost:5173",
@@ -22,7 +22,7 @@ app.add_middleware(
 )
 
 # Create instances of logging and app.
-log.setup_logging()
+log.setup_logging(stream_callback=log_stream.broadcast)
 app.include_router(principal.route)
 app.include_router(report.r_route)
 app.include_router(set.s_route)

@@ -1,18 +1,22 @@
+import json
+
 from loguru import logger
 from rich.logging import RichHandler
 
 
-def setup_logging():
+def setup_logging(stream_callback=None):
     # 1. Clear default Loguru handler
     logger.remove()
 
-    _ = logger.add(
+    # Console (Rich)
+    logger.add(
         RichHandler(rich_tracebacks=True, markup=True),
-        format="{message}",  # Rich handles the time/level formatting itself
+        format="{message}",
         level="INFO",
     )
 
-    _ = logger.add(
+    # File (Error logs)
+    logger.add(
         "logs/crash_report.log",
         level="ERROR",
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} - {message}",
@@ -22,13 +26,18 @@ def setup_logging():
         retention="1 week",
     )
 
-    # Heavy! 220MB ram and 23MB/s writing, constant usage.
+    if stream_callback:
 
-    # # Timeline logging
-    # _ = logger.add(
-    #     "logs/full_history.log",
-    #     level="DEBUG",
-    #     rotation="100 MB",
-    #     retention="3 days",
-    #     compression="zip",
-    # )
+        def stream_sink(message):
+            record = message.record
+            payload = json.dumps(
+                {
+                    "time": record["time"].strftime("%H:%M:%S"),
+                    "level": record["level"].name,
+                    "message": record["message"],
+                }
+            )
+            # This calls the broadcast function provided by the API
+            stream_callback(payload)
+
+        logger.add(stream_sink, level="INFO")
