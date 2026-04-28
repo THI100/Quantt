@@ -1,11 +1,13 @@
-from loguru import logger
 import math
+
+from loguru import logger
 
 import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
 from config import risk, settings
+
 
 def avaliation_and_place(client):
     trading_config = settings.TradingConfig()
@@ -29,12 +31,16 @@ def avaliation_and_place(client):
 
         conf_score = data["confidence"] * 100
         if conf_score < risk_cfg.acceptable_confidence:
-            logger.debug(f"Skipping {symbol}: Confidence {conf_score:.2f} below threshold.")
+            logger.debug(
+                f"Skipping {symbol}: Confidence {conf_score:.2f} below threshold."
+            )
             continue
 
         # Regime-specific logic: e.g (If regime is 'range' but momentum grade is too high, it might be a breakout)
         if data["regime"] == "range" and data["strength"] > 0.8:
-            logger.warning(f"High strength ({data['strength']}) detected in range regime for {symbol}. Proceeding with caution.")
+            logger.warning(
+                f"High strength ({data['strength']}) detected in range regime for {symbol}. Proceeding with caution."
+            )
 
         stops = sg.get_loss_and_profit_stops(symbol, side)
         sl, tp = stops[0], stops[1]
@@ -45,17 +51,24 @@ def avaliation_and_place(client):
         nn = math.floor(nn * 1000) / 1000
 
         if nn < 0.01:
-            logger.info(f"Insufficient volume for {symbol}: {nn} is below minimum constraints.")
+            logger.info(
+                f"Insufficient volume for {symbol}: {nn} is below minimum constraints."
+            )
             continue
 
         # 6. Entry Price Calculation
         entry_price = risk_manager.blp(symbol, side, nn)
 
-        logger.info(f"Data: {symbol}, {trading_config.execution_order}, {side}, {nn}, {entry_price}, {sl}, {tp}")
+        nn = round(nn, 2)
+        entry_price = round(entry_price, 2)
+        sl = round(sl, 2)
+        tp = round(tp, 2)
 
         # 7. Execution
         try:
-            logger.info(f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}")
+            logger.info(
+                f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}"
+            )
             order_manager.order(
                 client,
                 symbol,
@@ -64,7 +77,7 @@ def avaliation_and_place(client):
                 nn,
                 entry_price,
                 sl,
-                tp
+                tp,
             )
         except Exception as e:
             logger.error(f"Critical failure executing order for {symbol}: {e}")

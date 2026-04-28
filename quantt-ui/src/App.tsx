@@ -1,10 +1,7 @@
-import { useEffect, useRef, useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Topbar from "./components/layout/Topbar";
-import Sidebar from "./components/layout/Sidebar";
 import "./assets/App.css";
 
-import api from "../api/axiosInstance.js";
 import Home from "./pages/Navigation/Home";
 import Resume from "./pages/Navigation/Resume";
 import Setup from "./pages/Navigation/Setup";
@@ -15,6 +12,7 @@ import Log from "./pages/Navigation/Log";
 import Api from "./pages/Management/Api";
 import Instructions from "./pages/Management/Instructions";
 import Settings from "./pages/Management/Settings";
+import Logs from "./pages/Management/Logs";
 
 function App() {
   return (
@@ -29,7 +27,7 @@ function App() {
             <Route path="/Positions" element={<Positions />} />
             <Route path="/Graphs" element={<Graphs />} />
             <Route path="/Backtesting" element={<Backtesting />} />
-            <Route path="/Log" element={<Log />} />
+            <Route path="/Log" element={<Logs />} />
             <Route path="/Management/Api" element={<Api />} />
             <Route path="/Management/Instructions" element={<Instructions />} />
             <Route path="/Management/Settings" element={<Settings />} />

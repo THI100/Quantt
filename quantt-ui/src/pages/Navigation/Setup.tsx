@@ -123,34 +123,36 @@ export default function Setup() {
               </div>
             </div>
 
-            <div className="input-group">
-              <label>Exchange</label>
-              <select
-                value={trading.exchange}
-                className="terminal-input"
-                onChange={(e) =>
-                  setTrading({ ...trading, exchange: e.target.value })
-                }
-              >
-                <option value="binance">Binance</option>
-                <option value="bybit">Bybit</option>
-                <option value="okx">OKX</option>
-                <option value="mexc">Mexc</option>
-              </select>
-            </div>
+            <div className="input-row">
+              <div className="input-group">
+                <label>Exchange</label>
+                <select
+                  value={trading.exchange}
+                  className="terminal-input"
+                  onChange={(e) =>
+                    setTrading({ ...trading, exchange: e.target.value })
+                  }
+                >
+                  <option value="binance">Binance</option>
+                  <option value="bybit">Bybit</option>
+                  <option value="okx">OKX</option>
+                  <option value="mexc">Mexc</option>
+                </select>
+              </div>
 
-            <div className="input-group">
-              <label>Execution Mode</label>
-              <select
-                value={trading.execution_order}
-                className="terminal-input"
-                onChange={(e) =>
-                  setTrading({ ...trading, execution_order: e.target.value })
-                }
-              >
-                <option value="market">Market</option>
-                <option value="limit">Limit</option>
-              </select>
+              <div className="input-group">
+                <label>Execution Mode</label>
+                <select
+                  value={trading.execution_order}
+                  className="terminal-input"
+                  onChange={(e) =>
+                    setTrading({ ...trading, execution_order: e.target.value })
+                  }
+                >
+                  <option value="market">Market</option>
+                  <option value="limit">Limit</option>
+                </select>
+              </div>
             </div>
 
             <div className="input-group">
