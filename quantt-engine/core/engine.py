@@ -36,7 +36,7 @@ def avaliation_and_place(client):
             )
             continue
 
-        # Regime-specific logic: e.g (If regime is 'range' but momentum grade is too high, it might be a breakout)
+        # Regime-specific logic
         if data["regime"] == "range" and data["strength"] > 0.8:
             logger.warning(
                 f"High strength ({data['strength']}) detected in range regime for {symbol}. Proceeding with caution."

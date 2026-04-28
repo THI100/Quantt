@@ -1,4 +1,5 @@
 import threading
+import time
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -57,7 +58,6 @@ def stop_trigger():
 @route.post("/bot/restart")
 def restart_trigger():
     bot.stop()
-    # Give the thread a tiny window to exit the while loop
     time.sleep(1)
     return start_trigger()
 

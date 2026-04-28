@@ -15,12 +15,13 @@
     "LINK/USDT"
   ],
   "list_of_parameters": [
-    "SMR",
-    "EMA",
     "ROC",
     "OBV",
     "VWAP",
     "ADX",
-    "ATR"
+    "ATR",
+    "RSI",
+    "BB",
+    "DSCP"
   ]
 }
