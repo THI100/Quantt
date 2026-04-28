@@ -4,11 +4,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from core.bot import TradingBot
-from utils import stream_manager
+from utils.stream_manager import log_stream
 
 route = APIRouter()
 bot = TradingBot()
-log_stream = stream_manager.SyncLogStreamer()
 bot_thread = None
 
 # ------------------------------------------------------------------ #

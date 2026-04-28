@@ -1,4 +1,3 @@
-import json
 import queue
 
 
@@ -20,3 +19,6 @@ class SyncLogStreamer:
         while True:
             message = self.queue.get()
             yield f"data: {message}\n\n"
+
+
+log_stream = SyncLogStreamer()

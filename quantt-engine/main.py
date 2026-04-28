@@ -3,10 +3,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import principal, report, set
-from utils import log, stream_manager
+from utils import log
+from utils.stream_manager import log_stream
 
 app = FastAPI(title="quantt_engine")
-log_stream = stream_manager.SyncLogStreamer()
 
 origins = [
     "http://localhost:5173",
