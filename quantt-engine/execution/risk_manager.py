@@ -3,7 +3,7 @@ from loguru import logger
 import data.fetch as fetch
 from config import risk
 
-r = risk.RiskConfig()
+r = risk.watcher.get_config()
 
 
 def smart_amount(market: str):

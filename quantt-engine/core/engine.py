@@ -10,8 +10,8 @@ from config import risk, settings
 
 
 def avaliation_and_place(client):
-    trading_config = settings.TradingConfig()
-    risk_cfg = risk.RiskConfig()
+    trading_config = settings.watcher.get_config()
+    risk_cfg = risk.watcher.get_config()
 
     # 1. Fetch market states
     open_closed = pm.manage_open_symbols()
@@ -27,6 +27,7 @@ def avaliation_and_place(client):
         side = data["direction"]
 
         if side == "neutral":
+            logger.info(f"This {symbol} is in the state of {side} market.")
             continue
 
         conf_score = data["confidence"] * 100
@@ -48,7 +49,7 @@ def avaliation_and_place(client):
         # 5. Dynamic Sizing based on Strength
         raw_nn = risk_manager.smart_amount(symbol)
         nn = raw_nn * (0.5 + (data["strength"] / 2))
-        nn = math.floor(nn * 1000) / 1000
+        # nn = math.floor(nn * 1000) / 1000
 
         if nn < 0.01:
             logger.info(
@@ -58,6 +59,29 @@ def avaliation_and_place(client):
 
         # 6. Entry Price Calculation
         entry_price = risk_manager.blp(symbol, side, nn)
+
+        # 1. Minimum Structural Distance Check
+        # If the SMC structure is too tight, the trade is just noise.
+
+        risk_percent = abs(entry_price - sl) / entry_price
+        min_dist = 0.003  # 0.3% - Adjust based on symbol/volatility
+
+        if risk_percent < min_dist:
+            logger.warning(
+                f"Skipping {symbol}: SL too tight ({risk_percent:.4f}%). Likely noise."
+            )
+            continue
+
+        # 2. Risk/Reward Check
+        # Sometimes SMC gives a weird SL that kills your RRR.
+        current_rrr = abs(tp - entry_price) / abs(entry_price - sl)
+        if current_rrr < 1.2:  # Minimum RR you're willing to take
+            logger.warning(f"Skipping {symbol}: Poor RR Ratio ({current_rrr:.2f}).")
+            continue
+
+        # 3. Dead Market Check
+        ticker = client.fetch_ticker(symbol)
+        logger.debug(ticker)
 
         nn = round(nn, 2)
         entry_price = round(entry_price, 2)

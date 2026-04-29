@@ -3,9 +3,10 @@ from config import risk
 from data import cache
 from utils.math import scale_0_100
 
-r = risk.RiskConfig()
+r = risk.watcher.get_config()
 
 # --------------------- Auxiliaries --------------------- #
+
 
 def get_signal_candlestick_patterns(market: str):
     candles = cache.cached_p14(market=market)
@@ -41,9 +42,12 @@ def get_signal_smr(market: str):
 
     # Weight config for easier tuning
     WEIGHTS = {
-        "bos_bullish": 1.5, "bos_bearish": 1.5,
-        "choch_bullish": 2.0, "choch_bearish": 2.0,
-        "fvg_bullish": 0.7, "fvg_bearish": 0.7
+        "bos_bullish": 1.5,
+        "bos_bearish": 1.5,
+        "choch_bullish": 2.0,
+        "choch_bearish": 2.0,
+        "fvg_bullish": 0.7,
+        "fvg_bearish": 0.7,
     }
 
     for e in smr_events:
@@ -54,7 +58,12 @@ def get_signal_smr(market: str):
         weight = WEIGHTS[etype]
         # Decay factor: makes older SMR events less relevant than fresh breakouts
         recency_weight = e["index"] / total_len if total_len > 0 else 1.0
-        impact = abs(e["multiplicator"]) * min(e["volume_strength"], 2.0) * weight * recency_weight
+        impact = (
+            abs(e["multiplicator"])
+            * min(e["volume_strength"], 2.0)
+            * weight
+            * recency_weight
+        )
 
         if "bullish" in etype:
             conf_bull += 1
@@ -82,15 +91,10 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
     total_signals = 0
 
     # Track raw normalized scores (0.0 to 1.0) for each category
-    category_scores = {
-        "trend": [],
-        "momentum": [],
-        "volume": [],
-        "structure": []
-    }
+    category_scores = {"trend": [], "momentum": [], "volume": [], "structure": []}
 
     # Regime and Strength specific trackers
-    adx_val = 20.0 # Default fallback
+    adx_val = 20.0  # Default fallback
     atr_ratio = 0.5
 
     # 3. Process each indicator if present in parameters
@@ -100,61 +104,84 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
         vwap_value, vwap_mean, vwap_series = indicators.vwap(candles)
         score = 1.0 if vwap_value > vwap_mean else 0.0
         category_scores["trend"].append(score)
-        if score > 0.5: bull_votes += 1
-        else: bear_votes += 1
+        if score > 0.5:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "rsi" in parameters_lower:
         rsi_value, rsi_mean, rsi_series = indicators.rsi(candles)
-        score = rsi_value / 100.0 # Normalize 0-100 to 0.0-1.0
+        score = rsi_value / 100.0  # Normalize 0-100 to 0.0-1.0
         category_scores["momentum"].append(score)
-        if rsi_value > 50: bull_votes += 1
-        else: bear_votes += 1
+        if rsi_value > 50:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "tnk" in parameters_lower:
         tenkan_sen, kijun_sen = indicators.tenkan_and_kijun(candles)
         score = 1.0 if tenkan_sen > kijun_sen else 0.0
         category_scores["trend"].append(score)
-        if score > 0.5: bull_votes += 1
-        else: bear_votes += 1
+        if score > 0.5:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "macd" in parameters_lower:
-        macd_value, signal_value, hist_value, macd_series, signal_series, hist_series = indicators.macd(candles)
+        (
+            macd_value,
+            signal_value,
+            hist_value,
+            macd_series,
+            signal_series,
+            hist_series,
+        ) = indicators.macd(candles)
         score = 1.0 if hist_value > 0 else 0.0
         category_scores["momentum"].append(score)
-        if hist_value > 0: bull_votes += 1
-        else: bear_votes += 1
+        if hist_value > 0:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "ema" in parameters_lower:
         ema_value, ema_mean, ema_series = indicators.ema(candles)
         score = 1.0 if ema_value > ema_mean else 0.0
         category_scores["trend"].append(score)
-        if score > 0.5: bull_votes += 1
-        else: bear_votes += 1
+        if score > 0.5:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "atr" in parameters_lower:
         atr_value, atr_mean, atr_series = indicators.atr(candles)
-        atr_ratio = min(atr_value / (atr_mean + 1e-9), 1.0) # Avoid div by zero
-        category_scores["structure"].append(atr_ratio) # High ATR = high volatility structure
+        atr_ratio = min(atr_value / (atr_mean + 1e-9), 1.0)  # Avoid div by zero
+        category_scores["structure"].append(
+            atr_ratio
+        )  # High ATR = high volatility structure
 
     if "roc" in parameters_lower:
         roc_value, roc_mean, roc_series = indicators.roc(candles)
         score = 1.0 if roc_value > 0 else 0.0
         category_scores["momentum"].append(score)
-        if roc_value > 0: bull_votes += 1
-        else: bear_votes += 1
+        if roc_value > 0:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "st" in parameters_lower:
         last_st, last_dir, st_series = indicators.supertrend(candles)
         score = 1.0 if last_dir == "up" else 0.0
         category_scores["trend"].append(score)
-        if last_dir == "up": bull_votes += 1
-        else: bear_votes += 1
+        if last_dir == "up":
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     if "bb" in parameters_lower:
@@ -169,26 +196,34 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
     if "adx" in parameters_lower:
         adx_value, adx_mean, adx_series = indicators.adx(candles)
         adx_val = adx_value
-        score = min(adx_value / 50.0, 1.0) # ADX > 25 is strong trend, cap at 50 for max score
+        score = min(
+            adx_value / 50.0, 1.0
+        )  # ADX > 25 is strong trend, cap at 50 for max score
         category_scores["trend"].append(score)
 
     if "obv" in parameters_lower:
         obv_value, obv_mean, obv_series = indicators.obv(candles)
         score = 1.0 if obv_value > obv_mean else 0.0
         category_scores["volume"].append(score)
-        if obv_value > obv_mean: bull_votes += 1
-        else: bear_votes += 1
+        if obv_value > obv_mean:
+            bull_votes += 1
+        else:
+            bear_votes += 1
         total_signals += 1
 
     # Note: These two functions take 'Market' directly, not 'candles'
     if "dscp" in parameters_lower:
-        m_force_bull, m_force_bear, conf_bull, conf_bear = get_signal_candlestick_patterns(Market)
+        m_force_bull, m_force_bear, conf_bull, conf_bear = (
+            get_signal_candlestick_patterns(Market)
+        )
         if m_force_bull > m_force_bear:
             bull_votes += 1
             category_scores["structure"].append(min(m_force_bull + conf_bull, 1.0))
         elif m_force_bear > m_force_bull:
             bear_votes += 1
-            category_scores["structure"].append(max(0.0, 1.0 - (m_force_bear + conf_bear)))
+            category_scores["structure"].append(
+                max(0.0, 1.0 - (m_force_bear + conf_bear))
+            )
         total_signals += 1
 
     if "smr" in parameters_lower:
@@ -198,7 +233,9 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
             category_scores["structure"].append(min(m_force_bull + conf_bull, 1.0))
         elif m_force_bear > m_force_bull:
             bear_votes += 1
-            category_scores["structure"].append(max(0.0, 1.0 - (m_force_bear + conf_bear)))
+            category_scores["structure"].append(
+                max(0.0, 1.0 - (m_force_bear + conf_bear))
+            )
         total_signals += 1
 
     # 4. Aggregate results
@@ -222,7 +259,11 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
     regime = "trend" if adx_val >= 25.0 else "range"
 
     # Calculate overall strength (using ADX normalized as primary, fallback to ATR ratio)
-    strength = round(min(adx_val / 50.0, 1.0), 2) if "adx" in parameters_lower else round(atr_ratio, 2)
+    strength = (
+        round(min(adx_val / 50.0, 1.0), 2)
+        if "adx" in parameters_lower
+        else round(atr_ratio, 2)
+    )
 
     # Calculate average grades per category (fallback to 0.5 if category had no indicators triggered)
     grades = {}
@@ -230,7 +271,7 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
         if scores:
             grades[cat] = round(sum(scores) / len(scores), 2)
         else:
-            grades[cat] = 0.50 # Default neutral grade if not evaluated
+            grades[cat] = 0.50  # Default neutral grade if not evaluated
 
     # 5. Return final dictionary
     return {
@@ -238,11 +279,12 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
         "confidence": confidence,
         "strength": strength,
         "regime": regime,
-        "grades": grades
+        "grades": grades,
     }
 
 
 # --------------------- LOSS AND PROFIT STOPS --------------------- #
+
 
 def get_loss_and_profit_stops(market: str, direction: str):
     """

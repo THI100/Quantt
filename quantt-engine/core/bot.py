@@ -1,7 +1,7 @@
 import os
+import threading
 import time
 from typing import Optional
-import threading
 
 from loguru import logger
 
@@ -30,9 +30,9 @@ class TradingBot:
 
         self.client.load_markets()
 
-        for symbol in settings.TradingConfig().list_of_interest:
+        for symbol in settings.watcher.get_config().list_of_interest:
             try:
-                self.client.set_leverage(risk.RiskConfig().leverage, symbol)
+                self.client.set_leverage(risk.watcher.get_config().leverage, symbol)
                 logger.debug(f"Leverage set for {symbol}")
             except Exception as err:
                 logger.error(f"Error occured, when setting Leverage: {err}")
@@ -48,7 +48,7 @@ class TradingBot:
         try:
             while self.is_running:
                 if paused_check_func and paused_check_func():
-                    time.sleep(5) # Low CPU usage while paused
+                    time.sleep(5)  # Low CPU usage while paused
                     continue
 
                 manage_open_limit(self.client)

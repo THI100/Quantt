@@ -8,11 +8,9 @@
     "BTC/USDT",
     "ETH/USDT",
     "BNB/USDT",
-    "XRP/USDT",
     "ADA/USDT",
-    "AVAX/USDT",
-    "ETC/USDT",
-    "LINK/USDT"
+    "XRP/USDT",
+    "PAXG/USDT"
   ],
   "list_of_parameters": [
     "ROC",
@@ -20,8 +18,9 @@
     "VWAP",
     "ADX",
     "ATR",
-    "RSI",
     "BB",
-    "DSCP"
+    "DSCP",
+    "SMR",
+    "EMA"
   ]
 }

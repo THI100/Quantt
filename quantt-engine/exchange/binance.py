@@ -27,7 +27,7 @@ def create_client():
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
-                "defaultType": settings.TradingConfig().future_spot,
+                "defaultType": settings.watcher.get_config().future_spot,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
@@ -36,7 +36,7 @@ def create_client():
         }
     )
 
-    client.enable_demo_trading(settings.TradingConfig().is_demo_enabled)
+    client.enable_demo_trading(settings.watcher.get_config().is_demo_enabled)
 
     return client
 

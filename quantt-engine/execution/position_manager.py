@@ -10,15 +10,13 @@ from persistance.models import (
     TakeStopOrder,
 )
 
-tc = settings.TradingConfig()
-
 
 def manage_open_symbols():
     symbol_status = {}
     session = SessionLocal()
 
     try:
-        for symbol in tc.list_of_interest:
+        for symbol in settings.watcher.get_config().list_of_interest:
             # 1. Fetch the absolute latest record for this symbol
             stmt = (
                 select(GeneralOrder)
@@ -113,7 +111,7 @@ def manage_open_symbols():
 def manage_open_limit(client):
     typ = "limit"
 
-    for symbol in tc.list_of_interest:
+    for symbol in settings.watcher.get_config().list_of_interest:
         current_open = fetch.get_open_orders(symbol, 10)
 
         for x in current_open:
