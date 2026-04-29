@@ -1,3 +1,5 @@
+import math
+
 from loguru import logger
 
 import data.fetch as fetch
@@ -7,18 +9,37 @@ r = risk.watcher.get_config()
 
 
 def smart_amount(market: str):
-    bal = fetch.balance()
-    ticker = fetch.get_ticker(market)
-    last = ticker["last"]
-    usdt_n = bal["USDT"]["free"]
+    try:
+        # 1. Fetch data
+        bal = fetch.balance()
+        ticker = fetch.get_ticker(market)
 
-    limited = usdt_n * r.percentage_of_capital_per_trade
+        last = ticker.get("last") or ticker.get("close")
 
-    ma = (limited / last) * r.leverage
+        # 3. Extract Balance
+        usdt_n = bal.get("USDT", {}).get("free")
 
-    market_amount = round(ma, 4)
+        # 4. Safety Check: Avoid Division by Zero
+        if not last or last <= 0 or math.isnan(last):
+            return 0.0
 
-    return market_amount
+        # 5. Calculation Logic
+        percentage = getattr(r, "percentage_of_capital_per_trade", 0.0)
+        leverage = getattr(r, "leverage", 1.0)
+
+        limited = usdt_n * percentage
+        ma = (limited / last) * leverage
+
+        # 6. Final Polish
+        # Check result one last time before rounding
+        if math.isnan(ma) or math.isinf(ma):
+            return 0.0
+
+        return round(ma, 4)
+
+    except Exception as e:
+        # Log the error if necessary: logger.info(f"Error in smart_amount: {e}")
+        return 0.0
 
 
 def blp(market: str, side: str, amount: float):

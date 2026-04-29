@@ -9,11 +9,8 @@ import utils.math as smath
 
 # ---------- VWAP-indicator ----------#
 
-def vwap(
-    candles: List[List[float]],
-    period: int = 14,
-    use_typical_price: bool = True
-):
+
+def vwap(candles: List[List[float]], period: int = 14, use_typical_price: bool = True):
     """
     Returns:
         vwap_value: float   # last VWAP value
@@ -41,13 +38,13 @@ def vwap(
 
     # Sliding window calculation (non-vectorized)
     for i in range(period, len(candles) + 1):
-        window_pv = pv[i-period:i]
-        window_vol = volumes[i-period:i]
+        window_pv = pv[i - period : i]
+        window_vol = volumes[i - period : i]
 
         sum_vol = np.sum(window_vol)
 
         if sum_vol == 0:
-            current_vwap = prices[i-1]
+            current_vwap = prices[i - 1]
         else:
             current_vwap = np.sum(window_pv) / sum_vol
 
@@ -227,10 +224,7 @@ def macd(
 # ---------- EMA-indicator ----------#
 
 
-def ema(
-    candles: List[List[float]],
-    period: int = 20
-):
+def ema(candles: List[List[float]], period: int = 20):
     """
     Returns:
         ema_value: float   # last EMA value
@@ -267,10 +261,7 @@ def ema(
 # ---------- ATR-indicator ----------#
 
 
-def atr(
-    candles: List[List[float]],
-    period: int = 14
-) -> Tuple[float, float, list]:
+def atr(candles: List[List[float]], period: int = 14) -> Tuple[float, float, list]:
     """
     Returns:
         atr_value: float    # last ATR value
@@ -311,10 +302,7 @@ def atr(
 # ---------- ROC-indicator ----------#
 
 
-def roc(
-    candles: List[List[float]],
-    period: int = 12
-):
+def roc(candles: List[List[float]], period: int = 12):
     """
     Returns:
         roc_value: float   # last ROC value (percentage)
@@ -345,9 +333,7 @@ def roc(
 
 
 def supertrend(
-    candles: List[List[float]],
-    period: int = 10,
-    multiplier: float = 3.0
+    candles: List[List[float]], period: int = 10, multiplier: float = 3.0
 ) -> Tuple[float, str, list]:
     """
     Returns:
@@ -367,19 +353,21 @@ def supertrend(
     # 1. Calculate ATR rolling window
     atr_values = np.zeros(len(candles))
     for i in range(1, len(candles)):
-        tr = max(highs[i] - lows[i],
-                 abs(highs[i] - closes[i-1]),
-                 abs(lows[i] - closes[i-1]))
+        tr = max(
+            highs[i] - lows[i],
+            abs(highs[i] - closes[i - 1]),
+            abs(lows[i] - closes[i - 1]),
+        )
         atr_values[i] = tr
 
     # Simple Moving Average of TR to get ATR
     # We'll use a manual rolling mean to stay consistent with your ATR function
     def get_atr_at_index(idx):
-        return np.mean(atr_values[max(1, idx-period+1):idx+1])
+        return np.mean(atr_values[max(1, idx - period + 1) : idx + 1])
 
     # 2. Initialize variables
     st_series = [0.0] * len(candles)
-    direction = [1] * len(candles) # 1 for Up, -1 for Down
+    direction = [1] * len(candles)  # 1 for Up, -1 for Down
 
     upper_band = np.zeros(len(candles))
     lower_band = np.zeros(len(candles))
@@ -392,24 +380,24 @@ def supertrend(
         basic_lb = median_price - (multiplier * current_atr)
 
         # Final Upper Band (Cannot move up if price is below previous upper band)
-        if basic_ub < upper_band[i-1] or closes[i-1] > upper_band[i-1]:
+        if basic_ub < upper_band[i - 1] or closes[i - 1] > upper_band[i - 1]:
             upper_band[i] = basic_ub
         else:
-            upper_band[i] = upper_band[i-1]
+            upper_band[i] = upper_band[i - 1]
 
         # Final Lower Band (Cannot move down if price is above previous lower band)
-        if basic_lb > lower_band[i-1] or closes[i-1] < lower_band[i-1]:
+        if basic_lb > lower_band[i - 1] or closes[i - 1] < lower_band[i - 1]:
             lower_band[i] = basic_lb
         else:
-            lower_band[i] = lower_band[i-1]
+            lower_band[i] = lower_band[i - 1]
 
         # Determine Direction
-        if closes[i] > upper_band[i-1]:
+        if closes[i] > upper_band[i - 1]:
             direction[i] = 1
-        elif closes[i] < lower_band[i-1]:
+        elif closes[i] < lower_band[i - 1]:
             direction[i] = -1
         else:
-            direction[i] = direction[i-1]
+            direction[i] = direction[i - 1]
 
         st_series[i] = lower_band[i] if direction[i] == 1 else upper_band[i]
 
@@ -423,9 +411,7 @@ def supertrend(
 
 
 def bollinger_bands(
-    candles: List[List[float]],
-    period: int = 20,
-    std_dev_multiplier: float = 2.0
+    candles: List[List[float]], period: int = 20, std_dev_multiplier: float = 2.0
 ):
     """
     Returns:
@@ -445,7 +431,7 @@ def bollinger_bands(
     bandwidth_series = []
 
     for i in range(period, len(closes) + 1):
-        window = closes[i-period:i]
+        window = closes[i - period : i]
 
         sma = np.mean(window)
         std = np.std(window)
@@ -460,14 +446,14 @@ def bollinger_bands(
         # Bandwidth is a useful secondary metric: (Upper - Lower) / Middle
         bandwidth_series.append((upper - lower) / sma)
 
-    last_bands = (float(upper_series[-1]), float(middle_series[-1]), float(lower_series[-1]))
+    last_bands = (
+        float(upper_series[-1]),
+        float(middle_series[-1]),
+        float(lower_series[-1]),
+    )
     bb_mean_width = float(np.mean(bandwidth_series))
 
-    bb_series = {
-        "upper": upper_series,
-        "middle": middle_series,
-        "lower": lower_series
-    }
+    bb_series = {"upper": upper_series, "middle": middle_series, "lower": lower_series}
 
     return last_bands, bb_mean_width, bb_series
 
@@ -475,10 +461,7 @@ def bollinger_bands(
 # ---------- ADX-indicator ----------#
 
 
-def adx(
-    candles: List[List[float]],
-    period: int = 14
-):
+def adx(candles: List[List[float]], period: int = 14):
     """
     Returns:
         adx_value: float    # last ADX value
@@ -507,9 +490,9 @@ def adx(
     # Wilder's Smoothing
     def smooth(data, per):
         smoothed = np.zeros(len(data))
-        smoothed[per-1] = np.mean(data[:per])
+        smoothed[per - 1] = np.mean(data[:per])
         for i in range(per, len(data)):
-            smoothed[i] = (smoothed[i-1] * (per - 1) + data[i]) / per
+            smoothed[i] = (smoothed[i - 1] * (per - 1) + data[i]) / per
         return smoothed
 
     tr_smooth = smooth(tr, period)
@@ -517,7 +500,9 @@ def adx(
     minus_di = 100 * (smooth(minus_dm, period) / tr_smooth)
 
     # Calculate DX and ADX
-    dx = 100 * np.abs(plus_di - minus_di) / (plus_di + minus_di + 1e-10) # 1e-10 to avoid div by zero
+    dx = (
+        100 * np.abs(plus_di - minus_di) / (plus_di + minus_di + 1e-10)
+    )  # 1e-10 to avoid div by zero
     adx_series = smooth(dx, period)
 
     adx_value = float(adx_series[-1])
@@ -529,9 +514,7 @@ def adx(
 # ---------- ATR-indicator ----------#
 
 
-def obv(
-    candles: List[List[float]]
-):
+def obv(candles: List[List[float]]):
     """
     Returns:
         obv_value: float    # last OBV value
@@ -736,7 +719,7 @@ def smr(
     swing_right: int = 2,
     volume_period: int = 20,
     min_volume_strength: float = 1.1,
-    min_fvg_size: float = 0.0, # Minimum % size of the gap to be recorded
+    min_fvg_size: float = 0.0,  # Minimum % size of the gap to be recorded
 ) -> List[Dict]:
 
     candles = np.asarray(candles, dtype=float)
@@ -780,27 +763,31 @@ def smr(
             if lows[i] > highs[i - 2]:
                 gap_size = (lows[i] - highs[i - 2]) / highs[i - 2] * 100
                 if gap_size > min_fvg_size:
-                    events.append({
-                        "type": "fvg_bullish",
-                        "index": i,
-                        "top": lows[i],
-                        "bottom": highs[i - 2],
-                        "multiplicator": smath.clamp_multiplier(gap_size),
-                        "volume_strength": volume_strength,
-                    })
+                    events.append(
+                        {
+                            "type": "fvg_bullish",
+                            "index": i,
+                            "top": lows[i],
+                            "bottom": highs[i - 2],
+                            "multiplicator": smath.clamp_multiplier(gap_size),
+                            "volume_strength": volume_strength,
+                        }
+                    )
 
             # Bearish FVG: High of candle[i] < Low of candle[i-2]
             elif highs[i] < lows[i - 2]:
                 gap_size = (lows[i - 2] - highs[i]) / lows[i - 2] * 100
                 if gap_size > min_fvg_size:
-                    events.append({
-                        "type": "fvg_bearish",
-                        "index": i,
-                        "top": lows[i - 2],
-                        "bottom": highs[i],
-                        "multiplicator": smath.clamp_multiplier(gap_size),
-                        "volume_strength": volume_strength,
-                    })
+                    events.append(
+                        {
+                            "type": "fvg_bearish",
+                            "index": i,
+                            "top": lows[i - 2],
+                            "bottom": highs[i],
+                            "multiplicator": smath.clamp_multiplier(gap_size),
+                            "volume_strength": volume_strength,
+                        }
+                    )
 
         # -------- advance swing pointers --------
         while (
@@ -813,13 +800,19 @@ def smr(
             hi_ptr += 1
 
             if prev_high is not None:
-                mult = abs(last_high - prev_high) / prev_high * 100 if prev_high != 0 else 0
-                events.append({
-                    "type": "HH" if last_high > prev_high else "LH",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                })
+                mult = (
+                    abs(last_high - prev_high) / prev_high * 100
+                    if prev_high != 0
+                    else 0
+                )
+                events.append(
+                    {
+                        "type": "HH" if last_high > prev_high else "LH",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
 
         while (
             lo_ptr < len(swing_low_idxs) and swing_low_idxs[lo_ptr] + swing_right <= i
@@ -832,12 +825,14 @@ def smr(
 
             if prev_low is not None:
                 mult = abs(last_low - prev_low) / prev_low * 100 if prev_low != 0 else 0
-                events.append({
-                    "type": "HL" if last_low > prev_low else "LL",
-                    "index": i,
-                    "multiplicator": smath.clamp_multiplier(mult),
-                    "volume_strength": volume_strength,
-                })
+                events.append(
+                    {
+                        "type": "HL" if last_low > prev_low else "LL",
+                        "index": i,
+                        "multiplicator": smath.clamp_multiplier(mult),
+                        "volume_strength": volume_strength,
+                    }
+                )
 
         # -------- volume filter for BOS / CHOCH --------
         if volume_strength < min_volume_strength:
@@ -854,23 +849,27 @@ def smr(
         if last_high and close > last_high:
             event_type = "bos_bullish" if trend == "up" else "choch_bullish"
             mult = (close - last_high) / last_high * 100
-            events.append({
-                "type": event_type,
-                "index": i,
-                "multiplicator": smath.clamp_multiplier(mult),
-                "volume_strength": volume_strength,
-            })
+            events.append(
+                {
+                    "type": event_type,
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                }
+            )
             trend = "up"
 
         if last_low and close < last_low:
             event_type = "bos_bearish" if trend == "down" else "choch_bearish"
             mult = (last_low - close) / last_low * 100
-            events.append({
-                "type": event_type,
-                "index": i,
-                "multiplicator": smath.clamp_multiplier(mult),
-                "volume_strength": volume_strength,
-            })
+            events.append(
+                {
+                    "type": event_type,
+                    "index": i,
+                    "multiplicator": smath.clamp_multiplier(mult),
+                    "volume_strength": volume_strength,
+                }
+            )
             trend = "down"
 
     return events
@@ -881,9 +880,7 @@ def smr(
 # ============================================================
 
 
-def pivot_points_fibonacci(
-    candles: List[List[float]]
-) -> Dict[str, float]:
+def pivot_points_fibonacci(candles: List[List[float]]) -> Dict[str, float]:
     """
     Calculates Fibonacci Pivot Points based on the most recent completed period.
     Typically used with Daily candles to find levels for the next day.
@@ -912,7 +909,7 @@ def pivot_points_fibonacci(
         "r3": float(pp + (pivot_range * 1.000)),
         "s1": float(pp - (pivot_range * 0.382)),
         "s2": float(pp - (pivot_range * 0.618)),
-        "s3": float(pp - (pivot_range * 1.000))
+        "s3": float(pp - (pivot_range * 1.000)),
     }
 
     return levels

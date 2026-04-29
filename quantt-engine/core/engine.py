@@ -27,7 +27,7 @@ def avaliation_and_place(client):
         side = data["direction"]
 
         if side == "neutral":
-            logger.info(f"This {symbol} is in the state of {side} market.")
+            logger.info(f"{symbol} is in the state of {side} market.")
             continue
 
         conf_score = data["confidence"] * 100
@@ -48,8 +48,11 @@ def avaliation_and_place(client):
 
         # 5. Dynamic Sizing based on Strength
         raw_nn = risk_manager.smart_amount(symbol)
-        nn = raw_nn * (0.5 + (data["strength"] / 2))
-        # nn = math.floor(nn * 1000) / 1000
+        if math.isnan(raw_nn):
+            nn = 0.0
+        else:
+            nn = raw_nn * (0.5 + (data["strength"] / 2))
+        nn = math.floor(nn * 1000) / 1000
 
         if nn < 0.01:
             logger.info(

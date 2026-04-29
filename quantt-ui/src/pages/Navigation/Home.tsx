@@ -185,27 +185,27 @@ function Home() {
 
   // ─── useEffect ────────────────────────────────────────────────────────────────────
 
-  const [isInitialized, setIsInitialized] = useState(false);
-  const hasRunA = useRef(false);
+  // const [isInitialized, setIsInitialized] = useState(false);
+  // const hasRunA = useRef(false);
 
-  useEffect(() => {
-    // If we've already started the process, don't do it again
-    if (hasRunA.current) return;
-    hasRunA.current = true;
+  // useEffect(() => {
+  //   // If we've already started the process, don't do it again
+  //   if (hasRunA.current) return;
+  //   hasRunA.current = true;
 
-    const initialize = async () => {
-      try {
-        await api.post("/");
-        setIsInitialized(true);
-      } catch (error) {
-        // If it fails, we reset hasRun so a retry could potentially happen
-        hasRunA.current = false;
-        console.error("Initialization failed:", error);
-      }
-    };
+  //   const initialize = async () => {
+  //     try {
+  //       await api.post("/");
+  //       setIsInitialized(true);
+  //     } catch (error) {
+  //       // If it fails, we reset hasRun so a retry could potentially happen
+  //       hasRunA.current = false;
+  //       console.error("Initialization failed:", error);
+  //     }
+  //   };
 
-    initialize();
-  }, []);
+  //   initialize();
+  // }, []);
 
   useEffect(() => {
     if (hasRun.current) return;
