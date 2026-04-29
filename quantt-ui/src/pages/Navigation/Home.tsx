@@ -79,7 +79,6 @@ function Home() {
       };
 
       // 3. Map Trades Data
-      // Note: Backend 'trades' is an array inside an object
       const mappedTrades: Trade[] = positionsRaw.trades.map(
         (t: any, index: number) => ({
           id: String(index),
@@ -184,28 +183,6 @@ function Home() {
   };
 
   // ─── useEffect ────────────────────────────────────────────────────────────────────
-
-  const [isInitialized, setIsInitialized] = useState(false);
-  const hasRunA = useRef(false);
-
-  useEffect(() => {
-    // If we've already started the process, don't do it again
-    if (hasRunA.current) return;
-    hasRunA.current = true;
-
-    const initialize = async () => {
-      try {
-        await api.post("/");
-        setIsInitialized(true);
-      } catch (error) {
-        // If it fails, we reset hasRun so a retry could potentially happen
-        hasRunA.current = false;
-        console.error("Initialization failed:", error);
-      }
-    };
-
-    initialize();
-  }, []);
 
   useEffect(() => {
     if (hasRun.current) return;
