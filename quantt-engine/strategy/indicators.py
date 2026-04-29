@@ -462,12 +462,6 @@ def bollinger_bands(
 
 
 def adx(candles: List[List[float]], period: int = 14):
-    """
-    Returns:
-        adx_value: float    # last ADX value
-        adx_mean: float     # mean ADX strength
-        adx_series: list    # full ADX series
-    """
     if len(candles) < period * 2:
         logger.warning("Not enough candles to compute ADX")
 
@@ -476,42 +470,49 @@ def adx(candles: List[List[float]], period: int = 14):
     lows = candles[:, 3]
     closes = candles[:, 4]
 
-    # Calculate True Range (TR) and Directional Movement (DM)
     up_move = np.diff(highs)
     down_move = -np.diff(lows)
 
-    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0)
-    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0)
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
 
-    # Simplified True Range calculation
     tr = np.maximum(highs[1:] - lows[1:], np.abs(highs[1:] - closes[:-1]))
     tr = np.maximum(tr, np.abs(lows[1:] - closes[:-1]))
 
-    # Wilder's Smoothing
     def smooth(data, per):
         smoothed = np.zeros(len(data))
-        smoothed[per - 1] = np.mean(data[:per])
+        seed = np.mean(data[:per])
+        smoothed[per - 1] = seed if not np.isnan(seed) else 0.0
         for i in range(per, len(data)):
             smoothed[i] = (smoothed[i - 1] * (per - 1) + data[i]) / per
         return smoothed
 
     tr_smooth = smooth(tr, period)
-    plus_di = 100 * (smooth(plus_dm, period) / tr_smooth)
-    minus_di = 100 * (smooth(minus_dm, period) / tr_smooth)
 
-    # Calculate DX and ADX
-    dx = (
-        100 * np.abs(plus_di - minus_di) / (plus_di + minus_di + 1e-10)
-    )  # 1e-10 to avoid div by zero
+    # Guard: replace near-zero tr_smooth values to avoid division blow-up
+    tr_smooth_safe = np.where(tr_smooth < 1e-10, 1e-10, tr_smooth)
+
+    plus_di = 100 * (smooth(plus_dm, period) / tr_smooth_safe)
+    minus_di = 100 * (smooth(minus_dm, period) / tr_smooth_safe)
+
+    dx = 100 * np.abs(plus_di - minus_di) / (np.abs(plus_di) + np.abs(minus_di) + 1e-10)
     adx_series = smooth(dx, period)
+
+    # Final NaN/inf sweep before returning
+    adx_series = np.nan_to_num(adx_series, nan=0.0, posinf=100.0, neginf=0.0)
 
     adx_value = float(adx_series[-1])
     adx_mean = float(np.mean(adx_series))
 
+    if np.isnan(adx_value) or np.isinf(adx_value):
+        raise ValueError(f"ADX computation produced an invalid adx_value: {adx_value}")
+    if np.isnan(adx_mean) or np.isinf(adx_mean):
+        raise ValueError(f"ADX computation produced an invalid adx_mean: {adx_mean}")
+
     return adx_value, adx_mean, adx_series.tolist()
 
 
-# ---------- ATR-indicator ----------#
+# ---------- OBV-indicator ----------#
 
 
 def obv(candles: List[List[float]]):

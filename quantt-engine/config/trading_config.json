@@ -21,6 +21,11 @@
     "BB",
     "DSCP",
     "SMR",
-    "EMA"
+    "EMA",
+    "TnK",
+    "MACD",
+    "PPF",
+    "RSI",
+    "ST"
   ]
 }

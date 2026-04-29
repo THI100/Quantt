@@ -1,9 +1,28 @@
+import math
+
+from loguru import logger
+
 import strategy.indicators as indicators
 from config import risk
 from data import cache
 from utils.math import scale_0_100
 
 r = risk.watcher.get_config()
+
+# ----------------------- Helpers ----------------------- #
+
+
+def _check_nan(value, name: str):
+    """Raise ValueError if value is None, NaN, or infinite."""
+    if value is None:
+        raise ValueError(f"Indicator '{name}' returned None.")
+    try:
+        if math.isnan(value) or math.isinf(value):
+            raise ValueError(f"Indicator '{name}' returned an invalid value: {value}")
+    except TypeError:
+        raise ValueError(f"Indicator '{name}' returned a non-numeric value: {value!r}")
+    return value
+
 
 # --------------------- Auxiliaries --------------------- #
 
@@ -90,18 +109,17 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
     bear_votes = 0
     total_signals = 0
 
-    # Track raw normalized scores (0.0 to 1.0) for each category
     category_scores = {"trend": [], "momentum": [], "volume": [], "structure": []}
 
-    # Regime and Strength specific trackers
-    adx_val = 20.0  # Default fallback
+    adx_val = 20.0
     atr_ratio = 0.5
 
-    # 3. Process each indicator if present in parameters
     parameters_lower = [p.lower() for p in parameters]
 
     if "vwap" in parameters_lower:
         vwap_value, vwap_mean, vwap_series = indicators.vwap(candles)
+        _check_nan(vwap_value, "vwap_value")
+        _check_nan(vwap_mean, "vwap_mean")
         score = 1.0 if vwap_value > vwap_mean else 0.0
         category_scores["trend"].append(score)
         if score > 0.5:
@@ -112,7 +130,8 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if "rsi" in parameters_lower:
         rsi_value, rsi_mean, rsi_series = indicators.rsi(candles)
-        score = rsi_value / 100.0  # Normalize 0-100 to 0.0-1.0
+        _check_nan(rsi_value, "rsi_value")
+        score = rsi_value / 100.0
         category_scores["momentum"].append(score)
         if rsi_value > 50:
             bull_votes += 1
@@ -122,6 +141,8 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if "tnk" in parameters_lower:
         tenkan_sen, kijun_sen = indicators.tenkan_and_kijun(candles)
+        _check_nan(tenkan_sen, "tenkan_sen")
+        _check_nan(kijun_sen, "kijun_sen")
         score = 1.0 if tenkan_sen > kijun_sen else 0.0
         category_scores["trend"].append(score)
         if score > 0.5:
@@ -139,6 +160,7 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
             signal_series,
             hist_series,
         ) = indicators.macd(candles)
+        _check_nan(hist_value, "macd_hist_value")
         score = 1.0 if hist_value > 0 else 0.0
         category_scores["momentum"].append(score)
         if hist_value > 0:
@@ -149,6 +171,8 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if "ema" in parameters_lower:
         ema_value, ema_mean, ema_series = indicators.ema(candles)
+        _check_nan(ema_value, "ema_value")
+        _check_nan(ema_mean, "ema_mean")
         score = 1.0 if ema_value > ema_mean else 0.0
         category_scores["trend"].append(score)
         if score > 0.5:
@@ -159,13 +183,14 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if "atr" in parameters_lower:
         atr_value, atr_mean, atr_series = indicators.atr(candles)
-        atr_ratio = min(atr_value / (atr_mean + 1e-9), 1.0)  # Avoid div by zero
-        category_scores["structure"].append(
-            atr_ratio
-        )  # High ATR = high volatility structure
+        _check_nan(atr_value, "atr_value")
+        _check_nan(atr_mean, "atr_mean")
+        atr_ratio = min(atr_value / (atr_mean + 1e-9), 1.0)
+        category_scores["structure"].append(atr_ratio)
 
     if "roc" in parameters_lower:
         roc_value, roc_mean, roc_series = indicators.roc(candles)
+        _check_nan(roc_value, "roc_value")
         score = 1.0 if roc_value > 0 else 0.0
         category_scores["momentum"].append(score)
         if roc_value > 0:
@@ -176,6 +201,10 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if "st" in parameters_lower:
         last_st, last_dir, st_series = indicators.supertrend(candles)
+        if not isinstance(last_dir, str):
+            raise ValueError(
+                f"Indicator 'supertrend_dir' returned a non-string value: {last_dir!r}"
+            )
         score = 1.0 if last_dir == "up" else 0.0
         category_scores["trend"].append(score)
         if last_dir == "up":
@@ -187,22 +216,26 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
     if "bb" in parameters_lower:
         last_bands, bb_mean_width, bb_series = indicators.bollinger_bands(candles)
         upper, middle, lower = last_bands
-        # Position of price relative to bands (estimating price is near middle for safe proxy)
-        # Using bandwidth squeeze as a structure metric
+        _check_nan(upper, "bb_upper")
+        _check_nan(middle, "bb_middle")
+        _check_nan(lower, "bb_lower")
+        _check_nan(bb_mean_width, "bb_mean_width")
         bb_width = upper - lower
         squeeze_ratio = min(bb_width / (bb_mean_width + 1e-9), 1.0)
         category_scores["structure"].append(squeeze_ratio)
 
     if "adx" in parameters_lower:
         adx_value, adx_mean, adx_series = indicators.adx(candles)
+        _check_nan(adx_value, "adx_value")
+        _check_nan(adx_mean, "adx_mean")
         adx_val = adx_value
-        score = min(
-            adx_value / 50.0, 1.0
-        )  # ADX > 25 is strong trend, cap at 50 for max score
+        score = min(adx_value / 50.0, 1.0)
         category_scores["trend"].append(score)
 
     if "obv" in parameters_lower:
         obv_value, obv_mean, obv_series = indicators.obv(candles)
+        _check_nan(obv_value, "obv_value")
+        _check_nan(obv_mean, "obv_mean")
         score = 1.0 if obv_value > obv_mean else 0.0
         category_scores["volume"].append(score)
         if obv_value > obv_mean:
@@ -211,11 +244,14 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
             bear_votes += 1
         total_signals += 1
 
-    # Note: These two functions take 'Market' directly, not 'candles'
     if "dscp" in parameters_lower:
         m_force_bull, m_force_bear, conf_bull, conf_bear = (
             get_signal_candlestick_patterns(Market)
         )
+        _check_nan(m_force_bull, "dscp_m_force_bull")
+        _check_nan(m_force_bear, "dscp_m_force_bear")
+        _check_nan(conf_bull, "dscp_conf_bull")
+        _check_nan(conf_bear, "dscp_conf_bear")
         if m_force_bull > m_force_bear:
             bull_votes += 1
             category_scores["structure"].append(min(m_force_bull + conf_bull, 1.0))
@@ -228,6 +264,10 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
 
     if "smr" in parameters_lower:
         m_force_bull, m_force_bear, conf_bull, conf_bear = get_signal_smr(Market)
+        _check_nan(m_force_bull, "smr_m_force_bull")
+        _check_nan(m_force_bear, "smr_m_force_bear")
+        _check_nan(conf_bull, "smr_conf_bull")
+        _check_nan(conf_bear, "smr_conf_bear")
         if m_force_bull > m_force_bear:
             bull_votes += 1
             category_scores["structure"].append(min(m_force_bull + conf_bull, 1.0))
@@ -238,8 +278,7 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
             )
         total_signals += 1
 
-    # 4. Aggregate results
-    # Determine Direction & Confidence
+    # Aggregate results
     direction = "neutral"
     confidence = 0.50
 
@@ -254,26 +293,18 @@ def avaliation_of_market(Market: str, parameters: list[str]) -> dict:
             direction = "neutral"
             confidence = 0.50
 
-    # Determine Strength and Regime
-    # ADX > 25 is typically the threshold for a trending market
     regime = "trend" if adx_val >= 25.0 else "range"
 
-    # Calculate overall strength (using ADX normalized as primary, fallback to ATR ratio)
     strength = (
         round(min(adx_val / 50.0, 1.0), 2)
         if "adx" in parameters_lower
         else round(atr_ratio, 2)
     )
 
-    # Calculate average grades per category (fallback to 0.5 if category had no indicators triggered)
     grades = {}
     for cat, scores in category_scores.items():
-        if scores:
-            grades[cat] = round(sum(scores) / len(scores), 2)
-        else:
-            grades[cat] = 0.50  # Default neutral grade if not evaluated
+        grades[cat] = round(sum(scores) / len(scores), 2) if scores else 0.50
 
-    # 5. Return final dictionary
     return {
         "direction": direction,
         "confidence": confidence,

@@ -52,7 +52,7 @@ def avaliation_and_place(client):
             nn = 0.0
         else:
             nn = raw_nn * (0.5 + (data["strength"] / 2))
-        nn = math.floor(nn * 1000) / 1000
+            nn = math.floor(nn * 1000) / 1000
 
         if nn < 0.01:
             logger.info(
@@ -96,6 +96,9 @@ def avaliation_and_place(client):
             logger.info(
                 f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}"
             )
+
+            logger.info(f"{symbol}, {side}, {nn}, {entry_price}, {sl}, {tp}")
+
             order_manager.order(
                 client,
                 symbol,
