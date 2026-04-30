@@ -19,7 +19,6 @@ class TradingBot:
         self.is_running = False
         self.db_path = "./general.db"
         self.stop_event = threading.Event()
-        self.setup_environment()
 
     def setup_environment(self):
         """Initializes database and exchange settings."""
@@ -96,7 +95,6 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                print("hi2")
                 return self.client.fetch_order(id, symbol)
             except Exception as err:
                 logger.error(
@@ -105,7 +103,6 @@ class TradingBot:
                 return []
         else:
             try:
-                print("hi")
                 return self.client.fetch_orders(symbol)
             except Exception as err:
                 logger.error(

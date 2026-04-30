@@ -1,6 +1,5 @@
 import time
 from typing import Optional
-
 from loguru import logger
 
 import data.fetch as fetch
@@ -8,8 +7,81 @@ from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
 
-db = SessionLocal()
+# --------------------- Helpers --------------------- #
 
+def _order_ice(
+    client,
+    market: str,
+    total_amount: float,
+    side: str,
+    tp: Optional[float],
+    sl: Optional[float],
+    order_id: str,
+):
+    """Sets Stop Loss and Take Profit for a specific iceberg slice."""
+    exit_side = "sell" if side.lower() == "buy" else "buy"
+
+    # Place Stop Loss
+    if sl:
+        _place_linked_order(
+            client, market, "STOP_MARKET", exit_side, total_amount, sl,
+            order_id, "stop_id", SessionLocal
+        )
+
+    # Place Take Profit
+    if tp:
+        _place_linked_order(
+            client, market, "TAKE_PROFIT_MARKET", exit_side, total_amount, tp,
+            order_id, "take_id", SessionLocal
+        )
+
+def _place_linked_order(client, market, order_type, side, amount, trigger_price, parent_id, id_field, session_factory):
+    """
+    Helper function to handle the repetitive logic of SL/TP
+    to avoid UnboundLocalErrors and code duplication.
+    """
+    try:
+        order_data = client.create_order(
+            symbol=market,
+            type=order_type,
+            side=side,
+            amount=amount,
+            price=trigger_price,
+            params={
+                "stopPrice": trigger_price,
+                "reduceOnly": True,
+                "workingType": "MARK_PRICE",
+            },
+        )
+        logger.info(f"Created {order_type}: {order_data['id']}")
+
+        with session_factory() as session:
+            try:
+                parent = session.get(GeneralOrder, parent_id)
+                if parent:
+                    setattr(parent, id_field, order_data["id"])
+
+                # Create Linked Order Record
+                new_linked = TakeStopOrder(
+                    id=order_data["id"],
+                    parent_order_id=parent_id,
+                    price=order_data.get("triggerPrice", trigger_price),
+                    amount=order_data["amount"],
+                    side=order_data["side"],
+                    symbol=order_data["symbol"],
+                    order_type=order_type,
+                    time=order_data["timestamp"],
+                )
+                session.add(new_linked)
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                logger.error(f"DB Error saving {order_type}: {e}")
+
+    except Exception as e:
+        logger.error(f"{order_type} API Failure: {e}")
+
+# --------------------- Nominal Order --------------------- #
 
 def order(
     client,
@@ -21,286 +93,125 @@ def order(
     stop_loss: Optional[float] = None,
     take_profit: Optional[float] = None,
 ):
-    # 1. Determine Entry and Exit Sides
-    entry_side = sell_buy
+    # 1. Determine Sides
+    entry_side = sell_buy.lower()
+    exit_side = "sell" if entry_side == "buy" else "buy"
 
-    if entry_side == "buy":
-        exit_side = "sell"
-    else:
-        exit_side = "buy"
+    # 2. Place Main Entry Order
+    try:
+        entry_order = client.create_order(market, t, entry_side, n, price)
+        general_id = entry_order["id"]
+        logger.info(f"Created entry: {general_id}")
+    except Exception as e:
+        logger.error(f"Entry Order Failed: {e}")
+        return None
 
-    # 2. Place the Main Entry Order
-    # Using entry_side ('buy' for bullish)
-    entry_order = client.create_order(market, t, entry_side, n, price)
-
-    general_id = entry_order["id"]
-
-    with db as session:
+    # 3. Persist Entry Order
+    with SessionLocal() as session:
         try:
             new_order = GeneralOrder(
-                id=entry_order["id"],
-                price=entry_order["average"] if t == "market" else entry_order["price"],
+                id=general_id,
+                price=entry_order.get("average") if t == "market" else entry_order.get("price"),
                 entrance_exit="entrance",
                 amount=entry_order["amount"],
                 side=entry_order["side"],
                 symbol=entry_order["symbol"],
                 order_type=entry_order["type"],
                 time=entry_order["timestamp"],
-                previous_time=entry_order["lastTradeTimestamp"],
+                previous_time=entry_order.get("lastTradeTimestamp"),
             )
             session.add(new_order)
-
             session.commit()
-
         except Exception as e:
             session.rollback()
-            logger.error(f"An error occurred: {e}")
+            logger.error(f"Database error saving Entry: {e}")
 
-    # 3. Place Stop Loss
+    # 4. Place Stop Loss
     if stop_loss:
-        type = "STOP_MARKET"
-        try:
-            sl_order = client.create_order(
-                symbol=market,
-                type=type,
-                side=exit_side,  # Must be 'sell' if entry was 'buy'
-                amount=n,
-                price=stop_loss,  # The price it executes at
-                params={
-                    "stopPrice": stop_loss,
-                    "reduceOnly": True,
-                    "workingType": "MARK_PRICE",
-                },
-            )
-        except Exception as e:
-            logger.error(f"Stop Loss Failed: {e}")
+        _place_linked_order(
+            client, market, "STOP_MARKET", exit_side, n, stop_loss,
+            general_id, "stop_id", session_factory=SessionLocal
+        )
 
-        with db as session:
-            try:
-                g_order = session.get(GeneralOrder, general_id)
-                g_order.stop_id = sl_order["id"]
-                new_order = TakeStopOrder(
-                    id=sl_order["id"],
-                    parent_order_id=general_id,
-                    price=sl_order["triggerPrice"],
-                    amount=sl_order["amount"],
-                    side=sl_order["side"],
-                    symbol=sl_order["symbol"],
-                    order_type=type,
-                    time=sl_order["timestamp"],
-                )
-                session.add(new_order)
-
-                session.commit()
-
-            except Exception as e:
-                session.rollback()
-                logger.error(f"An error occurred: {e}")
-
-    # 4. Place Take Profit
+    # 5. Place Take Profit
     if take_profit:
-        type = "TAKE_PROFIT_MARKET"
-        try:
-            tp_order = client.create_order(
-                symbol=market,
-                type=type,
-                side=exit_side,
-                amount=n,
-                price=take_profit,
-                params={
-                    "stopPrice": take_profit,
-                    "reduceOnly": True,
-                    "workingType": "MARK_PRICE",
-                },
-            )
-        except Exception as e:
-            logger.error(f"Take Profit Failed: {e}")
+        _place_linked_order(
+            client, market, "TAKE_PROFIT_MARKET", exit_side, n, take_profit,
+            general_id, "take_id", session_factory=SessionLocal
+        )
 
-        with db as session:
-            try:
-                g_order = session.get(GeneralOrder, general_id)
-                g_order.take_id = tp_order["id"]
-                new_order = TakeStopOrder(
-                    id=tp_order["id"],
-                    parent_order_id=general_id,
-                    price=tp_order["triggerPrice"],
-                    amount=tp_order["amount"],
-                    side=tp_order["side"],
-                    symbol=tp_order["symbol"],
-                    order_type=type,
-                    time=tp_order["timestamp"],
-                )
-                session.add(new_order)
-                session.commit()
-
-            except Exception as e:
-                session.rollback()
-                logger.error(f"An error occurred: {e}")
-
-
-def order_ice(
-    client,
-    market: str,
-    total_amount: float,
-    side: str,
-    tp: float,
-    sl: float,
-    order_id: int,
-):
-
-    if side == "buy":
-        exit_side = "sell"
-    else:
-        exit_side = "buy"
-
-    if sl:
-        type = "STOP_MARKET"
-        try:
-            sl_order = client.create_order(
-                symbol=market,
-                type=type,
-                side=exit_side,  # Must be 'sell' if entry was 'buy'
-                amount=total_amount,
-                price=sl,  # The price it executes at
-                params={
-                    "stopPrice": sl,
-                    "reduceOnly": True,
-                    "workingType": "MARK_PRICE",
-                },
-            )
-        except Exception as e:
-            logger.error(f"Stop Loss Failed: {e}")
-
-        with db as session:
-            try:
-                g_order = session.get(GeneralOrder, order_id)
-                g_order.stop_id = sl_order["id"]
-                new_order = TakeStopOrder(
-                    id=sl_order["id"],
-                    parent_order_id=order_id,
-                    price=sl_order["triggerPrice"],
-                    amount=sl_order["amount"],
-                    side=sl_order["side"],
-                    symbol=sl_order["symbol"],
-                    order_type=type,
-                    time=sl_order["timestamp"],
-                )
-                session.add(new_order)
-
-                session.commit()
-
-            except Exception as e:
-                session.rollback()
-                logger.error(f"An error occurred: {e}")
-
-    # 4. Place Take Profit
-    if tp:
-        type = "TAKE_PROFIT_MARKET"
-        try:
-            tp_order = client.create_order(
-                symbol=market,
-                type=type,
-                side=exit_side,
-                amount=total_amount,
-                price=tp,
-                params={
-                    "stopPrice": tp,
-                    "reduceOnly": True,
-                    "workingType": "MARK_PRICE",
-                },
-            )
-        except Exception as e:
-            logger.error(f"Take Profit Failed: {e}")
-
-        with db as session:
-            try:
-                g_order = session.get(GeneralOrder, order_id)
-                g_order.take_id = tp_order["id"]
-                new_order = TakeStopOrder(
-                    id=tp_order["id"],
-                    parent_order_id=order_id,
-                    price=tp_order["triggerPrice"],
-                    amount=tp_order["amount"],
-                    side=tp_order["side"],
-                    symbol=tp_order["symbol"],
-                    order_type=type,
-                    time=tp_order["timestamp"],
-                )
-                session.add(new_order)
-                session.commit()
-
-            except Exception as e:
-                session.rollback()
-                logger.error(f"An error occurred: {e}")
-
+# --------------------- Ice --------------------- #
 
 def execute_iceberg(
     client, market: str, total_amount: float, side: str, tp: float, sl: float
 ):
     remaining_amount = total_amount
-    # Break the order into 10% chunks to hide our size
     chunk_size = total_amount * 0.1
 
-    if side == "bullish":
-        side = "buy"
-    elif side == "bearish":
-        side = "sell"
-    else:
-        logger.error(f"Invalid side, actual side: {side}")
+    # Normalize side
+    normalized_side = side
+
+    if normalized_side not in ["buy", "sell"]:
+        logger.error(f"Invalid side provided: {side}")
+        return
 
     while remaining_amount > 0:
-        price_data = risk_manager.blp(market, side, chunk_size)
-        target_price = price_data
-
+        # 1. Get current market depth/target price
+        target_price = risk_manager.blp(market, normalized_side, chunk_size)
         current_slice = min(chunk_size, remaining_amount)
 
-        logger.info(f"Placing {side} limit order: {current_slice} at {target_price}")
+        logger.info(f"Iceberg Slice: {normalized_side} {current_slice} at {target_price}")
 
         try:
-            order = client.create_order(
-                market, "limit", side, current_slice, target_price, {"postOnly": True}
+            # 2. Create the Entry Order
+            order_resp = client.create_order(
+                market, "limit", normalized_side, current_slice, target_price, {"postOnly": True}
             )
+            order_id = order_resp["id"]
 
-            order_ice(market, current_slice, side, tp, sl, order["id"])
-
-            with db as session:
+            # 3. Save Entry to DB immediately
+            with SessionLocal() as session:
                 try:
                     new_order = GeneralOrder(
-                        id=order["id"],
-                        price=order["average"],
+                        id=order_id,
+                        price=order_resp.get("average", target_price),
                         entrance_exit="entrance",
-                        amount=order["amount"],
-                        side=order["side"],
-                        symbol=order["symbol"],
-                        order_type=order["type"],
-                        time=order["timestamp"],
-                        previous_time=order["lastTradeTimestamp"],
+                        amount=order_resp["amount"],
+                        side=order_resp["side"],
+                        symbol=order_resp["symbol"],
+                        order_type=order_resp["type"],
+                        time=order_resp["timestamp"],
+                        previous_time=order_resp.get("lastTradeTimestamp"),
                     )
                     session.add(new_order)
-
                     session.commit()
-
-                except Exception as e:
+                except Exception as db_e:
                     session.rollback()
-                    logger.error(f"An error occurred: {e}")
+                    logger.error(f"Iceberg DB Error: {db_e}")
+
+            # 4. Attach Protection (SL/TP)
+            _order_ice(client, market, current_slice, normalized_side, tp, sl, order_id)
+
+            # 5. Wait for fill (Iceberg logic)
+            time.sleep(30)
+
+            # 6. Check Status & Re-evaluate
+            order_status = fetch.get_order(order_id, market)
+            filled = order_status.get("filled", 0)
+            remaining_amount -= filled
+
+            if order_status["status"] != "closed":
+                logger.info(f"Slice partially filled ({filled}). Canceling remainder.")
+                try:
+                    client.cancel_order(order_id, market)
+                except Exception as e:
+                    logger.warning(f"Could not cancel order {order_id}: {e}")
+
+            logger.info(f"Total remaining for iceberg: {remaining_amount}")
 
         except Exception as e:
-            logger.error(f"Order failed/rejected (possibly price changed): {e}")
+            logger.error(f"Slice failed: {e}")
             time.sleep(2)
             continue
 
-        time.sleep(30)
-
-        order_status = fetch.get_order(order["id"], market)
-        filled = order_status["filled"]
-        remaining_amount -= filled
-
-        if order_status["status"] != "closed":
-            logger.info(
-                f"Order partially filled. Canceling remaining {order_status['remaining']} to re-price."
-            )
-            client.cancel_order(order["id"], market)
-
-        logger.info(f"Remaining total to {side}: {remaining_amount}")
-
-    logger.info(f"{market} Iceberg Execution Complete.")
+    logger.info(f"Finished Iceberg for {market}. Total filled: {total_amount - remaining_amount}")

@@ -30,7 +30,7 @@ def avaliation_and_place(client):
             logger.info(f"{symbol} is in the state of {side} market.")
             continue
 
-        conf_score = data["confidence"] * 100
+        conf_score = data["confidence"] * 100 # Transforming to %
         if conf_score < risk_cfg.acceptable_confidence:
             logger.debug(
                 f"Skipping {symbol}: Confidence {conf_score:.2f} below threshold."
@@ -38,7 +38,7 @@ def avaliation_and_place(client):
             continue
 
         # Regime-specific logic
-        if data["regime"] == "range" and data["strength"] > 0.8:
+        if data["regime"] == "range" and data["strength"] > 0.8: # 80% strength
             logger.warning(
                 f"High strength ({data['strength']}) detected in range regime for {symbol}. Proceeding with caution."
             )
@@ -46,28 +46,26 @@ def avaliation_and_place(client):
         stops = sg.get_loss_and_profit_stops(symbol, side)
         sl, tp = stops[0], stops[1]
 
-        # 5. Dynamic Sizing based on Strength
+        # 3. Dynamic Sizing based on Strength
         raw_nn = risk_manager.smart_amount(symbol)
         if math.isnan(raw_nn):
             nn = 0.0
         else:
-            nn = raw_nn * (0.5 + (data["strength"] / 2))
-            nn = math.floor(nn * 1000) / 1000
+            nn = raw_nn * (0.5 + (data["strength"] / 2)) # Strength based size
+            nn = math.floor(nn * 1000) / 1000 # Correcting from any decimal problems. e.g: x.00004
 
-        if nn < 0.01:
+        if nn < 0.01: # minimum amount for Binance
             logger.info(
                 f"Insufficient volume for {symbol}: {nn} is below minimum constraints."
             )
             continue
 
-        # 6. Entry Price Calculation
+        # 4. Entry Price Calculation
         entry_price = risk_manager.blp(symbol, side, nn)
 
-        # 1. Minimum Structural Distance Check
-        # If the SMC structure is too tight, the trade is just noise.
-
+        # 5.1. Minimum Structural Distance Check
         risk_percent = abs(entry_price - sl) / entry_price
-        min_dist = 0.003  # 0.3% - Adjust based on symbol/volatility
+        min_dist = 0.003  # 0.3% parameters for the diference between tp and sl.
 
         if risk_percent < min_dist:
             logger.warning(
@@ -75,29 +73,26 @@ def avaliation_and_place(client):
             )
             continue
 
-        # 2. Risk/Reward Check
-        # Sometimes SMC gives a weird SL that kills your RRR.
+        # 5.2. Risk/Reward Check
         current_rrr = abs(tp - entry_price) / abs(entry_price - sl)
-        if current_rrr < 1.2:  # Minimum RR you're willing to take
+        if current_rrr < 1.5:  # Minimum RR
             logger.warning(f"Skipping {symbol}: Poor RR Ratio ({current_rrr:.2f}).")
             continue
 
-        # 3. Dead Market Check
+        # 5.3. Dead Market Check
         ticker = client.fetch_ticker(symbol)
         logger.debug(ticker)
 
         nn = round(nn, 2)
-        entry_price = round(entry_price, 2)
+        entry_price = round(entry_price, 4)
         sl = round(sl, 2)
         tp = round(tp, 2)
 
-        # 7. Execution
+        # 6. Execution
         try:
             logger.info(
                 f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}"
             )
-
-            logger.info(f"{symbol}, {side}, {nn}, {entry_price}, {sl}, {tp}")
 
             order_manager.order(
                 client,
