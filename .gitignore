@@ -212,6 +212,8 @@ pyrightconfig.json
 *.db
 .zed/
 logs/
+risk_config.json
+trading_config.json
 
 # --- UI/TYPESCRIPT --- #
 

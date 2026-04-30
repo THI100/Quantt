@@ -20,13 +20,13 @@ RISK_CONFIG_PATH = CONFIG_DIR / "risk_config.json"
 
 
 class RiskConfig(BaseModel):
-    risk_reward_ratio: float = 2.0
-    acceptable_confidence: int = 40  # Field(40, ge=0, le=100)
+    risk_reward_ratio: float = Field(default=2.0, ge=0, le=10)
+    acceptable_confidence: int = Field(default=40, ge=0, le=100)
     atr_multiplier: float = 0.4
-    maximum_loss: float = 0.15  # Field(0.15, gt=0, le=1)
-    percentage_of_capital_per_trade: float = 0.02  # Field(0.02, gt=0, le=1)
-    leverage: int = 50  # Field(50, ge=1)
-    maximum_iceberg_share: float = 0.02
+    maximum_loss: float = Field(default=0.15, gt=0, le=1)  # Still
+    percentage_of_capital_per_trade: float = Field(default=0.02, gt=0, le=1)
+    leverage: int = Field(default=50, ge=1, le=100)
+    maximum_iceberg_share: float = Field(default=0.02, gt=0, le=0.1)
     cross_isolated: Literal["cross", "isolated"] = "cross"
 
 
