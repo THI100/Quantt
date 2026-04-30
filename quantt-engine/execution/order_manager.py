@@ -1,6 +1,8 @@
 import time
 from typing import Optional
+
 from loguru import logger
+from sqlalchemy.sql import False_
 
 import data.fetch as fetch
 from execution import risk_manager
@@ -8,6 +10,7 @@ from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
 
 # --------------------- Helpers --------------------- #
+
 
 def _order_ice(
     client,
@@ -24,18 +27,43 @@ def _order_ice(
     # Place Stop Loss
     if sl:
         _place_linked_order(
-            client, market, "STOP_MARKET", exit_side, total_amount, sl,
-            order_id, "stop_id", SessionLocal
+            client,
+            market,
+            "STOP_MARKET",
+            exit_side,
+            total_amount,
+            sl,
+            order_id,
+            "stop_id",
+            SessionLocal,
         )
 
     # Place Take Profit
     if tp:
         _place_linked_order(
-            client, market, "TAKE_PROFIT_MARKET", exit_side, total_amount, tp,
-            order_id, "take_id", SessionLocal
+            client,
+            market,
+            "TAKE_PROFIT_MARKET",
+            exit_side,
+            total_amount,
+            tp,
+            order_id,
+            "take_id",
+            SessionLocal,
         )
 
-def _place_linked_order(client, market, order_type, side, amount, trigger_price, parent_id, id_field, session_factory):
+
+def _place_linked_order(
+    client,
+    market,
+    order_type,
+    side,
+    amount,
+    trigger_price,
+    parent_id,
+    id_field,
+    session_factory,
+):
     """
     Helper function to handle the repetitive logic of SL/TP
     to avoid UnboundLocalErrors and code duplication.
@@ -81,14 +109,16 @@ def _place_linked_order(client, market, order_type, side, amount, trigger_price,
     except Exception as e:
         logger.error(f"{order_type} API Failure: {e}")
 
+
 # --------------------- Nominal Order --------------------- #
+
 
 def order(
     client,
     market: str,
-    t: str,
+    type: str,
     sell_buy: str,
-    n: float,
+    amount: float,
     price: Optional[float] = None,
     stop_loss: Optional[float] = None,
     take_profit: Optional[float] = None,
@@ -99,7 +129,14 @@ def order(
 
     # 2. Place Main Entry Order
     try:
-        entry_order = client.create_order(market, t, entry_side, n, price)
+        entry_order = client.create_order(
+            market,
+            type,
+            entry_side,
+            amount,
+            price,
+            {"postOnly": True} if type == "limit" else False,
+        )
         general_id = entry_order["id"]
         logger.info(f"Created entry: {general_id}")
     except Exception as e:
@@ -111,14 +148,15 @@ def order(
         try:
             new_order = GeneralOrder(
                 id=general_id,
-                price=entry_order.get("average") if t == "market" else entry_order.get("price"),
+                price=entry_order.get("average")
+                if type == "market"
+                else entry_order.get("price"),
                 entrance_exit="entrance",
                 amount=entry_order["amount"],
                 side=entry_order["side"],
                 symbol=entry_order["symbol"],
                 order_type=entry_order["type"],
                 time=entry_order["timestamp"],
-                previous_time=entry_order.get("lastTradeTimestamp"),
             )
             session.add(new_order)
             session.commit()
@@ -129,18 +167,34 @@ def order(
     # 4. Place Stop Loss
     if stop_loss:
         _place_linked_order(
-            client, market, "STOP_MARKET", exit_side, n, stop_loss,
-            general_id, "stop_id", session_factory=SessionLocal
+            client,
+            market,
+            "STOP_MARKET",
+            exit_side,
+            amount,
+            stop_loss,
+            general_id,
+            "stop_id",
+            session_factory=SessionLocal,
         )
 
     # 5. Place Take Profit
     if take_profit:
         _place_linked_order(
-            client, market, "TAKE_PROFIT_MARKET", exit_side, n, take_profit,
-            general_id, "take_id", session_factory=SessionLocal
+            client,
+            market,
+            "TAKE_PROFIT_MARKET",
+            exit_side,
+            amount,
+            take_profit,
+            general_id,
+            "take_id",
+            session_factory=SessionLocal,
         )
 
+
 # --------------------- Ice --------------------- #
+
 
 def execute_iceberg(
     client, market: str, total_amount: float, side: str, tp: float, sl: float
@@ -160,12 +214,19 @@ def execute_iceberg(
         target_price = risk_manager.blp(market, normalized_side, chunk_size)
         current_slice = min(chunk_size, remaining_amount)
 
-        logger.info(f"Iceberg Slice: {normalized_side} {current_slice} at {target_price}")
+        logger.info(
+            f"Iceberg Slice: {normalized_side} {current_slice} at {target_price}"
+        )
 
         try:
             # 2. Create the Entry Order
             order_resp = client.create_order(
-                market, "limit", normalized_side, current_slice, target_price, {"postOnly": True}
+                market,
+                "limit",
+                normalized_side,
+                current_slice,
+                target_price,
+                {"postOnly": True},
             )
             order_id = order_resp["id"]
 
@@ -181,7 +242,6 @@ def execute_iceberg(
                         symbol=order_resp["symbol"],
                         order_type=order_resp["type"],
                         time=order_resp["timestamp"],
-                        previous_time=order_resp.get("lastTradeTimestamp"),
                     )
                     session.add(new_order)
                     session.commit()
@@ -214,4 +274,6 @@ def execute_iceberg(
             time.sleep(2)
             continue
 
-    logger.info(f"Finished Iceberg for {market}. Total filled: {total_amount - remaining_amount}")
+    logger.info(
+        f"Finished Iceberg for {market}. Total filled: {total_amount - remaining_amount}"
+    )

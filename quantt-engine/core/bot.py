@@ -19,6 +19,10 @@ class TradingBot:
         self.is_running = False
         self.db_path = "./general.db"
         self.stop_event = threading.Event()
+        self.Ran = False
+
+        if self.Ran == False:
+            self.setup_environment()
 
     def setup_environment(self):
         """Initializes database and exchange settings."""
