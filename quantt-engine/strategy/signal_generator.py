@@ -1,10 +1,12 @@
 import math
 
+import numpy as np
 from loguru import logger
 
 import strategy.indicators as indicators
 from config import risk
 from data import cache
+from data.cache import cached_p14
 from utils.math import scale_0_100
 
 r = risk.watcher.get_config()
@@ -334,7 +336,6 @@ def get_loss_and_profit_stops(market: str, direction: str):
     # 1. Iterate to find the MOST RECENT structural points
     for a in stop_losses_events:
         i = a["index"]
-        # Ensure we don't hit an IndexError
         idx = max(0, i - 2)
 
         if a["type"] in ("HH", "LH"):
@@ -343,22 +344,18 @@ def get_loss_and_profit_stops(market: str, direction: str):
             last_low_val = candles[idx][3]
 
     # 2. Assign SL based on direction
-    if direction == "bullish":
-        # For bullish, SL should be the last structural LOW
+    if direction == "buy":
         stop_loss = last_low_val if last_low_val else actual_value * 0.98
 
-        # Emergency check: SL must be below price
         if stop_loss >= actual_value:
             stop_loss = actual_value * 0.99
 
         risk_amt = actual_value - stop_loss
         take_profit = actual_value + (risk_amt * r.risk_reward_ratio)
 
-    else:  # bearish
-        # For bearish, SL should be the last structural HIGH
+    else:
         stop_loss = last_high_val if last_high_val else actual_value * 1.02
 
-        # Emergency check: SL must be above price
         if stop_loss <= actual_value:
             stop_loss = actual_value * 1.01
 
@@ -366,3 +363,35 @@ def get_loss_and_profit_stops(market: str, direction: str):
         take_profit = actual_value - (risk_amt * r.risk_reward_ratio)
 
     return stop_loss, take_profit, actual_value
+
+
+# --------------------- ICEBERG HELPER --------------------- #
+
+
+def is_iceberg(symbol: str, maximum_share: float, amount: float, price: float):
+    candles = np.asarray(cached_p14(symbol), dtype=float)
+
+    if len(candles) < 14:
+        logger.error(f"Not enough candles to check iceberg: {len(candles)}")
+        return False, amount
+
+    # Take only the last 14 volume entries and average them
+    avg_vol = np.mean(candles[-14:, 5])
+
+    if avg_vol == 0:
+        logger.error("Not enough volume to check iceberg.")
+        return False, amount
+
+    # Thresholds
+    upper_threshold = maximum_share * avg_vol
+    lower_threshold = 0.01 * avg_vol
+    value = amount * price
+
+    # Check against the larger requirement first
+    if amount >= upper_threshold and value == 5000:
+        return True, upper_threshold
+
+    if amount >= lower_threshold and value == 5000:
+        return True, amount
+
+    return False, amount

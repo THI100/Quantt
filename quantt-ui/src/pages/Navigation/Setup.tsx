@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import "../localassets/Setup.css";
 import api from "../../../api/axiosInstance.js";
 
@@ -20,6 +20,7 @@ export default function Setup() {
     maximum_loss: 0,
     percentage_of_capital_per_trade: 0,
     leverage: 1,
+    maximum_iceberg_share: 0,
     cross_isolated: "",
   });
 
@@ -293,23 +294,43 @@ export default function Setup() {
               />
             </div>
 
-            <div className="input-group">
-              <label htmlFor="capital-per-trade">
-                Capital Per Trade (decimal)
-              </label>
-              <input
-                id="capital-per-trade"
-                type="number"
-                step="0.01"
-                value={risk.percentage_of_capital_per_trade}
-                className="terminal-input"
-                onChange={(e) =>
-                  setRisk({
-                    ...risk,
-                    percentage_of_capital_per_trade: e.target.value,
-                  })
-                }
-              />
+            <div className="input-row">
+              <div className="input-group">
+                <label htmlFor="capital-per-trade">
+                  Capital Per Trade (decimal)
+                </label>
+                <input
+                  id="capital-per-trade"
+                  type="number"
+                  step="0.01"
+                  value={risk.percentage_of_capital_per_trade}
+                  className="terminal-input"
+                  onChange={(e) =>
+                    setRisk({
+                      ...risk,
+                      percentage_of_capital_per_trade: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="input-group">
+                <label htmlFor="capital-per-trade">
+                  Maximum Iceberg Share (decimal, limit: 0.1)
+                </label>
+                <input
+                  id="maximum-iceberg-share"
+                  type="number"
+                  step="0.01"
+                  value={risk.maximum_iceberg_share}
+                  className="terminal-input"
+                  onChange={(e) =>
+                    setRisk({
+                      ...risk,
+                      maximum_iceberg_share: e.target.value,
+                    })
+                  }
+                />
+              </div>
             </div>
 
             <button

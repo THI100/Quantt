@@ -26,6 +26,7 @@ class RiskConfig(BaseModel):
     maximum_loss: float = 0.15  # Field(0.15, gt=0, le=1)
     percentage_of_capital_per_trade: float = 0.02  # Field(0.02, gt=0, le=1)
     leverage: int = 50  # Field(50, ge=1)
+    maximum_iceberg_share: float = 0.02
     cross_isolated: Literal["cross", "isolated"] = "cross"
 
 
