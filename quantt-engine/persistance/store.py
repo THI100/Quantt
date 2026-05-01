@@ -15,7 +15,7 @@ from data.fetch import balance
 
 
 CONFIG_DIR = Path(__file__).parent
-STORE_CONFIG_PATH = CONFIG_DIR / "store.json"
+STORE_CONFIG_PATH = "store_config.json"
 SECONDS_IN_A_DAY = 86400
 
 

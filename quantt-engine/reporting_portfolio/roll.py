@@ -1,8 +1,17 @@
+import time
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from data import fetch
+from persistance import store
 from persistance.models import GeneralOrder, TakeStopOrder
+
+# ================================================================== #
+#  Initializations                                                   #
+# ================================================================== #
+
+store_cfg = store.watcher.get_config()
 
 # ================================================================== #
 #  Helpers                                                             #
@@ -32,14 +41,21 @@ def get_closed_trades(session: Session) -> list[dict]:
         .all()
     }
 
+    # PnL, No need for trades and others
+    store_t = store_cfg.balances.get("USDT", 0.0)
+    time.sleep(1)
+    actual = fetch.balance()
+    actual_t = actual.get("USDT", {}).get("total", 0.0)
+    untracked_pnl = actual_t - store_t
+
     trades = []
     for entry in entrances:
         exit_order = exits_by_time.get(entry.time)
         if not exit_order:
             continue  # still open
 
-        entry_dt = _ts_to_dt(entry.time)
-        exit_dt = _ts_to_dt(exit_order.time)
+        entry_dt = _ts_to_dt(int(entry.time))
+        exit_dt = _ts_to_dt(int(exit_order.time))
         fees = 0.0
 
         if exit_order.take_id:
@@ -62,6 +78,7 @@ def get_closed_trades(session: Session) -> list[dict]:
                 "entry_price": entry.price,
                 "exit_price": exit_order.price,
                 "amount": entry.amount,
+                "untracked_pnl": untracked_pnl,
                 "pnl": pnl,
                 "fees": fees,
                 "entry_time": entry_dt,
@@ -75,12 +92,13 @@ def get_closed_trades(session: Session) -> list[dict]:
 
 # ================================================================== #
 #  Series / graphic data — lists of {x, y} points for charts         #
+#  All series use trade-based `pnl`.                                  #
 # ================================================================== #
 
 
 def get_equity_curve(session: Session) -> list[dict]:
     """
-    Cumulative P&L over time.
+    Cumulative trade-based P&L over time.
     Each point: { timestamp (ISO), equity (float) }
     Frontend: Line chart.
     """
@@ -102,7 +120,7 @@ def get_equity_curve(session: Session) -> list[dict]:
 
 def get_daily_pnl(session: Session) -> list[dict]:
     """
-    P&L grouped by UTC calendar day.
+    Trade-based P&L grouped by UTC calendar day.
     Each point: { date (YYYY-MM-DD), pnl (float) }
     Frontend: Green/red bar chart.
     """
@@ -118,7 +136,8 @@ def get_daily_pnl(session: Session) -> list[dict]:
 
 def get_drawdown_series(session: Session) -> list[dict]:
     """
-    Drawdown at each closed trade exit — how far below the running peak.
+    Drawdown at each closed trade exit using trade-based P&L —
+    how far below the running peak.
     Each point: { timestamp (ISO), drawdown_abs (float), drawdown_pct (float) }
     Frontend: Red filled area chart.
     """

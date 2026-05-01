@@ -1,11 +1,20 @@
+import time
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from data import fetch
+from persistance import store
 from persistance.models import GeneralOrder, TakeStopOrder
 
 # ================================================================== #
-#  Helpers                                                             #
+#  Initializations                                                   #
+# ================================================================== #
+
+store_cfg = store.watcher.get_config()
+
+# ================================================================== #
+#  Helpers                                                           #
 # ================================================================== #
 
 
@@ -32,16 +41,24 @@ def get_closed_trades(session: Session) -> list[dict]:
         .all()
     }
 
+    # PnL, No need for trades and others
+    store_t = store_cfg.balances.get("USDT", 0.0)
+    time.sleep(1)
+    actual = fetch.balance()
+    actual_t = actual.get("USDT", {}).get("total", 0.0)
+    untracked_pnl = actual_t - store_t
+
     trades = []
     for entry in entrances:
         exit_order = exits_by_time.get(entry.time)
         if not exit_order:
             continue  # still open
 
-        entry_dt = _ts_to_dt(entry.time)
-        exit_dt = _ts_to_dt(exit_order.time)
+        entry_dt = _ts_to_dt(int(entry.time))
+        exit_dt = _ts_to_dt(int(exit_order.time))
         fees = 0.0
 
+        # Fees, some exchanges doesnt share this
         if exit_order.take_id:
             take = session.get(TakeStopOrder, exit_order.take_id)
             if take:
@@ -62,6 +79,7 @@ def get_closed_trades(session: Session) -> list[dict]:
                 "entry_price": entry.price,
                 "exit_price": exit_order.price,
                 "amount": entry.amount,
+                "untracked_pnl": untracked_pnl,
                 "pnl": pnl,
                 "fees": fees,
                 "entry_time": entry_dt,
@@ -75,12 +93,14 @@ def get_closed_trades(session: Session) -> list[dict]:
 
 # ================================================================== #
 #  Static metrics — single values / summary cards                     #
+#  All metrics use snapshot-based `untracked_pnl`.                    #
 # ================================================================== #
 
 
 def get_max_drawdown(session: Session) -> dict:
     """
-    Largest peak-to-trough drop in cumulative P&L.
+    Largest peak-to-trough drop based on the live balance snapshot delta
+    (untracked_pnl) accumulated across closed trades over time.
     Returns absolute value and percentage of the peak.
     """
     trades = get_closed_trades(session)
@@ -90,8 +110,9 @@ def get_max_drawdown(session: Session) -> dict:
     trades.sort(key=lambda t: t["exit_time"])
     cumulative, peak, max_dd = 0.0, 0.0, 0.0
 
+    cumulative = trades["untracked_pnl"]
+
     for t in trades:
-        cumulative += t["pnl"]
         if cumulative > peak:
             peak = cumulative
         dd = peak - cumulative
@@ -107,14 +128,15 @@ def get_max_drawdown(session: Session) -> dict:
 
 def get_sharpe_ratio(session: Session, risk_free_rate: float = 0.0) -> dict:
     """
-    Annualised Sharpe ratio based on per-trade P&L.
-    Assumes ~252 trading days/year. Returns None if insufficient data.
+    Annualised Sharpe ratio based on per-trade untracked_pnl (live balance
+    snapshot delta). Assumes ~252 trading days/year.
+    Returns None if insufficient data or zero variance.
     """
     trades = get_closed_trades(session)
     if len(trades) < 2:
         return {"sharpe_ratio": None}
 
-    pnls = [t["pnl"] for t in trades]
+    pnls = [t["untracked_pnl"] for t in trades]
     n = len(pnls)
     mean = sum(pnls) / n
     std = (sum((p - mean) ** 2 for p in pnls) / (n - 1)) ** 0.5
@@ -127,7 +149,10 @@ def get_sharpe_ratio(session: Session, risk_free_rate: float = 0.0) -> dict:
 
 
 def get_win_rate(session: Session) -> dict:
-    """Win rate, average win, average loss, and profit factor."""
+    """
+    Win rate, average win, average loss, and profit factor based on
+    untracked_pnl (live balance snapshot delta) per trade.
+    """
     trades = get_closed_trades(session)
     if not trades:
         return {
@@ -138,8 +163,8 @@ def get_win_rate(session: Session) -> dict:
             "total_trades": 0,
         }
 
-    wins = [t["pnl"] for t in trades if t["pnl"] > 0]
-    losses = [t["pnl"] for t in trades if t["pnl"] <= 0]
+    wins = [t["untracked_pnl"] for t in trades if t["untracked_pnl"] > 0]
+    losses = [t["untracked_pnl"] for t in trades if t["untracked_pnl"] <= 0]
 
     gross_profit = sum(wins)
     gross_loss = abs(sum(losses))
@@ -155,7 +180,10 @@ def get_win_rate(session: Session) -> dict:
 
 
 def get_avg_hold_time(session: Session) -> dict:
-    """Average trade hold time in seconds, minutes, and hours."""
+    """
+    Average trade hold time in seconds, minutes, and hours.
+    Hold time is trade-structural data, not PnL-dependent — unchanged.
+    """
     trades = get_closed_trades(session)
     if not trades:
         return {"avg_hold_seconds": 0.0, "avg_hold_minutes": 0.0, "avg_hold_hours": 0.0}
@@ -169,17 +197,20 @@ def get_avg_hold_time(session: Session) -> dict:
 
 
 def get_best_and_worst_trades(session: Session, n: int = 5) -> dict:
-    """Top N and bottom N trades by P&L."""
+    """
+    Top N and bottom N trades ranked by untracked_pnl (live balance
+    snapshot delta).
+    """
     trades = get_closed_trades(session)
     if not trades:
         return {"best": [], "worst": []}
 
-    sorted_trades = sorted(trades, key=lambda t: t["pnl"], reverse=True)
+    sorted_trades = sorted(trades, key=lambda t: t["untracked_pnl"], reverse=True)
 
     def _fmt(t: dict) -> dict:
         return {
             "symbol": t["symbol"],
-            "pnl": round(t["pnl"], 4),
+            "untracked_pnl": round(t["untracked_pnl"], 4),
             "entry_time": t["entry_time"].isoformat(),
             "exit_time": t["exit_time"].isoformat(),
             "side": t["side"],
@@ -192,7 +223,10 @@ def get_best_and_worst_trades(session: Session, n: int = 5) -> dict:
 
 
 def get_consecutive_wins_losses(session: Session) -> dict:
-    """Longest consecutive win and loss streaks."""
+    """
+    Longest consecutive win and loss streaks based on untracked_pnl
+    (live balance snapshot delta).
+    """
     trades = get_closed_trades(session)
     if not trades:
         return {"max_consecutive_wins": 0, "max_consecutive_losses": 0}
@@ -201,7 +235,7 @@ def get_consecutive_wins_losses(session: Session) -> dict:
     max_wins = max_losses = cur_wins = cur_losses = 0
 
     for t in trades:
-        if t["pnl"] > 0:
+        if t["untracked_pnl"] > 0:
             cur_wins += 1
             cur_losses = 0
         else:
