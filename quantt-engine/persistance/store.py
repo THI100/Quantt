@@ -134,7 +134,7 @@ def initialize():
     except FileNotFoundError:
         logger.warning("No store.json found. Creating initial file.")
         initial_store = Store()  # This will use defaults
-        save_risk_config(initial_store)
+        save_store(initial_store)
         return initial_store
     except Exception as e:
         logger.error(f"Initialization error: {e}")

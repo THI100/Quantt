@@ -29,6 +29,15 @@ Automate cryptocurrency trading using CCXT-supported exchanges (Binance, Bybit, 
 
 ---
 
+## RoadMap
+* v0.1 → Execution engine (local only)
+* v0.2 → Backtesting (Still open source)
+* v0.3 → AI layer (Closed intelectual property, e.g: AI models)
+* v0.4 → Optional cloud backend (Not a promise, only a possibility)
+* v1.0 → Final Launch
+
+---
+
 ## Features
 
 **Core Features**
