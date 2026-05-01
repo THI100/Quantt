@@ -51,11 +51,11 @@ class ConfigWatcher:
         if not self.path.exists():
             # If file doesn't exist, save defaults to create it
             default_sfg = Store()
-            save_risk_config(default_sfg)
+            save_store(default_sfg)
             return default_sfg
 
         self._last_mtime = self.path.stat().st_mtime
-        return load_risk_config()
+        return load_store()
 
     def get_config(self) -> Store:
         current_mtime = self.path.stat().st_mtime
@@ -66,7 +66,7 @@ class ConfigWatcher:
         if self.config.last_updated.date() < datetime.now().date():
             logger.info("New day detected! Resetting store totals.")
             self.config = Store()  # Reset to defaults
-            save_risk_config(self.config)
+            save_store(self.config)
 
         return self.config
 

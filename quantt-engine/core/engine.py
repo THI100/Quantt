@@ -12,14 +12,14 @@ from persistance import store
 
 
 def avaliation_and_place(client):
-    _ = store.initialize()
+    store.initialize()
 
     trading_config = settings.watcher.get_config()
     risk_cfg = risk.watcher.get_config()
-    store = store.watcher.get_config()
+    store_cfg = store.watcher.get_config()
 
-    max_loss_amt_t = store_data.balances.get("USDT", 0.0) * risk_cfg.maximum_loss
-    max_loss_amt_c = store_data.balances.get("USDC", 0.0) * risk_cfg.maximum_loss
+    max_loss_amt_t = store_cfg.balances.get("USDT", 0.0) * risk_cfg.maximum_loss
+    max_loss_amt_c = store_cfg.balances.get("USDC", 0.0) * risk_cfg.maximum_loss
 
     # 3. Get actual live balances
     actual = fetch.balance()
@@ -27,13 +27,13 @@ def avaliation_and_place(client):
     actual_c = actual.get("USDC", {}).get("total", 0.0)
 
     if actual_t <= (
-        store_data.balances.get("USDT", 0.0) - max_loss_amt_t
-    ) or actual_c <= (store_data.balances.get("USDC", 0.0) - max_loss_amt_c):
+        store_cfg.balances.get("USDT", 0.0) - max_loss_amt_t
+    ) or actual_c <= (store_cfg.balances.get("USDC", 0.0) - max_loss_amt_c):
         logger.error(
-            f"USDT Stop Loss! Current: {actual_t}, Limit: {store_data.balances.get('USDT') - max_loss_amt_t}"
+            f"USDT Stop Loss! Current: {actual_t}, Limit: {store_cfg.balances.get('USDT') - max_loss_amt_t}"
         )
         logger.error(
-            f"USDC Stop Loss! Current: {actual_c}, Limit: {store_data.balances.get('USDC') - max_loss_amt_c}"
+            f"USDC Stop Loss! Current: {actual_c}, Limit: {store_cfg.balances.get('USDC') - max_loss_amt_c}"
         )
         raise ValueError(
             "The actual balance has surpassed the maxiumum daily loss percentage."

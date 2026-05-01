@@ -214,6 +214,7 @@ pyrightconfig.json
 logs/
 risk_config.json
 trading_config.json
+store.json
 
 # --- UI/TYPESCRIPT --- #
 
