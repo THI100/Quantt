@@ -69,6 +69,7 @@ def _place_linked_order(
     to avoid UnboundLocalErrors and code duplication.
     """
     try:
+        time.sleep(0.5)
         order_data = client.create_order(
             symbol=market,
             type=order_type,

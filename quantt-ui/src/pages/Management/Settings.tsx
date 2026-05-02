@@ -1,29 +1,67 @@
-import React, { useState } from "react";
+import { useRef } from "react";
 import "../localassets/Settings.css";
+import { useBotStore, selectUI } from "../../store/botStore";
 
 export default function Settings() {
-  // Local state for frontend-only settings
-  const [uiSettings, setUiSettings] = useState({
-    darkMode: true,
-    compactMode: false,
-    refreshRate: "1s",
-    animations: true,
-    showNotifications: true,
-    soundEffects: false,
-  });
+  const ui = useBotStore(selectUI);
+  const { setUISettings, resetAll, exportJSON, importJSON } = useBotStore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Export settings as a downloaded .json file ──────────────────────────
+  const handleExport = () => {
+    const blob = new Blob([exportJSON()], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "store.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── Import settings from a .json file ───────────────────────────────────
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (typeof ev.target?.result === "string") {
+        importJSON(ev.target.result);
+      }
+    };
+    reader.readAsText(file);
+    // reset so the same file can be re-imported if needed
+    e.target.value = "";
+  };
 
   return (
     <div className="home-container">
       <div className="section-header">
         <h2 className="section-title silver-text">Local Preferences</h2>
-        <span className="activity-count">Client-Side Only</span>
+        <span className="activity-count">Global Store</span>
       </div>
 
       <div className="settings-wrapper">
         <div className="settings-card">
-          {/* Category: Interface */}
+          {/* ── Display & Interface ───────────────────────────────────── */}
           <div className="settings-category">
             <h3 className="category-label">Display & Interface</h3>
+
+            <div className="setting-row">
+              <div className="setting-info">
+                <span className="setting-name">Dark Mode</span>
+                <span className="setting-description">
+                  Change the main color only
+                </span>
+              </div>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={ui.darkMode}
+                  onChange={() => setUISettings({ darkMode: !ui.darkMode })}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
 
             <div className="setting-row">
               <div className="setting-info">
@@ -34,14 +72,10 @@ export default function Settings() {
               </div>
               <label className="switch">
                 <input
-                  id="compact-mode"
                   type="checkbox"
-                  checked={uiSettings.compactMode}
+                  checked={ui.compactMode}
                   onChange={() =>
-                    setUiSettings({
-                      ...uiSettings,
-                      compactMode: !uiSettings.compactMode,
-                    })
+                    setUISettings({ compactMode: !ui.compactMode })
                   }
                 />
                 <span className="slider"></span>
@@ -60,9 +94,11 @@ export default function Settings() {
               <select
                 id="refresh-rate"
                 className="neutral-select"
-                value={uiSettings.refreshRate}
+                value={ui.refreshRate}
                 onChange={(e) =>
-                  setUiSettings({ ...uiSettings, refreshRate: e.target.value })
+                  setUISettings({
+                    refreshRate: e.target.value as "500ms" | "1s" | "5s",
+                  })
                 }
               >
                 <option value="500ms">Real-time (500ms)</option>
@@ -74,7 +110,7 @@ export default function Settings() {
 
           <div className="divider-line"></div>
 
-          {/* Category: System */}
+          {/* ── Alerts & System ───────────────────────────────────────── */}
           <div className="settings-category">
             <h3 className="category-label">Alerts & System</h3>
 
@@ -87,36 +123,11 @@ export default function Settings() {
               </div>
               <label className="switch">
                 <input
-                  id="push-notifications"
                   type="checkbox"
-                  checked={uiSettings.showNotifications}
+                  checked={ui.showNotifications}
                   onChange={() =>
-                    setUiSettings({
-                      ...uiSettings,
-                      showNotifications: !uiSettings.showNotifications,
-                    })
-                  }
-                />
-                <span className="slider"></span>
-              </label>
-            </div>
-
-            <div className="setting-row">
-              <div className="setting-info">
-                <span className="setting-name">Performance Mode</span>
-                <span className="setting-description">
-                  Disable heavy CSS animations to save GPU.
-                </span>
-              </div>
-              <label className="switch">
-                <input
-                  id="performance-mode"
-                  type="checkbox"
-                  checked={!uiSettings.animations}
-                  onChange={() =>
-                    setUiSettings({
-                      ...uiSettings,
-                      animations: !uiSettings.animations,
+                    setUISettings({
+                      showNotifications: !ui.showNotifications,
                     })
                   }
                 />
@@ -126,18 +137,36 @@ export default function Settings() {
           </div>
 
           <div className="settings-footer">
-            <button className="neutral-btn grey-btn">Reset All</button>
-            <button className="neutral-btn confirm-btn">Apply Locally</button>
+            <button className="neutral-btn grey-btn" onClick={resetAll}>
+              Reset All
+            </button>
+            <button className="neutral-btn grey-btn" onClick={handleExport}>
+              Export JSON
+            </button>
+            <button
+              className="neutral-btn grey-btn"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              Import JSON
+            </button>
+            {/* hidden file input for import */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              style={{ display: "none" }}
+              onChange={handleImport}
+            />
           </div>
         </div>
       </div>
 
-      {/* Persistence Notice */}
+      {/* ── Persistence notice ──────────────────────────────────────────── */}
       <div className="control-bar">
         <div className="control-status">
           <div className="status-indicator highlight-silver-bg"></div>
           <span className="status-text silver-text">
-            Storage: <strong>LocalStorage (Front)</strong>
+            Storage: <strong>Zustand → LocalStorage (bot-settings)</strong>
           </span>
         </div>
       </div>
