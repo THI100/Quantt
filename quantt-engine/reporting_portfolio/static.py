@@ -79,7 +79,6 @@ def get_closed_trades(session: Session) -> list[dict]:
                 "entry_price": entry.price,
                 "exit_price": exit_order.price,
                 "amount": entry.amount,
-                "untracked_pnl": untracked_pnl,
                 "pnl": pnl,
                 "fees": fees,
                 "entry_time": entry_dt,
@@ -110,9 +109,8 @@ def get_max_drawdown(session: Session) -> dict:
     trades.sort(key=lambda t: t["exit_time"])
     cumulative, peak, max_dd = 0.0, 0.0, 0.0
 
-    cumulative = trades["untracked_pnl"]
-
     for t in trades:
+        cumulative += t["pnl"]
         if cumulative > peak:
             peak = cumulative
         dd = peak - cumulative
@@ -136,7 +134,7 @@ def get_sharpe_ratio(session: Session, risk_free_rate: float = 0.0) -> dict:
     if len(trades) < 2:
         return {"sharpe_ratio": None}
 
-    pnls = [t["untracked_pnl"] for t in trades]
+    pnls = [t["pnl"] for t in trades]
     n = len(pnls)
     mean = sum(pnls) / n
     std = (sum((p - mean) ** 2 for p in pnls) / (n - 1)) ** 0.5
@@ -163,8 +161,8 @@ def get_win_rate(session: Session) -> dict:
             "total_trades": 0,
         }
 
-    wins = [t["untracked_pnl"] for t in trades if t["untracked_pnl"] > 0]
-    losses = [t["untracked_pnl"] for t in trades if t["untracked_pnl"] <= 0]
+    wins = [t["pnl"] for t in trades if t["pnl"] > 0]
+    losses = [t["pnl"] for t in trades if t["pnl"] <= 0]
 
     gross_profit = sum(wins)
     gross_loss = abs(sum(losses))
@@ -205,12 +203,12 @@ def get_best_and_worst_trades(session: Session, n: int = 5) -> dict:
     if not trades:
         return {"best": [], "worst": []}
 
-    sorted_trades = sorted(trades, key=lambda t: t["untracked_pnl"], reverse=True)
+    sorted_trades = sorted(trades, key=lambda t: t["pnl"], reverse=True)
 
     def _fmt(t: dict) -> dict:
         return {
             "symbol": t["symbol"],
-            "untracked_pnl": round(t["untracked_pnl"], 4),
+            "pnl": round(t["pnl"], 4),
             "entry_time": t["entry_time"].isoformat(),
             "exit_time": t["exit_time"].isoformat(),
             "side": t["side"],
@@ -235,7 +233,7 @@ def get_consecutive_wins_losses(session: Session) -> dict:
     max_wins = max_losses = cur_wins = cur_losses = 0
 
     for t in trades:
-        if t["untracked_pnl"] > 0:
+        if t["pnl"] > 0:
             cur_wins += 1
             cur_losses = 0
         else:

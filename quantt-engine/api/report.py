@@ -66,7 +66,7 @@ def get_summary():
     db = SessionLocal()
     try:
         trades = get_closed_trades(db)
-        total_pnl = round(sum(t["pnl"] for t in trades), 4)
+        total_pnl = round(trades[0]["untracked_pnl"], 4)
         avg_pnl = round(total_pnl / len(trades), 4) if trades else 0.0
 
         return {
@@ -78,7 +78,7 @@ def get_summary():
             **get_max_drawdown(db),
             **get_sharpe_ratio(db),
             **get_consecutive_wins_losses(db),
-            **bot.check_margin()
+            **bot.check_margin(),
         }
     finally:
         db.close()

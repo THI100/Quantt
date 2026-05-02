@@ -3,8 +3,7 @@ settings.py
 Pydantic model for trading configuration files with Hot-Reloading
 """
 
-import json
-import time
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -51,6 +50,13 @@ class ConfigWatcher:
         self.path = path
         self._last_mtime = 0
         self.config = self.reload()
+        self.ensure_json_file()
+
+    def ensure_json_file(self, fpath=TRADING_CONFIG_PATH):
+        if not os.path.exists(fpath):
+            with open(fpath, "w") as f:
+                f.write("")
+            return logger.info(f"Created file: {fpath}")
 
     def reload(self) -> TradingConfig:
         """Force a reload from disk."""

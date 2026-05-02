@@ -13,19 +13,11 @@
     "PAXG/USDT"
   ],
   "list_of_parameters": [
-    "ROC",
-    "OBV",
-    "VWAP",
-    "ADX",
     "ATR",
-    "BB",
-    "DSCP",
     "SMR",
-    "EMA",
-    "TnK",
-    "MACD",
-    "PPF",
     "RSI",
-    "ST"
+    "VWAP",
+    "EMA",
+    "ADX"
   ]
 }

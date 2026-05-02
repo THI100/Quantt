@@ -3,6 +3,7 @@ store.py
 Pydantic model for Storing misc variables.
 """
 
+import os
 from datetime import datetime, time, timedelta
 from pathlib import Path
 
@@ -15,7 +16,7 @@ from data.fetch import balance
 
 
 CONFIG_DIR = Path(__file__).parent
-STORE_CONFIG_PATH = "store_config.json"
+STORE_CONFIG_PATH = CONFIG_DIR / "store_config.json"
 SECONDS_IN_A_DAY = 86400
 
 
@@ -45,6 +46,13 @@ class ConfigWatcher:
         self.path = path
         self._last_mtime = 0
         self.config = self.reload()
+        self.ensure_json_file()
+
+    def ensure_json_file(self, fpath=STORE_CONFIG_PATH):
+        if not os.path.exists(fpath):
+            with open(fpath, "w") as f:
+                f.write("")
+            return logger.info(f"Created file: {fpath}")
 
     def reload(self) -> Store:
         """Force a reload from disk."""
