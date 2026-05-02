@@ -19,6 +19,7 @@ from reporting_portfolio.static import (
     get_sharpe_ratio,
     get_win_rate,
 )
+from reporting_portfolio.static import get_closed_trades as gct
 
 r_route = APIRouter()
 bot = TradingBot()
@@ -65,8 +66,7 @@ def get_summary():
     """
     db = SessionLocal()
     try:
-        trades = get_closed_trades(db)
-        total_pnl = round(trades[0]["untracked_pnl"], 4)
+        total_pnl, trades = gct(db)
         avg_pnl = round(total_pnl / len(trades), 4) if trades else 0.0
 
         return {

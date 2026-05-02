@@ -4,11 +4,11 @@ Pydantic model for Storing misc variables.
 """
 
 import os
-from datetime import datetime, time, timedelta
+from datetime import datetime
 from pathlib import Path
 
 from loguru import logger
-from pydantic import BaseModel, computed_field
+from pydantic import BaseModel
 
 from data.fetch import balance
 
@@ -26,14 +26,6 @@ SECONDS_IN_A_DAY = 86400
 class Store(BaseModel):
     last_updated: datetime = datetime.now()
     balances: dict[str, float] = {"USDT": 0.0, "USDC": 0.0}
-
-    @computed_field
-    @property
-    def time_left(self) -> int:
-        """Returns seconds remaining until the end of the current day."""
-        now = datetime.now()
-        tomorrow = datetime.combine(now.date() + timedelta(days=1), time.min)
-        return int((tomorrow - now).total_seconds())
 
 
 # -------------- HELPERS --------------- #
@@ -70,12 +62,6 @@ class ConfigWatcher:
         if current_mtime > self._last_mtime:
             self.config = self.reload()
 
-        # Check for day rollover
-        if self.config.last_updated.date() < datetime.now().date():
-            logger.info("New day detected! Resetting store totals.")
-            self.config = Store()  # Reset to defaults
-            save_store(self.config)
-
         return self.config
 
 
@@ -109,39 +95,35 @@ watcher = ConfigWatcher(STORE_CONFIG_PATH)
 def initialize():
     """
     Checks the store.
-    - If today matches the file: Returns current data (No Write).
-    - If it's a new day: Fetches balances, resets, and saves (Write).
+    - If a balance already exists: Returns current data (No Write).
+    - If no balance is set: Fetches balances and saves (Write).
     """
     try:
-        # 1. Load the existing config to check the date
+        # 1. Load the existing config
         current_store = load_store()
 
-        today = datetime.now().date()
-        last_recorded_day = current_store.last_updated.date()
-
-        # 2. THE LOCK: Check if we are still on the same day
-        if last_recorded_day == today:
-            logger.info("Store already initialized for today. Skipping update.")
+        # 2. THE LOCK: If a non-zero balance already exists, do nothing
+        has_balance = any(v > 0.0 for v in current_store.balances.values())
+        if has_balance:
+            logger.info("Store already has a balance. Skipping update.")
             return current_store
 
-        # 3. NEW DAY LOGIC: Only runs if the 'if' above is false
-        logger.info("New day detected! Updating store.json...")
+        # 3. NO BALANCE: Fetch and save once
+        logger.info("No balance found. Fetching and saving initial balance...")
 
         bal = balance()
         usdt_total = bal.get("USDT", {}).get("total", 0.0)
         usdc_total = bal.get("USDC", {}).get("total", 0.0)
 
-        # Update the instance
         current_store.balances = {"USDT": usdt_total, "USDC": usdc_total}
         current_store.last_updated = datetime.now()
 
-        # 4. Save to disk (Only happens once per day)
         save_store(current_store)
         return current_store
 
     except FileNotFoundError:
         logger.warning("No store.json found. Creating initial file.")
-        initial_store = Store()  # This will use defaults
+        initial_store = Store()
         save_store(initial_store)
         return initial_store
     except Exception as e:

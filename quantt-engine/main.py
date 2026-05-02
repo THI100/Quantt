@@ -3,9 +3,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import principal, report, set
+from core import bot
+from persistance import store
 from utils import log
 from utils.stream_manager import log_stream
 
+b = bot.TradingBot()
 app = FastAPI(title="quantt_engine")
 
 origins = [
@@ -28,5 +31,7 @@ app.include_router(report.r_route)
 app.include_router(set.s_route)
 
 if __name__ == "__main__":
+    b.setup_environment()
+    store.initialize()
     # Run the web server
     uvicorn.run(app, host="0.0.0.0", port=8000)

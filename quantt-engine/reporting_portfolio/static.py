@@ -23,7 +23,7 @@ def _ts_to_dt(ts_ms: int) -> datetime:
     return datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc)
 
 
-def get_closed_trades(session: Session) -> list[dict]:
+def get_closed_trades(session: Session) -> tuple[float, list[dict]]:
     """
     Core helper — pairs every 'entrance' order with its matching 'exit' order
     by symbol and previous_time, then returns a clean list of trade dicts.
@@ -41,12 +41,12 @@ def get_closed_trades(session: Session) -> list[dict]:
         .all()
     }
 
-    # PnL, No need for trades and others
+    # Alive PnL, No need for trades
     store_t = store_cfg.balances.get("USDT", 0.0)
     time.sleep(1)
     actual = fetch.balance()
     actual_t = actual.get("USDT", {}).get("total", 0.0)
-    untracked_pnl = actual_t - store_t
+    alive_pnl = actual_t - store_t
 
     trades = []
     for entry in entrances:
@@ -87,7 +87,7 @@ def get_closed_trades(session: Session) -> list[dict]:
             }
         )
 
-    return trades
+    return alive_pnl, trades
 
 
 # ================================================================== #
@@ -102,7 +102,7 @@ def get_max_drawdown(session: Session) -> dict:
     (untracked_pnl) accumulated across closed trades over time.
     Returns absolute value and percentage of the peak.
     """
-    trades = get_closed_trades(session)
+    alive_pnl, trades = get_closed_trades(session)
     if not trades:
         return {"max_drawdown_abs": 0.0, "max_drawdown_pct": 0.0}
 
@@ -117,6 +117,11 @@ def get_max_drawdown(session: Session) -> dict:
         if dd > max_dd:
             max_dd = dd
 
+    cumulative += alive_pnl
+    dd = peak - cumulative
+    if dd > max_dd:
+        max_dd = dd
+
     max_dd_pct = (max_dd / peak * 100) if peak > 0 else 0.0
     return {
         "max_drawdown_abs": round(max_dd, 4),
@@ -130,7 +135,7 @@ def get_sharpe_ratio(session: Session, risk_free_rate: float = 0.0) -> dict:
     snapshot delta). Assumes ~252 trading days/year.
     Returns None if insufficient data or zero variance.
     """
-    trades = get_closed_trades(session)
+    _, trades = get_closed_trades(session)
     if len(trades) < 2:
         return {"sharpe_ratio": None}
 
@@ -151,7 +156,7 @@ def get_win_rate(session: Session) -> dict:
     Win rate, average win, average loss, and profit factor based on
     untracked_pnl (live balance snapshot delta) per trade.
     """
-    trades = get_closed_trades(session)
+    _, trades = get_closed_trades(session)
     if not trades:
         return {
             "win_rate": 0.0,
@@ -182,7 +187,7 @@ def get_avg_hold_time(session: Session) -> dict:
     Average trade hold time in seconds, minutes, and hours.
     Hold time is trade-structural data, not PnL-dependent — unchanged.
     """
-    trades = get_closed_trades(session)
+    _, trades = get_closed_trades(session)
     if not trades:
         return {"avg_hold_seconds": 0.0, "avg_hold_minutes": 0.0, "avg_hold_hours": 0.0}
 
@@ -199,7 +204,7 @@ def get_best_and_worst_trades(session: Session, n: int = 5) -> dict:
     Top N and bottom N trades ranked by untracked_pnl (live balance
     snapshot delta).
     """
-    trades = get_closed_trades(session)
+    _, trades = get_closed_trades(session)
     if not trades:
         return {"best": [], "worst": []}
 
@@ -225,7 +230,7 @@ def get_consecutive_wins_losses(session: Session) -> dict:
     Longest consecutive win and loss streaks based on untracked_pnl
     (live balance snapshot delta).
     """
-    trades = get_closed_trades(session)
+    _, trades = get_closed_trades(session)
     if not trades:
         return {"max_consecutive_wins": 0, "max_consecutive_losses": 0}
 
