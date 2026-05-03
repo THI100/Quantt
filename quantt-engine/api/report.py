@@ -1,6 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
+from loguru import logger
 
 from core.bot import TradingBot
 from persistance.connection import SessionLocal
@@ -68,6 +69,11 @@ def get_summary():
     try:
         total_pnl, trades = gct(db)
         avg_pnl = round(total_pnl / len(trades), 4) if trades else 0.0
+
+        # Debug: This serves for debugging, only-dumb-dev like me. haha
+        # logger.info(
+        #     f"total_trades: {len(trades)}, total_pnl: {total_pnl}, avg_pnl: {avg_pnl}, {get_win_rate(db)}, {get_avg_hold_time(db)}, {get_max_drawdown(db)}, {get_sharpe_ratio(db)}, {get_consecutive_wins_losses(db)}, {bot.check_margin()}"
+        # )
 
         return {
             "total_trades": len(trades),
