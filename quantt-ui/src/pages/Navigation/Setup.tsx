@@ -68,7 +68,7 @@ export default function Setup() {
     <div className="home-container">
       <div className="section-header">
         <h2 className="section-title">System Configuration</h2>
-        <span className="activity-count">V0.0.x-DEV</span>
+        <span className="activity-count">v0.1.0-set</span>
       </div>
 
       <div className="setup-grid">

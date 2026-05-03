@@ -109,15 +109,9 @@ def get_max_drawdown(session: Session) -> dict:
     trades.sort(key=lambda t: t["exit_time"])
     cumulative, peak, max_dd = 0.0, 0.0, 0.0
 
-    for t in trades:
-        cumulative += t["pnl"]
-        if cumulative > peak:
-            peak = cumulative
-        dd = peak - cumulative
-        if dd > max_dd:
-            max_dd = dd
-
-    cumulative += alive_pnl
+    cumulative = alive_pnl
+    if cumulative > peak:
+        peak = cumulative
     dd = peak - cumulative
     if dd > max_dd:
         max_dd = dd

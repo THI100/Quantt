@@ -14,7 +14,6 @@ from persistance import store
 
 def avaliation_and_place(client):
     # 1. Initialize data
-    store.initialize()
     trading_config = settings.watcher.get_config()
     risk_cfg = risk.watcher.get_config()
     store_cfg = store.watcher.get_config()

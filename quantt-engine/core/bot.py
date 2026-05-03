@@ -18,6 +18,7 @@ class TradingBot:
         self.client = cached_client()
         self.is_running = False
         self.db_path = "./general.db"
+        self.stop_event = threading.Event()
 
     def setup_environment(self):
         """Initializes database and exchange settings."""
@@ -39,7 +40,6 @@ class TradingBot:
     @logger.catch
     def start(self, paused_check_func=None):
         """Main execution loop."""
-        # self.setup_environment()
         self.is_running = True
         self.stop_event.clear()
         logger.info("Bot started.")
@@ -63,19 +63,19 @@ class TradingBot:
 
     def check_bal(self):
         bal = self.client.fetch_balance()
-        ut = bal["USDT"]
-        uc = bal["USDC"]
+        ut = bal.get("USDT")
+        uc = bal.get("USDC")
         ut.update({"coin": "USDT"})
         uc.update({"coin": "USDC"})
         return ut, uc
 
     def check_margin(self):
         b = self.check_bal()
-        dic = {}
+        margin_status = {}
         for c in b:
             margin_health = scale_0_100(c["used"], c["total"])
-            dic.update({c["coin"]: margin_health})
-        return dic
+            margin_status.update({c["coin"]: margin_health})
+        return margin_status
 
     def stop(self):
         """Graceful shutdown."""
@@ -86,6 +86,7 @@ class TradingBot:
     def close_order(self, symbol: str, id: str):
         try:
             self.client.cancel_order(id, symbol)
+            logger.info(f"Successfully cancelled order {order_id} for {symbol}")
         except Exception as err:
             logger.error(
                 f"Due to {err}, it wasnt possible to close/cancel order: {id}, {symbol}"

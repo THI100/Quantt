@@ -84,6 +84,20 @@
     margin-bottom: 24px;
 }
 
+.doc-ol {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #999;
+    margin-bottom: 24px;
+    padding-left: 20px;
+    list-style-type: decimal;
+}
+
+.doc-li {
+    margin-bottom: 10px;
+    padding-left: 6px;
+}
+
 /* ─── Specialized Callouts ──────────────────────────────────────────────── */
 
 .info-callout {
