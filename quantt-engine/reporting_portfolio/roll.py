@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from config import store
 from data import fetch
-from persistance import store
 from persistance.models import GeneralOrder, TakeStopOrder
 
 # ================================================================== #

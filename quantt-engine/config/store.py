@@ -12,12 +12,11 @@ from pydantic import BaseModel
 
 from data.fetch import balance
 
-# -------------- MODEL --------------- #
+# -------------- PATHS --------------- #
 
 
-CONFIG_DIR = Path(__file__).parent
-STORE_CONFIG_PATH = CONFIG_DIR / "store_config.json"
-SECONDS_IN_A_DAY = 86400
+DIR = Path(__file__).parent
+STORE_CONFIG_PATH = DIR / "store_config.json"
 
 
 # -------------- MODEL --------------- #

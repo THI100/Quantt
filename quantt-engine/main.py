@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import principal, report, set
+from config import store
 from core import bot
-from persistance import store
 from utils import log
 from utils.stream_manager import log_stream
 

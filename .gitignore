@@ -212,6 +212,7 @@ pyrightconfig.json
 *.db
 .zed/
 logs/
+jdat/
 risk_config.json
 trading_config.json
 store_config.json

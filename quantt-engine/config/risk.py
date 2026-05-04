@@ -12,8 +12,8 @@ from pydantic import BaseModel, Field
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
-CONFIG_DIR = Path(__file__).parent  # adjust if configs live elsewhere
-RISK_CONFIG_PATH = CONFIG_DIR / "risk_config.json"
+DIR = Path(__file__).parent
+RISK_CONFIG_PATH = DIR / "/risk_config.json"
 
 # ── Models ─────────────────────────────────────────────────────────────────────
 

@@ -11,8 +11,9 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 # ── Paths ──────────────────────────────────────────────────────────────────────
-CONFIG_DIR = Path(__file__).parent
-TRADING_CONFIG_PATH = CONFIG_DIR / "trading_config.json"
+
+DIR = Path(__file__).parent
+TRADING_CONFIG_PATH = DIR / "trading_config.json"
 
 # ── Model ─────────────────────────────────────────────────────────────────────
 
