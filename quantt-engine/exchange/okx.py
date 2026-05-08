@@ -4,7 +4,9 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-load_dotenv()
+from exchange.awm import ENV_PATH
+
+_ = load_dotenv(dotenv_path=ENV_PATH)
 
 
 def create_client():

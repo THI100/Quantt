@@ -1,6 +1,7 @@
 import os
 import threading
 import time
+from pathlib import Path
 from typing import Optional
 
 from loguru import logger
@@ -12,17 +13,21 @@ from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 from utils.math import scale_0_100
 
+DIR = Path(__file__).parent
+
 
 class TradingBot:
     def __init__(self):
         self.client = cached_client()
         self.is_running = False
-        self.db_path = "./general.db"
+        self.DB_PATH = DIR.parent / "qdata" / "general.db"
         self.stop_event = threading.Event()
 
     def setup_environment(self):
         """Initializes database and exchange settings."""
-        if os.path.exists(self.db_path):
+        self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+        if os.path.exists(self.DB_PATH):
             logger.info("Database already exists.")
         else:
             logger.info("Initializing database...")

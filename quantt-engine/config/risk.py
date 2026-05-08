@@ -13,7 +13,8 @@ from pydantic import BaseModel, Field
 # ── Paths ──────────────────────────────────────────────────────────────────────
 
 DIR = Path(__file__).parent
-RISK_CONFIG_PATH = DIR / "/risk_config.json"
+RISK_CONFIG_PATH = DIR.parent / "qdata" / "risk_config.json"
+RISK_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Models ─────────────────────────────────────────────────────────────────────
 
@@ -42,6 +43,8 @@ class ConfigWatcher:
         self.ensure_json_file()
 
     def ensure_json_file(self, fpath=RISK_CONFIG_PATH):
+        fpath.parent.mkdir(parents=True, exist_ok=True)
+
         if not os.path.exists(fpath):
             with open(fpath, "w") as f:
                 f.write("")

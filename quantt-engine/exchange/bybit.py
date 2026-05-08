@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 from loguru import logger
 
 from config import settings
+from exchange.awm import ENV_PATH
 
-load_dotenv()
+_ = load_dotenv(dotenv_path=ENV_PATH)
 
 
 def create_client():

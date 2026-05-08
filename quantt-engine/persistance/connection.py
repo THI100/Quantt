@@ -1,10 +1,16 @@
+from pathlib import Path
 from sqlite3 import Connection as sqlite3connection
 from typing import Any
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DB_URL = "sqlite:///./general.db"
+DIR = Path(__file__).parent
+DB_PATH = DIR.parent / "qdata" / "general.db"
+
+DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+DB_URL = f"sqlite:///./{DB_PATH.absolute()}"
 
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 

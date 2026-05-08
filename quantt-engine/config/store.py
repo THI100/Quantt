@@ -16,8 +16,8 @@ from data.fetch import balance
 
 
 DIR = Path(__file__).parent
-STORE_CONFIG_PATH = DIR / "store_config.json"
-
+STORE_CONFIG_PATH = DIR.parent / "qdata" / "store_config.json"
+STORE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # -------------- MODEL --------------- #
 
@@ -40,6 +40,7 @@ class ConfigWatcher:
         self.ensure_json_file()
 
     def ensure_json_file(self, fpath=STORE_CONFIG_PATH):
+        fpath.parent.mkdir(parents=True, exist_ok=True)
         if not os.path.exists(fpath):
             with open(fpath, "w") as f:
                 f.write("")
