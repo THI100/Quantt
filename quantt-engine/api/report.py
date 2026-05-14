@@ -1,7 +1,6 @@
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
-from loguru import logger
 
 from core.bot import TradingBot
 from persistance.connection import SessionLocal

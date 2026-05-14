@@ -35,7 +35,7 @@ def get_exchange_client(exchange_name: str = settings.watcher.get_config().excha
     elif exchange_name == "mexc":
         from exchange.mexc import mx_client
 
-        return okx_client
+        return mx_client
 
     else:
         logger.error(f"Unsupported exchange: {exchange_name}")
