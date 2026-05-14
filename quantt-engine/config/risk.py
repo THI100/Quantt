@@ -4,16 +4,21 @@ Pydantic models for trading configuration files + FastAPI routes to read/update 
 """
 
 import os
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+import sys
 from pathlib import Path
 from typing import Literal
 
 from loguru import logger
 from pydantic import BaseModel, Field
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+if getattr(sys, "frozen", False):
+    DIR = Path(sys.executable).parent
+else:
+    DIR = Path(__file__).resolve().parent.parent
 
-DIR = Path(__file__).parent
-RISK_CONFIG_PATH = DIR.parent / "qdata" / "risk_config.json"
+RISK_CONFIG_PATH = DIR / "qdata" / "risk_config.json"
 RISK_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Models ─────────────────────────────────────────────────────────────────────

@@ -4,16 +4,21 @@ Pydantic model for trading configuration files with Hot-Reloading
 """
 
 import os
+
+# ── Paths ──────────────────────────────────────────────────────────────────────
+import sys
 from pathlib import Path
 from typing import Literal
 
 from loguru import logger
 from pydantic import BaseModel, Field
 
-# ── Paths ──────────────────────────────────────────────────────────────────────
+if getattr(sys, "frozen", False):
+    DIR = Path(sys.executable).parent
+else:
+    DIR = Path(__file__).resolve().parent.parent
 
-DIR = Path(__file__).parent
-TRADING_CONFIG_PATH = DIR.parent / "qdata" / "trading_config.json"
+TRADING_CONFIG_PATH = DIR / "qdata" / "trading_config.json"
 TRADING_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Model ─────────────────────────────────────────────────────────────────────

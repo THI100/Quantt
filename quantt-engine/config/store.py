@@ -4,6 +4,9 @@ Pydantic model for Storing misc variables.
 """
 
 import os
+
+# -------------- PATHS --------------- #
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -12,11 +15,12 @@ from pydantic import BaseModel
 
 from data.fetch import balance
 
-# -------------- PATHS --------------- #
+if getattr(sys, "frozen", False):
+    DIR = Path(sys.executable).parent
+else:
+    DIR = Path(__file__).resolve().parent.parent
 
-
-DIR = Path(__file__).parent
-STORE_CONFIG_PATH = DIR.parent / "qdata" / "store_config.json"
+STORE_CONFIG_PATH = DIR / "qdata" / "store_config.json"
 STORE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # -------------- MODEL --------------- #

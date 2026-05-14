@@ -1,10 +1,15 @@
 import os
+import sys
 from pathlib import Path
 
 from dotenv import set_key
 
-DIR = Path(__file__).parent
-ENV_PATH = DIR.parent / "qdata" / ".env"
+if getattr(sys, "frozen", False):
+    DIR = Path(sys.executable).parent
+else:
+    DIR = Path(__file__).resolve().parent.parent
+
+ENV_PATH = DIR / "qdata" / ".env"
 ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 

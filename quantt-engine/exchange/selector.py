@@ -11,9 +11,6 @@ if file_path.stat().st_size == 0:
     logger.error(
         "Oops, it seems you dont have data on your .env, write directly on it or use the API page to modify the values."
     )
-    raise Exception(
-        "your .env file doesn´t have the values needed, write directly on it or use the API page to modify the values."
-    )
 
 
 def get_exchange_client(exchange_name: str = settings.watcher.get_config().exchange):

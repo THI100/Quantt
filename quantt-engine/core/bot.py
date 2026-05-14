@@ -1,4 +1,5 @@
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -13,14 +14,17 @@ from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 from utils.math import scale_0_100
 
-DIR = Path(__file__).parent
+if getattr(sys, "frozen", False):
+    DIR = Path(sys.executable).parent
+else:
+    DIR = Path(__file__).resolve().parent.parent
 
 
 class TradingBot:
     def __init__(self):
         self.client = cached_client()
         self.is_running = False
-        self.DB_PATH = DIR.parent / "qdata" / "general.db"
+        self.DB_PATH = DIR / "qdata" / "general.db"
         self.stop_event = threading.Event()
 
     def setup_environment(self):
