@@ -288,7 +288,6 @@ export default function Sidebar() {
         <IconMenu />
         <span className="sidebar-toggle-text">Menu</span>
       </button>
-
       <nav className={`sidebar-panel${isOpen ? " open" : ""}`}>
         <div className="sidebar-section-label">Navigation</div>
         {navItems.slice(0, 7).map((item) => (
@@ -305,22 +304,43 @@ export default function Sidebar() {
             {item.label}
           </NavLink>
         ))}
-
         <div className="sidebar-divider" />
         <div className="sidebar-section-label">Management</div>
-        {navItems.slice(7).map((item) => (
-          <NavLink
-            key={item.href}
-            to={item.href}
-            className={({ isActive }) =>
-              `sidebar-link${isActive ? " active" : ""}`
-            }
-            onClick={close}
-          >
-            <span className="sidebar-link-icon">{item.icon}</span>
-            {item.label}
-          </NavLink>
-        ))}
+        {navItems.slice(7).map((item) =>
+          item.isExternal ? (
+            <a
+              key={item.href}
+              href={item.href}
+              className="sidebar-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                // If running in Electron, use electronAPI
+                if (window.electronAPI?.openLink) {
+                  e.preventDefault();
+                  window.electronAPI.openLink(item.href);
+                  close();
+                }
+                // Otherwise, let the browser handle it normally with target="_blank"
+              }}
+            >
+              <span className="sidebar-link-icon">{item.icon}</span>
+              {item.label}
+            </a>
+          ) : (
+            <NavLink
+              key={item.href}
+              to={item.href}
+              className={({ isActive }) =>
+                `sidebar-link${isActive ? " active" : ""}`
+              }
+              onClick={close}
+            >
+              <span className="sidebar-link-icon">{item.icon}</span>
+              {item.label}
+            </NavLink>
+          ),
+        )}
       </nav>
     </div>
   );
