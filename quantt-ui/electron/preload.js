@@ -1,11 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-// We use contextBridge to safely expose APIs to the React frontend
 contextBridge.exposeInMainWorld("electronAPI", {
-  // 1. A function to get the app version or system info
+  // 1. Function to get the app version or system info
   getPlatform: () => process.platform,
 
-  // 2. Send a message to the Main process (e.g., to open a folder)
+  // 2. Send a message to the Main process
   sendMessage: (channel, data) => {
     const validChannels = ["toMain"];
     if (validChannels.includes(channel)) {
@@ -20,4 +19,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
     }
   },
+  openLink: (url) => ipcRenderer.send("open-external-url", url),
 });
