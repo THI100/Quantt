@@ -6,10 +6,10 @@ from loguru import logger
 
 from exchange.awm import ENV_PATH
 
-_ = load_dotenv(dotenv_path=ENV_PATH)
-
 
 def create_client():
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
+
     api_key = os.getenv("API_KEY_OKX")
     api_secret = os.getenv("API_SECRET_OKX")
 

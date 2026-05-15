@@ -11,16 +11,25 @@ def ttl_cache(ttl_seconds: int):
         @wraps(func)
         def wrapper(*args, **kwargs):
             now = time.time()
-            if now >= cache["expiry"]:
+
+            # recreate if expired
+            if cache["value"] is None or now >= cache["expiry"]:
                 cache["value"] = func(*args, **kwargs)
                 cache["expiry"] = now + ttl_seconds
+
             return cache["value"]
+
+        def reset():
+            cache["value"] = None
+            cache["expiry"] = 0
+
+        wrapper.reset = reset
 
         return wrapper
 
     return decorator
 
 
-@ttl_cache(ttl_seconds=86400)  # Cache for the specified timeframe
+@ttl_cache(ttl_seconds=86399)  # Cache for the specified timeframe
 def cached_client():
     return get_exchange_client()

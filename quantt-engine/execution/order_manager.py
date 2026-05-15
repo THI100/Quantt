@@ -5,9 +5,30 @@ from loguru import logger
 from sqlalchemy.sql import False_
 
 import data.fetch as fetch
+from data.client import cached_client
 from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
+
+# ------------------- Safe Helper ------------------- #
+
+
+def safe_exchange_call(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+
+    except Exception as err:
+        logger.warning(f"Exchange error, recreating client: {err}")
+
+        cached_client.reset()
+
+        client = cached_client()
+
+        # retry using refreshed client
+        new_func = getattr(client, func.__name__)
+
+        return new_func(*args, **kwargs)
+
 
 # --------------------- Helpers --------------------- #
 
@@ -70,7 +91,9 @@ def _place_linked_order(
     """
     try:
         time.sleep(0.5)
-        order_data = client.create_order(
+
+        order_data = safe_exchange_call(
+            client.create_order,
             symbol=market,
             type=order_type,
             side=side,
@@ -82,6 +105,7 @@ def _place_linked_order(
                 "workingType": "MARK_PRICE",
             },
         )
+
         logger.info(f"Created {order_type}: {order_data['id']}")
 
         with session_factory() as session:
@@ -130,7 +154,8 @@ def order(
 
     # 2. Place Main Entry Order
     try:
-        entry_order = client.create_order(
+        entry_order = safe_exchange_call(
+            client.create_order,
             market,
             type,
             entry_side,
@@ -221,7 +246,8 @@ def execute_iceberg(
 
         try:
             # 2. Create the Entry Order
-            order_resp = client.create_order(
+            order_resp = safe_exchange_call(
+                client.create_order,
                 market,
                 "limit",
                 normalized_side,
@@ -264,7 +290,7 @@ def execute_iceberg(
             if order_status["status"] != "closed":
                 logger.info(f"Slice partially filled ({filled}). Canceling remainder.")
                 try:
-                    client.cancel_order(order_id, market)
+                    safe_exchange_call(client.cancel_order, order_id, market)
                 except Exception as e:
                     logger.warning(f"Could not cancel order {order_id}: {e}")
 

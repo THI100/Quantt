@@ -27,6 +27,27 @@ class TradingBot:
         self.DB_PATH = DIR / "qdata" / "general.db"
         self.stop_event = threading.Event()
 
+    def refresh_client(self):
+        cached_client.reset()
+        self.client = cached_client()
+
+        try:
+            self.client.load_markets()
+        except Exception as err:
+            logger.error(f"Failed to reload markets: {err}")
+
+    def safe_client_call(self, func, *args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+
+        except Exception as err:
+            logger.warning(f"Client error detected: {err}")
+            logger.info("Refreshing exchange client...")
+
+            self.refresh_client()
+
+            return func(*args, **kwargs)
+
     def setup_environment(self):
         """Initializes database and exchange settings."""
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -37,7 +58,7 @@ class TradingBot:
             logger.info("Initializing database...")
             Base.metadata.create_all(bind=engine)
 
-        self.client.load_markets()
+        self.safe_client_call(self.client.load_markets)
 
         for symbol in settings.watcher.get_config().list_of_interest:
             try:
@@ -71,7 +92,7 @@ class TradingBot:
             self.is_running = False
 
     def check_bal(self):
-        bal = self.client.fetch_balance()
+        bal = self.safe_client_call(self.client.fetch_balance)
         ut = bal.get("USDT")
         uc = bal.get("USDC")
         ut.update({"coin": "USDT"})
@@ -94,7 +115,7 @@ class TradingBot:
 
     def close_order(self, symbol: str, id: str):
         try:
-            self.client.cancel_order(id, symbol)
+            self.safe_client_call(self.client.cancel_order, id, symbol)
             logger.info(f"Successfully cancelled order {order_id} for {symbol}")
         except Exception as err:
             logger.error(
@@ -104,7 +125,7 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                return self.client.fetch_order(id, symbol)
+                return self.safe_client_call(self.client.fetch_order, id, symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open order: {id}, {symbol}"
@@ -112,7 +133,7 @@ class TradingBot:
                 return []
         else:
             try:
-                return self.client.fetch_orders(symbol)
+                return self.safe_client_call(self.client.fetch_orders, symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open orders of {symbol}"

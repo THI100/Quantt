@@ -3,12 +3,32 @@ from sqlalchemy import desc, select
 
 import data.fetch as fetch
 from config import settings
+from data.client import cached_client
 from execution import risk_manager as rm
 from persistance.connection import SessionLocal
 from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
+
+# ------------------- Safe Helper ------------------- #
+
+
+def safe_exchange_call(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+
+    except Exception as err:
+        logger.warning(f"Exchange error, recreating client: {err}")
+
+        cached_client.reset()
+
+        client = cached_client()
+
+        # retry using refreshed client
+        new_func = getattr(client, func.__name__)
+
+        return new_func(*args, **kwargs)
 
 
 def manage_open_symbols():
@@ -111,8 +131,10 @@ def manage_open_limit(client):
 
                 try:
                     # 1. Exchange Action
-                    client.cancel_order(order_id, symbol)
-                    new_exchange_order = client.create_order(symbol, typ, s, amt, p)
+                    safe_exchange_call(client.cancel_order, order_id, symbol)
+                    new_exchange_order = safe_exchange_call(
+                        client.create_order, symbol, typ, s, amt, p
+                    )
                     new_id = str(new_exchange_order["id"])
 
                     # 2. Create NEW parent first
