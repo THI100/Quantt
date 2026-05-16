@@ -233,6 +233,7 @@ node_modules
 dist
 dist-ssr
 *.local
+e_dist
 
 # Editor directories and files
 .vscode/*
