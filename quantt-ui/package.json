@@ -17,6 +17,9 @@
   },
   "build": {
     "appId": "com.quantt.ui",
+    "directories": {
+      "output": "e_dist"
+    },
     "files": [
       "dist/**/*",
       "electron/**/*",

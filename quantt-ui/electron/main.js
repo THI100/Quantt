@@ -2,6 +2,7 @@ import { app, BrowserWindow } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,11 +24,12 @@ function startPythonBackend() {
       process.resourcesPath,
       "backend-dist",
       "main",
-      "main",
+      "QuanttEngine",
     );
     if (process.platform === "win32") {
       pyBinaryPath += ".exe";
     }
+    console.log("Backend exists:", fs.existsSync(pyBinaryPath));
     pyProc = spawn(pyBinaryPath);
     console.log("Spawned production Python executable.");
   }
