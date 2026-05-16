@@ -55,11 +55,20 @@ function createWindow() {
     },
   });
 
-  win.loadURL(
-    app.isPackaged
-      ? "http://localhost:5173"
-      : `file://${path.join(__dirname, "../dist/index.html")}`,
-  );
+  if (app.isPackaged) {
+    const indexPath = path.join(
+      app.getAppPath(),
+      "dist",
+      "index.html"
+    );
+
+    console.log("Loading production frontend:", indexPath);
+
+    win.loadFile(indexPath);
+  } else {
+    console.log("Loading Vite dev server...");
+    win.loadURL("http://localhost:5173");
+  }
 }
 
 // Start Backend and open the window
