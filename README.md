@@ -3,7 +3,7 @@
 > Local-first algorithmic cryptocurrency trading platform focused on execution, analytics, and extensibility.
 
 ![Status](https://img.shields.io/badge/status-active%20development-orange)
-![Version](https://img.shields.io/badge/version-0.1.0--set-blue)
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.11+-informational)
 ![Node](https://img.shields.io/badge/node.js-25+-informational)
@@ -61,7 +61,7 @@ Quantt is **not** intended to:
 
 | Version | Milestone                     | Status                  |
 | ------- | ----------------------------- | ----------------------- |
-| v0.1    | Execution engine (local-only) | In Progress             |
+| v0.1    | Execution engine (local-only) | Complete                |
 | v0.2    | Backtesting integration       | Planned                 |
 | v0.3    | AI forecasting layer          | Planned                 |
 | v0.4    | Optional cloud backend        | Experimental / Possible |
