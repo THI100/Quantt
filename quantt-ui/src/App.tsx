@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Topbar from "./components/layout/Topbar";
 import "./assets/App.css";
 
@@ -15,7 +15,7 @@ import Settings from "./pages/Management/Settings";
 
 function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <div className="app-layout">
         <Topbar />
         <main className="app-main">
@@ -33,7 +33,7 @@ function App() {
           </Routes>
         </main>
       </div>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
 
