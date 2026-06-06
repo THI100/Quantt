@@ -1,9 +1,7 @@
 from loguru import logger
 
 from config import settings
-from exchange.awm import ENV_PATH, ensure_env_file
-
-logger.info(ensure_env_file())
+from exchange.awm import ENV_PATH
 
 file_path = ENV_PATH
 

@@ -3,8 +3,11 @@ import time
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
+from loguru import logger
 
+from config import store
 from core.bot import TradingBot
+from exchange.awm import ensure_env_file
 from utils.stream_manager import log_stream
 
 route = APIRouter()
@@ -31,6 +34,8 @@ def _require_running():
 def setup():
     try:
         bot.setup_environment()
+        _ = store.initialize()
+        _ = ensure_env_file()
         return {"status": "success", "message": "Environment set successfully"}
     except Exception as e:
         logger.error(f"Setup failed: {e}")

@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import "../localassets/Home.css";
+import aHasRun from "../../App.tsx";
 import {
   Activity,
   TrendingUp,
@@ -183,6 +184,10 @@ function Home() {
   };
 
   // ─── useEffect ────────────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (aHasRun.current) return;
+  }, []);
 
   useEffect(() => {
     if (hasRun.current) return;

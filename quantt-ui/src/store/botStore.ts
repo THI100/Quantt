@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
+const aHasRun = false;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface UISettings {
