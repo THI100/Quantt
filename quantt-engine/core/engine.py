@@ -125,7 +125,7 @@ def avaliation_and_place(client):
         if approval:
             try:
                 logger.info(
-                    f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}, | TP: {tp} | SL: {sl}"
+                    f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}, | TP: {tp} | SL: {sl} | Amount: {nn}"
                 )
                 order_manager.execute_iceberg(client, symbol, nn, side, tp, sl)
                 time.sleep(1)
@@ -134,7 +134,7 @@ def avaliation_and_place(client):
         else:
             try:
                 logger.info(
-                    f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}, | TP: {tp} | SL: {sl}"
+                    f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}, | TP: {tp} | SL: {sl} | Amount: {nn} | Price: {entry_price}"
                 )
                 order_manager.order(
                     client,

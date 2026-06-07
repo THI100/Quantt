@@ -6,7 +6,7 @@ import api from "../../../api/axiosInstance.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type BotStatus = "Online" | "Offline" | "Restarted" | "Error";
+type BotStatus = "Online" | "Offline" | "Restarted" | "Error" | "Connecting";
 
 type ActiveExchange = "Bybit" | "Binance" | "Okx" | "None";
 
@@ -141,7 +141,7 @@ export default function Topbar({
 
   const onStatusClick = async () => {
     try {
-      const response = await api.get<BotResponse>("/bot/status");
+      const response = await api.get("/bot/status");
       const statusFromServer = response.data.status;
 
       console.log(statusFromServer);

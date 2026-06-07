@@ -27,10 +27,17 @@ def create_client():
             "throwOnError": True,
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
+            # "urls": {
+            #     "api": {
+            #         # Default Global (Primary)
+            #         "public": "https://api.binance.com/api/v3",
+            #         "private": "https://api.binance.com/api/v3",
+            #     },
+            # },
             "options": {
                 "defaultType": settings.watcher.get_config().future_spot,
                 "adjustForTimeDifference": True,
-                "recvWindow": 10000,
+                "recvWindow": 30000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
                 "createMarketBuyOrderRequiresPrice": True,
             },

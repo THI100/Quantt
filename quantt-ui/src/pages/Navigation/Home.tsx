@@ -186,15 +186,22 @@ function Home() {
   // ─── useEffect ────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (aHasRun.current) return;
-  }, []);
-
-  useEffect(() => {
     if (hasRun.current) return;
 
-    handleStatus();
-    settingData();
+    const fetchData = async () => {
+      try {
+        const response = await api.post("/");
+        return response.data;
+      } catch (error) {
+        console.error("Error fetching summary:", error);
+        throw error;
+      } finally {
+        handleStatus();
+        settingData();
+      }
+    };
 
+    fetchData();
     hasRun.current = true;
   }, []);
 
