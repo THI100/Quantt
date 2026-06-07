@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "../localassets/Topbar.css";
 import Sidebar from "./Sidebar.tsx";
@@ -131,8 +131,6 @@ export default function Topbar({
 
   const now = useTime();
 
-  const hasRun = useRef(false);
-
   const status =
     STATUS_CONFIG[botStatus as keyof typeof STATUS_CONFIG] ||
     STATUS_CONFIG.Connecting;
@@ -154,17 +152,29 @@ export default function Topbar({
     }
   };
 
+  // FLAG!!
+
+  const handleExchange = async () => {
+    try {
+      const response = await api.post("/exchange/change");
+      const exchangeFromServer = response.data.exchange;
+
+      setActiveExchange(exchangeFromServer);
+    } catch (error: any) {
+      console.error("Error changing exchange:", error);
+    }
+  };
+
   const handleClick = () => {
     navigate("/Management/Api");
   };
 
   useEffect(() => {
-    if (hasRun.current) return;
-
     onStatusClick();
 
-    hasRun.current = true;
-  }, []);
+    const interval = setInterval(onStatusClick, 5000);
+    return () => clearInterval(interval);
+  }, [onStatusClick]);
 
   return (
     <header className="topbar">

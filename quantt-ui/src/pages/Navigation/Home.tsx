@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import "../localassets/Home.css";
-import aHasRun from "../../App.tsx";
 import {
   Activity,
   TrendingUp,
@@ -186,23 +185,28 @@ function Home() {
   // ─── useEffect ────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (hasRun.current) return;
-
-    const fetchData = async () => {
+    const set = async () => {
+      if (hasRun.current) return;
+      hasRun.current = true;
       try {
         const response = await api.post("/");
         return response.data;
       } catch (error) {
         console.error("Error fetching summary:", error);
         throw error;
-      } finally {
-        handleStatus();
-        settingData();
       }
     };
 
-    fetchData();
-    hasRun.current = true;
+    set();
+
+    handleStatus();
+    settingData();
+
+    const interval = setInterval(() => {
+      handleStatus();
+      settingData();
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // ─── Component ────────────────────────────────────────────────────────────────────

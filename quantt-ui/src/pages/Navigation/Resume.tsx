@@ -73,11 +73,10 @@ export default function Resume() {
   };
 
   useEffect(() => {
-    if (hasRun.current) return;
-
     handleRefresh();
 
-    hasRun.current = true;
+    const interval = setInterval(handleRefresh, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
