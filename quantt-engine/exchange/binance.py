@@ -11,11 +11,25 @@ from exchange.awm import ENV_PATH
 def create_client():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    api_key = os.getenv("API_KEY_BINANCE")
-    api_secret = os.getenv("API_SECRET_BINANCE")
+    demo_enabled = settings.watcher.get_config().is_demo_enabled
+
+    if demo_enabled:
+        api_key = os.getenv("API_KEY_BINANCE_DEMO")
+        api_secret = os.getenv("API_SECRET_BINANCE_DEMO")
+    else:
+        api_key = os.getenv("API_KEY_BINANCE")
+        api_secret = os.getenv("API_SECRET_BINANCE")
 
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
+
+    # Smaller code snippet for lightweight testing
+    # client = ccxt.binance(
+    #     {
+    #         "apiKey": api_key,
+    #         "secret": api_secret,
+    #     }
+    # )
 
     client = ccxt.binance(
         {
@@ -27,24 +41,17 @@ def create_client():
             "throwOnError": True,
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
-            "urls": {
-                "api": {
-                    # Default Global (Primary)
-                    "public": "https://api.binance.com/api/v3",
-                    "private": "https://api.binance.com/api/v3",
-                },
-            },
             "options": {
                 "defaultType": settings.watcher.get_config().future_spot,
                 "adjustForTimeDifference": True,
-                "recvWindow": 30000,
+                "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
                 "createMarketBuyOrderRequiresPrice": True,
             },
         }
     )
 
-    client.enable_demo_trading(settings.watcher.get_config().is_demo_enabled)
+    client.enable_demo_trading(demo_enabled)
 
     return client
 

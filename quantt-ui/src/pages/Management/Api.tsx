@@ -103,8 +103,11 @@ export default function Api() {
                   setApiData({ ...apiData, exchange: e.target.value })
                 }
               >
-                <option value="binance">Binance (Global/US)</option>
+                <option value="">Select Exchange</option>
+                <option value="binance">Binance (Global)</option>
+                <option value="binance_demo">Binance Demo (Global)</option>
                 <option value="bybit">Bybit</option>
+                <option value="bybit_demo">Bybit Demo</option>
                 <option value="okx">OKX</option>
                 <option value="mexc">Mexc</option>
               </select>

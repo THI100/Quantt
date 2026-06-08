@@ -3,9 +3,10 @@ import math
 from loguru import logger
 
 import data.fetch as fetch
-from config import risk
+from config import risk, settings
 
 r = risk.watcher.get_config()
+s = settings.watcher.get_config()
 
 
 def smart_amount(market: str):
@@ -25,7 +26,11 @@ def smart_amount(market: str):
 
         # 5. Calculation Logic
         percentage = getattr(r, "percentage_of_capital_per_trade", 0.0)
-        leverage = getattr(r, "leverage", 1.0)
+
+        if s.future_spot == "future":
+            leverage = getattr(r, "leverage", 1.0)
+        else:
+            leverage = 1.0
 
         limited = usdt_n * percentage
         ma = (limited / last) * leverage

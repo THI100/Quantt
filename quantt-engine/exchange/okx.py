@@ -4,6 +4,7 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
+from config import settings
 from exchange.awm import ENV_PATH
 
 
@@ -34,6 +35,8 @@ def create_client():
             },
         }
     )
+
+    client.set_sandbox_mode(settings.watcher.get_config().is_demo_enabled)
 
     return client
 

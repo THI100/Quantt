@@ -11,8 +11,14 @@ from exchange.awm import ENV_PATH
 def create_client():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    api_key = os.getenv("API_KEY_BYBIT")
-    api_secret = os.getenv("API_SECRET_BYBIT")
+    demo_enabled = settings.watcher.get_config().is_demo_enabled
+
+    if demo_enabled:
+        api_key = os.getenv("API_KEY_BYBIT_DEMO")
+        api_secret = os.getenv("API_SECRET_BYBIT_DEMO")
+    else:
+        api_key = os.getenv("API_KEY_BYBIT")
+        api_secret = os.getenv("API_SECRET_BYBIT")
 
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
@@ -37,8 +43,7 @@ def create_client():
         }
     )
 
-    # Correct, modern CCXT usage
-    client.enableDemoTrading(settings.watcher.get_config().is_demo_enabled)
+    client.enable_demo_trading(demo_enabled)
 
     return client
 

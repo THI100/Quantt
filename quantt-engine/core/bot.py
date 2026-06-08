@@ -60,12 +60,13 @@ class TradingBot:
 
         self.safe_client_call(self.client.load_markets)
 
-        for symbol in settings.watcher.get_config().list_of_interest:
-            try:
-                self.client.set_leverage(risk.watcher.get_config().leverage, symbol)
-                logger.debug(f"Leverage set for {symbol}")
-            except Exception as err:
-                logger.error(f"Error occured, when setting Leverage: {err}")
+        if settings.watcher.get_config().future_spot == "future":
+            for symbol in settings.watcher.get_config().list_of_interest:
+                try:
+                    self.client.set_leverage(risk.watcher.get_config().leverage, symbol)
+                    logger.debug(f"Leverage set for {symbol}")
+                except Exception as err:
+                    logger.error(f"Error occured, when setting Leverage: {err}")
 
     @logger.catch
     def start(self, paused_check_func=None):

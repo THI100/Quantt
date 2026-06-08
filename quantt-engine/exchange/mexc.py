@@ -37,8 +37,7 @@ def create_client():
         }
     )
 
-    # Correct, modern CCXT usage
-    client.enableDemoTrading(settings.watcher.get_config().is_demo_enabled)
+    client.set_sandbox_mode(settings.watcher.get_config().is_demo_enabled)
 
     return client
 
