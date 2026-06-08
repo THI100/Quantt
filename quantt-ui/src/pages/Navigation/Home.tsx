@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import "../localassets/Home.css";
 import {
   Activity,
@@ -64,7 +64,7 @@ function Home() {
 
   // ─── Inner-Helpers ────────────────────────────────────────────────────────────────────
 
-  const settingData = async () => {
+  const settingData = useCallback(async () => {
     try {
       // 1. Fetch raw data
       const summaryRaw = await getSummary();
@@ -96,9 +96,9 @@ function Home() {
     } catch (error) {
       console.error("Error mapping dashboard data:", error);
     }
-  };
+  }, [setMetrics, setRecentTrades]);
 
-  const handleStatus = async () => {
+  const handleStatus = useCallback(async () => {
     try {
       const response = await api.get<BotResponse>("/bot/status");
       const statusFromServer = response.data.status;
@@ -109,7 +109,7 @@ function Home() {
 
       setBotStatus("Error");
     }
-  };
+  }, [setBotStatus]);
 
   const handleStart = async () => {
     try {
@@ -207,7 +207,7 @@ function Home() {
       settingData();
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [settingData, handleStatus]);
 
   // ─── Component ────────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import "../localassets/Resume.css";
 import { getSummary } from "../../../api/services/Info";
 import { getPositions } from "../../../api/services/Positions";
@@ -33,7 +33,7 @@ export default function Resume() {
     return `${hours}h ${minutes}m`;
   };
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     try {
       // 1. Fetch raw data
       const summaryRaw = await getSummary();
@@ -70,14 +70,14 @@ export default function Resume() {
     } catch (error) {
       console.error("Error mapping dashboard data:", error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     handleRefresh();
 
     const interval = setInterval(handleRefresh, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [handleRefresh]);
 
   return (
     <div className="home-container">

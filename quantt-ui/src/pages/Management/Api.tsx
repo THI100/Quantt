@@ -57,7 +57,6 @@ export default function Api() {
     }
   };
 
-  // useEffect cannot be directly async. Wrapping the logic inside.
   useEffect(() => {
     if (hasRun.current) return;
 

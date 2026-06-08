@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../localassets/Topbar.css";
 import Sidebar from "./Sidebar.tsx";
@@ -137,7 +137,7 @@ export default function Topbar({
 
   const navigate = useNavigate();
 
-  const onStatusClick = async () => {
+  const onStatusClick = useCallback(async () => {
     try {
       const response = await api.get("/bot/status");
       const statusFromServer = response.data.status;
@@ -150,20 +150,20 @@ export default function Topbar({
 
       setBotStatus("Error");
     }
-  };
+  }, []);
 
   // FLAG!!
 
-  const handleExchange = async () => {
+  const handleExchange = useCallback(async () => {
     try {
-      const response = await api.post("/exchange/change");
+      const response = await api.get("/config/trading");
       const exchangeFromServer = response.data.exchange;
 
       setActiveExchange(exchangeFromServer);
     } catch (error: any) {
       console.error("Error changing exchange:", error);
     }
-  };
+  }, [navigate]);
 
   const handleClick = () => {
     navigate("/Management/Api");
@@ -171,10 +171,14 @@ export default function Topbar({
 
   useEffect(() => {
     onStatusClick();
+    handleExchange();
 
-    const interval = setInterval(onStatusClick, 5000);
+    const interval = setInterval(() => {
+      onStatusClick();
+      handleExchange();
+    }, 5000);
     return () => clearInterval(interval);
-  }, [onStatusClick]);
+  }, [onStatusClick, handleExchange]);
 
   return (
     <header className="topbar">

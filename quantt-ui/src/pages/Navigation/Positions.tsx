@@ -45,7 +45,6 @@ export default function Positions() {
     }
   }, []);
 
-  // 2. Initial load useEffect: Only runs ONCE on mount
   useEffect(() => {
     fetchPositions(1);
     const interval = setInterval(fetchPositions, 5000);
