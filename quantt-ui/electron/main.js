@@ -56,11 +56,7 @@ function createWindow() {
   });
 
   if (app.isPackaged) {
-    const indexPath = path.join(
-      app.getAppPath(),
-      "dist",
-      "index.html"
-    );
+    const indexPath = path.join(app.getAppPath(), "dist", "index.html");
 
     console.log("Loading production frontend:", indexPath);
 

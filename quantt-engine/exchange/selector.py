@@ -1,11 +1,22 @@
+import sys
+from pathlib import Path
+
 from loguru import logger
 
 from config import settings
-from exchange.awm import ENV_PATH
 
-file_path = ENV_PATH
+if getattr(sys, "frozen", False):
+    DIR = Path(sys.executable).parent
+else:
+    DIR = Path(__file__).resolve().parent.parent
 
-if file_path.stat().st_size == 0:
+ENV_PATH = DIR / "qdata" / ".env"
+ENV_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+if not ENV_PATH.exists():
+    ENV_PATH.touch()
+
+if ENV_PATH.stat().st_size == 0:
     logger.error(
         "Oops, it seems you dont have data on your .env, write directly on it or use the API page to modify the values."
     )
