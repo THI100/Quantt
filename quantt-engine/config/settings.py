@@ -29,7 +29,7 @@ class TradingConfig(BaseModel):
     timeframe: str = "15m"
     exchange: Literal["binance", "bybit", "okx", "mexc"] = "binance"
     execution_order: Literal["market", "limit"] = "limit"
-    future_spot: Literal["future", "spot"] = "future"
+    future_spot: Literal["future", "spot"] = "spot"
     list_of_interest: list[str] = Field(
         default_factory=lambda: [
             "BTC/USDT",
