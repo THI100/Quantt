@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import principal, report, set
+from config import store
+from core.bot import TradingBot
+from exchange.awm import ensure_env_file
 from utils import log
 from utils.log import LOGGING_CONFIG
 from utils.stream_manager import log_stream
@@ -30,6 +33,10 @@ app.include_router(report.r_route)
 app.include_router(set.s_route)
 
 if __name__ == "__main__":
+    TradingBot().setup_environment()
+    _ = store.initialize()
+    _ = ensure_env_file()
+
     log.setup_logging(stream_callback=log_stream.broadcast)
     # Run the server
     uvicorn.run(app, host="0.0.0.0", port=8000, log_config=LOGGING_CONFIG)
