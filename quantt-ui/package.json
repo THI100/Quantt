@@ -11,6 +11,7 @@
     "dev": "vite",
     "build_ft": "vite build",
     "build_electron": "electron-builder",
+    "dist:all": "electron-builder -wl",
     "lint": "eslint .",
     "preview": "vite preview",
     "electron": "electron ."
