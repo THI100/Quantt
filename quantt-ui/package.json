@@ -17,6 +17,7 @@
   },
   "build": {
     "appId": "com.quantt.ui",
+    "productName": "Quantt",
     "directories": {
       "output": "e_dist"
     },
@@ -37,6 +38,14 @@
     "win": {
       "target": "nsis",
       "icon": "build/qi.ico",
+      "artifactName": "Quantt_Setup_${version}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "build/qi.png",
       "artifactName": "Quantt_Setup_${version}.${ext}"
     },
     "mac": {
