@@ -2,9 +2,8 @@ import time
 from typing import Optional
 
 from loguru import logger
-from sqlalchemy.sql import False_
 
-import data.fetch as fetch
+from data import fetch
 from data.client import cached_client
 from execution import risk_manager
 from persistance.connection import SessionLocal
@@ -50,7 +49,7 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "STOP_MARKET",
+            "market",
             exit_side,
             total_amount,
             sl,
@@ -64,7 +63,7 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "TAKE_PROFIT_MARKET",
+            "market",
             exit_side,
             total_amount,
             tp,
@@ -195,7 +194,7 @@ def order(
         _place_linked_order(
             client,
             market,
-            "STOP_MARKET",
+            "market",
             exit_side,
             amount,
             stop_loss,
@@ -209,7 +208,7 @@ def order(
         _place_linked_order(
             client,
             market,
-            "TAKE_PROFIT_MARKET",
+            "market",
             exit_side,
             amount,
             take_profit,
