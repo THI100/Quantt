@@ -33,7 +33,7 @@ def get_OHLCV(symbol: str, timeframe: str, limit: int):
     try:
         client = cached_client()
 
-        return std_call(client.fetch_ohlcv, symbol, timeframe, limit)
+        return std_call(client.fetch_ohlcv, symbol, timeframe, limit=limit)
 
     except Exception as err:
         logger.error(f"following cause the OHLCV fetch to fail: {err}")
