@@ -1,6 +1,9 @@
 import threading
 import time
 
+import ccxt
+from loguru import logger
+
 
 class RateLimiter:
     def __init__(self, interval: float = 1.1):
@@ -20,3 +23,18 @@ class RateLimiter:
 
 
 gen_limiter = RateLimiter()
+
+
+def std_call(func, *args, **kwargs):
+    gen_limiter.wait()
+
+    try:
+        return func(*args, **kwargs)
+
+    except ccxt.RateLimitExceeded:
+        logger.warning("CCXT rate limit exceeded")
+        raise
+
+    except (ccxt.NetworkError, ccxt.ExchangeError) as err:
+        logger.warning(f"CCXT error: {err}")
+        raise

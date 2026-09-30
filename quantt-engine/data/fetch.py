@@ -4,30 +4,21 @@ from typing import Optional
 from loguru import logger
 
 from data.client import cached_client
+from utils.rate_lim import gen_limiter, std_call
 
 
 def get_ticker(symbol: str):
     """Fetch a ticker."""
-    try:
-        client = cached_client()
-        time.sleep(0.5)
-        return client.fetch_ticker(symbol)
-    except Exception as err:
-        logger.warning(
-            f"following cause triggered recreation of client instance: {err}"
-        )
-        cached_client.reset()
-
-        client = cached_client()
-        time.sleep(0.5)
-        return client.fetch_ticker(symbol)
+    client = cached_client()
+    gen_limiter.wait()
+    return client.fetch_ticker(symbol)
 
 
 def get_tickers(symbols: list):
     """Fetch multiple tickers."""
     try:
         client = cached_client()
-        time.sleep(0.5)
+        gen_limiter.wait()
         return client.fetch_tickers(symbols)
     except Exception as err:
         logger.warning(

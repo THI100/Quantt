@@ -5,30 +5,10 @@ from loguru import logger
 
 from config import settings
 from data import fetch
-from data.client import cached_client
 from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
-
-# ------------------- Safe Helper ------------------- #
-
-
-def safe_exchange_call(func, *args, **kwargs):
-    try:
-        return func(*args, **kwargs)
-
-    except Exception as err:
-        logger.warning(f"Exchange error, recreating client: {err}")
-
-        cached_client.reset()
-
-        client = cached_client()
-
-        # retry using refreshed client
-        new_func = getattr(client, func.__name__)
-
-        return new_func(*args, **kwargs)
-
+from utils.rate_lim import gen_limiter, std_call
 
 # --------------------- Helpers --------------------- #
 
@@ -92,9 +72,9 @@ def _place_linked_order(
     to avoid UnboundLocalErrors and code duplication.
     """
     try:
-        time.sleep(0.5)
+        gen_limiter.wait()
 
-        order_data = safe_exchange_call(
+        order_data = std_call(
             client.create_order,
             symbol=market,
             type=order_type,
@@ -156,7 +136,7 @@ def order(
 
     # 2. Place Main Entry Order
     try:
-        entry_order = safe_exchange_call(
+        entry_order = std_call(
             client.create_order,
             market,
             type,
@@ -248,7 +228,7 @@ def execute_iceberg(
 
         try:
             # 2. Create the Entry Order
-            order_resp = safe_exchange_call(
+            order_resp = std_call(
                 client.create_order,
                 market,
                 "limit",
@@ -292,7 +272,7 @@ def execute_iceberg(
             if order_status["status"] != "closed":
                 logger.info(f"Slice partially filled ({filled}). Canceling remainder.")
                 try:
-                    safe_exchange_call(client.cancel_order, order_id, market)
+                    std_call(client.cancel_order, order_id, market)
                 except Exception as e:
                     logger.warning(f"Could not cancel order {order_id}: {e}")
 

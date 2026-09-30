@@ -13,6 +13,7 @@ from data.client import cached_client
 from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 from utils.math import scale_0_100
+from utils.rate_lim import gen_limiter, std_call
 
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
@@ -27,27 +28,6 @@ class TradingBot:
         self.DB_PATH = DIR / "qdata" / "general.db"
         self.stop_event = threading.Event()
 
-    def refresh_client(self):
-        cached_client.reset()
-        self.client = cached_client()
-
-        try:
-            self.client.load_markets()
-        except Exception as err:
-            logger.error(f"Failed to reload markets: {err}")
-
-    def safe_client_call(self, func, *args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-
-        except Exception as err:
-            logger.warning(f"Client error detected: {err}")
-            logger.info("Refreshing exchange client...")
-
-            self.refresh_client()
-
-            return func(*args, **kwargs)
-
     def setup_environment(self):
         """Initializes database and exchange settings."""
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -58,12 +38,19 @@ class TradingBot:
             logger.info("Initializing database...")
             Base.metadata.create_all(bind=engine)
 
-        self.safe_client_call(self.client.load_markets)
+        gen_limiter.wait()
+
+        std_call(self.client.load_markets)
 
         if settings.watcher.get_config().future_spot == "future":
             for symbol in settings.watcher.get_config().list_of_interest:
                 try:
-                    self.client.set_leverage(risk.watcher.get_config().leverage, symbol)
+                    gen_limiter.wait()
+                    std_call(
+                        self.client.set_leverage(
+                            risk.watcher.get_config().leverage, symbol
+                        )
+                    )
                     logger.debug(f"Leverage set for {symbol}")
                 except Exception as err:
                     logger.error(f"Error occured, when setting Leverage: {err}")
@@ -93,7 +80,12 @@ class TradingBot:
             self.is_running = False
 
     def check_bal(self):
-        bal = self.safe_client_call(self.client.fetch_balance)
+        try:
+            gen_limiter.wait()
+            bal = std_call(self.client.fetch_balance)
+        except Exception as err:
+            logger.error(f"Due to {err}, it wasnt possible to fetch balance")
+            return []
         ut = bal.get("USDT")
         uc = bal.get("USDC")
         ut.update({"coin": "USDT"})
@@ -116,8 +108,9 @@ class TradingBot:
 
     def close_order(self, symbol: str, id: str):
         try:
-            self.safe_client_call(self.client.cancel_order, id, symbol)
-            logger.info(f"Successfully cancelled order {order_id} for {symbol}")
+            gen_limiter.wait()
+            std_call(self.client.cancel_order, id, symbol)
+            logger.info(f"Successfully cancelled order {id} for {symbol}")
         except Exception as err:
             logger.error(
                 f"Due to {err}, it wasnt possible to close/cancel order: {id}, {symbol}"
@@ -126,7 +119,8 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                return self.safe_client_call(self.client.fetch_order, id, symbol)
+                gen_limiter.wait()
+                return std_call(self.client.fetch_order, id, symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open order: {id}, {symbol}"
@@ -134,7 +128,8 @@ class TradingBot:
                 return []
         else:
             try:
-                return self.safe_client_call(self.client.fetch_orders, symbol)
+                gen_limiter.wait()
+                return std_call(self.client.fetch_orders, symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open orders of {symbol}"
