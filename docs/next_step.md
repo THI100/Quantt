@@ -2,6 +2,8 @@ For this 0.1.1 version update: The plan is mainly to add support to the supposel
 
   1. Add Support for exchanges, fix on execution folder (X)
   2. Make optimizations on the API timing.
+    2.1. Usual keywords to optimize: time.sleep, .reset(), safe_exchange_call
+    2.2. Substitute with universal API timer gen_limiter.wait() from utils.rate_lim.py
   3. Optimization of .json system, fix on config and persistance folder
   4. Add the profiles into the database, fix on persistance folder
 
