@@ -3,6 +3,7 @@ from typing import Optional
 
 from loguru import logger
 
+from config import settings
 from data import fetch
 from data.client import cached_client
 from execution import risk_manager
@@ -31,6 +32,8 @@ def safe_exchange_call(func, *args, **kwargs):
 
 # --------------------- Helpers --------------------- #
 
+exchange = settings.watcher.get_config().exchange
+
 
 def _order_ice(
     client,
@@ -49,7 +52,7 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "market",
+            "market" if exchange != "binance" else "STOP_LOSS",
             exit_side,
             total_amount,
             sl,
@@ -63,7 +66,7 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "market",
+            "market" if exchange != "binance" else "TAKE_PROFIT",
             exit_side,
             total_amount,
             tp,
@@ -194,7 +197,7 @@ def order(
         _place_linked_order(
             client,
             market,
-            "market",
+            "market" if exchange != "binance" else "STOP_LOSS",
             exit_side,
             amount,
             stop_loss,
@@ -208,7 +211,7 @@ def order(
         _place_linked_order(
             client,
             market,
-            "market",
+            "market" if exchange != "binance" else "STOP_LOSS",
             exit_side,
             amount,
             take_profit,
