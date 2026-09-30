@@ -13,7 +13,7 @@ from data.client import cached_client
 from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
 from utils.math import scale_0_100
-from utils.rate_lim import gen_limiter, std_call
+from utils.rate_lim import std_call
 
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
@@ -38,14 +38,17 @@ class TradingBot:
             logger.info("Initializing database...")
             Base.metadata.create_all(bind=engine)
 
-        gen_limiter.wait()
-
-        std_call(self.client.load_markets)
+        try:
+            std_call(self.client.load_markets)
+        except Exception as err:
+            logger.error(
+                f"Due to critical error: {err}, it wasnt possible to load the markets and initialize"
+            )
+            raise
 
         if settings.watcher.get_config().future_spot == "future":
             for symbol in settings.watcher.get_config().list_of_interest:
                 try:
-                    gen_limiter.wait()
                     std_call(
                         self.client.set_leverage(
                             risk.watcher.get_config().leverage, symbol
@@ -81,7 +84,6 @@ class TradingBot:
 
     def check_bal(self):
         try:
-            gen_limiter.wait()
             bal = std_call(self.client.fetch_balance)
         except Exception as err:
             logger.error(f"Due to {err}, it wasnt possible to fetch balance")
@@ -108,7 +110,6 @@ class TradingBot:
 
     def close_order(self, symbol: str, id: str):
         try:
-            gen_limiter.wait()
             std_call(self.client.cancel_order, id, symbol)
             logger.info(f"Successfully cancelled order {id} for {symbol}")
         except Exception as err:
@@ -119,7 +120,6 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                gen_limiter.wait()
                 return std_call(self.client.fetch_order, id, symbol)
             except Exception as err:
                 logger.error(
@@ -128,7 +128,6 @@ class TradingBot:
                 return []
         else:
             try:
-                gen_limiter.wait()
                 return std_call(self.client.fetch_orders, symbol)
             except Exception as err:
                 logger.error(

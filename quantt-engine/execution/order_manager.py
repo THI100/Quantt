@@ -8,7 +8,7 @@ from data import fetch
 from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
-from utils.rate_lim import gen_limiter, std_call
+from utils.rate_lim import std_call
 
 # --------------------- Helpers --------------------- #
 
@@ -72,8 +72,6 @@ def _place_linked_order(
     to avoid UnboundLocalErrors and code duplication.
     """
     try:
-        gen_limiter.wait()
-
         order_data = std_call(
             client.create_order,
             symbol=market,

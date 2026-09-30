@@ -6,6 +6,7 @@ from loguru import logger
 
 from config import settings
 from exchange.awm import ENV_PATH
+from utils.rate_lim import std_call
 
 
 def create_client():
@@ -43,7 +44,7 @@ def create_client():
         }
     )
 
-    client.enable_demo_trading(demo_enabled)
+    std_call(client.enable_demo_trading(demo_enabled))
 
     return client
 

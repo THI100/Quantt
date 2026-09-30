@@ -9,7 +9,7 @@ from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
-from utils.rate_lim import gen_limiter, std_call
+from utils.rate_lim import std_call
 
 
 def manage_open_symbols():
@@ -112,9 +112,9 @@ def manage_open_limit(client):
 
                 try:
                     # 1. Exchange Action
-                    gen_limiter.wait()
+
                     std_call(client.cancel_order, order_id, symbol)
-                    gen_limiter.wait()
+
                     new_exchange_order = std_call(
                         client.create_order, symbol, typ, s, amt, p
                     )

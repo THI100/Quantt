@@ -1,5 +1,4 @@
 import math
-import time
 
 from loguru import logger
 
@@ -20,7 +19,6 @@ def avaliation_and_place(client):
     max_loss_amt_t = store_cfg.balances.get("USDT", 0.0) * risk_cfg.maximum_loss
     max_loss_amt_c = store_cfg.balances.get("USDC", 0.0) * risk_cfg.maximum_loss
 
-    time.sleep(0.5)
     actual = fetch.balance()
     actual_t = actual.get("USDT", {}).get("total", 0.0)
     actual_c = actual.get("USDC", {}).get("total", 0.0)
@@ -46,8 +44,6 @@ def avaliation_and_place(client):
     for symbol, status in open_closed.items():
         if status != "open":
             continue
-
-        time.sleep(1)
 
         # 4. Market Evaluation
         data = sg.avaliation_of_market(symbol, trading_config.list_of_parameters)
@@ -90,7 +86,6 @@ def avaliation_and_place(client):
         # 6. Entry Price Calculation
         entry_price = risk_manager.blp(symbol, side, nn)
 
-        time.sleep(0.5)
         act_price = fetch.get_ticker(symbol)
         act_price = act_price.get("last")
 
@@ -128,7 +123,7 @@ def avaliation_and_place(client):
                     f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}, | TP: {tp} | SL: {sl} | Amount: {nn}"
                 )
                 order_manager.execute_iceberg(client, symbol, nn, side, tp, sl)
-                time.sleep(1)
+
             except Exception as e:
                 logger.error(f"Critical failure executing order for {symbol}: {e}")
         else:
@@ -146,7 +141,7 @@ def avaliation_and_place(client):
                     sl,
                     tp,
                 )
-                time.sleep(1)
+
             except Exception as e:
                 logger.error(f"Critical failure executing order for {symbol}: {e}")
 

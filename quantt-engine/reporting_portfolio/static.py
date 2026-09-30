@@ -61,7 +61,7 @@ def get_closed_trades(session: Session) -> tuple[float, list[dict]]:
 
     # Alive PnL, No need for trades
     store_t = store_cfg.balances.get("USDT", 0.0)
-    time.sleep(1)
+
     actual = fetch.balance()
     actual_t = actual.get("USDT", {}).get("total", 0.0)
     alive_pnl = actual_t - store_t

@@ -43,7 +43,7 @@ def get_closed_trades(session: Session) -> list[dict]:
 
     # PnL, No need for trades and others
     store_t = store_cfg.balances.get("USDT", 0.0)
-    time.sleep(1)
+
     actual = fetch.balance()
     actual_t = actual.get("USDT", {}).get("total", 0.0)
     untracked_pnl = actual_t - store_t
