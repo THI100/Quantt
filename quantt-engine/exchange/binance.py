@@ -24,14 +24,6 @@ def create_client():
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
 
-    # Smaller code snippet for lightweight testing
-    # client = ccxt.binance(
-    #     {
-    #         "apiKey": api_key,
-    #         "secret": api_secret,
-    #     }
-    # )
-
     client = ccxt.binance(
         {
             "apiKey": api_key,
@@ -52,7 +44,7 @@ def create_client():
         }
     )
 
-    std_call(client.enable_demo_trading(demo_enabled))
+    std_call(client.enable_demo_trading, demo_enabled)
 
     return client
 

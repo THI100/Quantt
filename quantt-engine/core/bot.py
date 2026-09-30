@@ -50,9 +50,9 @@ class TradingBot:
             for symbol in settings.watcher.get_config().list_of_interest:
                 try:
                     std_call(
-                        self.client.set_leverage(
-                            risk.watcher.get_config().leverage, symbol
-                        )
+                        self.client.set_leverage,
+                        risk.watcher.get_config().leverage,
+                        symbol,
                     )
                     logger.debug(f"Leverage set for {symbol}")
                 except Exception as err:
