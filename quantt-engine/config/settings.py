@@ -27,7 +27,9 @@ TRADING_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 class TradingConfig(BaseModel):
     is_demo_enabled: bool = True
     timeframe: str = "15m"
-    exchange: Literal["binance", "bybit", "okx", "mexc"] = "binance"
+    exchange: Literal[
+        "binance", "bybit", "okx", "mexc", "aster", "dydx", "hyperliquid", "lighter"
+    ] = "binance"
     execution_order: Literal["market", "limit"] = "limit"
     future_spot: Literal["future", "spot"] = "spot"
     list_of_interest: list[str] = Field(

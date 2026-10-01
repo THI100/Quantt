@@ -24,7 +24,7 @@ def create_client():
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
 
-    client = ccxt.bybit(
+    client = ccxt.mexc(
         {
             "apiKey": api_key,
             "secret": api_secret,

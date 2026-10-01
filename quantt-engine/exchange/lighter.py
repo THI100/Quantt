@@ -15,16 +15,16 @@ def create_client():
     demo_enabled = settings.watcher.get_config().is_demo_enabled
 
     if demo_enabled:
-        api_key = os.getenv("API_KEY_BYBIT_DEMO")
-        api_secret = os.getenv("API_SECRET_BYBIT_DEMO")
+        api_key = os.getenv("API_KEY_LIGHTER_DEMO")
+        api_secret = os.getenv("API_SECRET_LIGHTER_DEMO")
     else:
-        api_key = os.getenv("API_KEY_BYBIT")
-        api_secret = os.getenv("API_SECRET_BYBIT")
+        api_key = os.getenv("API_KEY_LIGHTER")
+        api_secret = os.getenv("API_SECRET_LIGHTER")
 
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
 
-    client = ccxt.bybit(
+    client = ccxt.lighter(
         {
             "apiKey": api_key,
             "secret": api_secret,
@@ -49,4 +49,4 @@ def create_client():
     return client
 
 
-bb_client = create_client()
+li_client = create_client()

@@ -6,7 +6,7 @@ For this 0.1.1 version update: The plan is mainly to add support to the supposel
     2.2. Substitute with universal API timer gen_limiter.wait() from utils.rate_lim.py (X)
   3. Optimization of .json system, fix on config and persistance folder
   4. Add the profiles into the database, fix on persistance folder
-  5. Add DEXs to the app (dydx, manual, aster, hyperliquid)
+  5. Add DEXs to the app (dydx, lighter, aster, hyperliquid)
   6. If a order is taken out by the user, this position is now open.
 
 Generalized goals:
