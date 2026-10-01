@@ -170,12 +170,29 @@ def order(
             session.rollback()
             logger.error(f"Database error saving Entry: {e}")
 
+    # Set stop loss and take profit type:
+    if active_exchange == "binance":
+        if active_type == "limit":
+            tp_type, sl_type = "TAKE_PROFIT", "STOP"
+        elif active_type == "market":
+            tp_type, sl_type = "TAKE_PROFIT_MARKET", "STOP_MARKET"
+        else:
+            raise ValueError(f"Invalid active_type: {active_type}")
+
+    else:
+        if active_type == "limit":
+            tp_type = sl_type = "limit"
+        elif active_type == "market":
+            tp_type = sl_type = "market"
+        else:
+            raise ValueError(f"Invalid active_type: {active_type}")
+
     # 4. Place Stop Loss
     if stop_loss:
         _place_linked_order(
             client,
             market,
-            "market" if exchange != "binance" else "STOP_LOSS",
+            sl_type,
             exit_side,
             amount,
             stop_loss,
@@ -189,7 +206,7 @@ def order(
         _place_linked_order(
             client,
             market,
-            "market" if exchange != "binance" else "STOP_LOSS",
+            tp_type,
             exit_side,
             amount,
             take_profit,

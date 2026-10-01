@@ -7,6 +7,7 @@ For this 0.1.1 version update: The plan is mainly to add support to the supposel
   3. Optimization of .json system, fix on config and persistance folder
   4. Add the profiles into the database, fix on persistance folder
   5. Add DEXs to the app (dydx, manual, aster, hyperliquid)
+  6. If a order is taken out by the user, this position is now open.
 
 Generalized goals:
 
