@@ -44,7 +44,7 @@ def create_client():
         }
     )
 
-    std_call(client.set_sandbox_mode, demo_enabled)
+    std_call(client.set_sandbox_mode, enable=demo_enabled)
 
     return client
 

@@ -113,10 +113,15 @@ def manage_open_limit(client):
                 try:
                     # 1. Exchange Action
 
-                    std_call(client.cancel_order, order_id, symbol)
+                    std_call(client.cancel_order, id=order_id, symbol=symbol)
 
                     new_exchange_order = std_call(
-                        client.create_order, symbol, typ, s, amt, p
+                        client.create_order,
+                        symbol=symbol,
+                        type=typ,
+                        side=s,
+                        amount=amt,
+                        price=p,
                     )
                     new_id = str(new_exchange_order["id"])
 

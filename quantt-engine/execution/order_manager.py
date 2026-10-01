@@ -136,12 +136,12 @@ def order(
     try:
         entry_order = std_call(
             client.create_order,
-            market,
-            type,
-            entry_side,
-            amount,
-            price,
-            {"postOnly": True} if type == "limit" else False,
+            symbol=market,
+            type=type,
+            side=entry_side,
+            amount=amount,
+            price=price,
+            params={"postOnly": True} if type == "limit" else False,
         )
         general_id = entry_order["id"]
         logger.info(f"Created entry: {general_id}")
@@ -228,12 +228,12 @@ def execute_iceberg(
             # 2. Create the Entry Order
             order_resp = std_call(
                 client.create_order,
-                market,
-                "limit",
-                normalized_side,
-                current_slice,
-                target_price,
-                {"postOnly": True},
+                symbol=market,
+                type="limit",
+                side=normalized_side,
+                amount=current_slice,
+                price=target_price,
+                params={"postOnly": True},
             )
             order_id = order_resp["id"]
 
@@ -270,7 +270,7 @@ def execute_iceberg(
             if order_status["status"] != "closed":
                 logger.info(f"Slice partially filled ({filled}). Canceling remainder.")
                 try:
-                    std_call(client.cancel_order, order_id, market)
+                    std_call(client.cancel_order, id=order_id, symbol=market)
                 except Exception as e:
                     logger.warning(f"Could not cancel order {order_id}: {e}")
 

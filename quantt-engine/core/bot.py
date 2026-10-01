@@ -51,8 +51,8 @@ class TradingBot:
                 try:
                     std_call(
                         self.client.set_leverage,
-                        risk.watcher.get_config().leverage,
-                        symbol,
+                        leverage=risk.watcher.get_config().leverage,
+                        symbol=symbol,
                     )
                     logger.debug(f"Leverage set for {symbol}")
                 except Exception as err:
@@ -110,7 +110,7 @@ class TradingBot:
 
     def close_order(self, symbol: str, id: str):
         try:
-            std_call(self.client.cancel_order, id, symbol)
+            std_call(self.client.cancel_order, id=id, symbol=symbol)
             logger.info(f"Successfully cancelled order {id} for {symbol}")
         except Exception as err:
             logger.error(
@@ -120,7 +120,7 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                return std_call(self.client.fetch_order, id, symbol)
+                return std_call(self.client.fetch_order, id=id, symbol=symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open order: {id}, {symbol}"
@@ -128,7 +128,7 @@ class TradingBot:
                 return []
         else:
             try:
-                return std_call(self.client.fetch_orders, symbol)
+                return std_call(self.client.fetch_orders, symbol=symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open orders of {symbol}"
