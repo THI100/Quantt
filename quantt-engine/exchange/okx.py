@@ -43,7 +43,7 @@ def create_client():
         }
     )
 
-    std_call(client.set_sandbox_mode, enable=demo_enabled)
+    std_call(client.enable_demo_trading, enable=demo_enabled)
 
     return client
 

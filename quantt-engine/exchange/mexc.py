@@ -12,14 +12,8 @@ from utils.rate_lim import std_call
 def create_client():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    demo_enabled = settings.watcher.get_config().is_demo_enabled
-
-    if demo_enabled:
-        api_key = os.getenv("API_KEY_MEXC_DEMO")
-        api_secret = os.getenv("API_SECRET_MEXC_DEMO")
-    else:
-        api_key = os.getenv("API_KEY_MEXC")
-        api_secret = os.getenv("API_SECRET_MEXC")
+    api_key = os.getenv("API_KEY_MEXC")
+    api_secret = os.getenv("API_SECRET_MEXC")
 
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
@@ -43,8 +37,6 @@ def create_client():
             },
         }
     )
-
-    std_call(client.set_sandbox_mode, enable=demo_enabled)
 
     return client
 
