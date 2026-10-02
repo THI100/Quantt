@@ -6,13 +6,13 @@ import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
-from config import risk, settings, store
+from config import risk, trading, store
 from data import fetch
 
 
 def avaliation_and_place(client):
     # 1. Initialize data
-    trading_config = settings.watcher.get_config()
+    trading_config = trading.watcher.get_config()
     risk_cfg = risk.watcher.get_config()
     store_cfg = store.watcher.get_config()
 

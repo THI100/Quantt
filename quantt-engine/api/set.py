@@ -3,45 +3,47 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from config import risk, settings
+from config import risk, trading
 from core.bot import TradingBot
-from exchange.awm import ensure_env_file, write_api_credentials, remove_env_file
+from exchange.awm import ensure_env_file, remove_env_file, write_api_credentials
 
 s_route = APIRouter()
 bot = TradingBot()
+
 
 class APIConfig(BaseModel):
     api_key: str
     api_secret: str
     exchange: str
 
+
 # ------------------------------------------------------------------ #
 #  Config — trading                                                    #
 # ------------------------------------------------------------------ #
 
 
-@s_route.get("/config/trading", response_model=settings.TradingConfig)
+@s_route.get("/config/trading", response_model=trading.TradingConfig)
 def get_trading_config():
     """Return the current trading configuration."""
     try:
-        return settings.load_trading_config()
+        return trading.load_trading_config()
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@s_route.put("/config/trading", response_model=settings.TradingConfig)
-def update_trading_config(new_cfg: settings.TradingConfig):
+@s_route.put("/config/trading", response_model=trading.TradingConfig)
+def update_trading_config(new_cfg: trading.TradingConfig):
     """Overwrite the entire trading configuration."""
-    settings.save_trading_config(new_cfg)
+    trading.save_trading_config(new_cfg)
     return new_cfg
 
 
-@s_route.patch("/config/trading", response_model=settings.TradingConfig)
+@s_route.patch("/config/trading", response_model=trading.TradingConfig)
 def patch_trading_config(partial: dict):
     """Partially update the trading configuration (only provided fields change)."""
-    current = settings.load_trading_config()
+    current = trading.load_trading_config()
     updated = current.model_copy(update=partial)
-    settings.save_trading_config(updated)
+    trading.save_trading_config(updated)
     return updated
 
 
@@ -117,9 +119,11 @@ def get_risk_limits(coin: Optional[str]):
             status_code=500, detail=f"Failed to compute risk limits: {str(e)}"
         )
 
+
 # ------------------------------------------------------------------ #
 #  Config — api                                                       #
 # ------------------------------------------------------------------ #
+
 
 @s_route.post("/config/api")
 def post_file():
@@ -133,6 +137,7 @@ def post_file():
             status_code=500, detail=f"Failed to initialize .env: {str(e)}"
         )
 
+
 @s_route.patch("/config/api")
 def update_api(config: APIConfig):
     """
@@ -144,6 +149,7 @@ def update_api(config: APIConfig):
         raise HTTPException(
             status_code=500, detail=f"Failed to update API credentials: {str(e)}"
         )
+
 
 @s_route.delete("/config/api")
 def delete_file_route():

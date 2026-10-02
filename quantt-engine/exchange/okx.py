@@ -4,7 +4,7 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config import settings
+from config import trading
 from exchange.awm import ENV_PATH
 from utils.rate_lim import std_call
 
@@ -12,7 +12,7 @@ from utils.rate_lim import std_call
 def create_client():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    demo_enabled = settings.watcher.get_config().is_demo_enabled
+    demo_enabled = trading.watcher.get_config().is_demo_enabled
 
     if demo_enabled:
         api_key = os.getenv("API_KEY_OKX_DEMO")

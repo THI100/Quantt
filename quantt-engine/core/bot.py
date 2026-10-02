@@ -8,7 +8,7 @@ from typing import Optional
 from loguru import logger
 
 import core.engine as e
-from config import risk, settings
+from config import risk, trading
 from data.client import cached_client
 from execution.position_manager import manage_open_limit
 from persistance.connection import Base, engine
@@ -46,8 +46,8 @@ class TradingBot:
             )
             raise
 
-        if settings.watcher.get_config().future_spot == "future":
-            for symbol in settings.watcher.get_config().list_of_interest:
+        if trading.watcher.get_config().future_spot == "future":
+            for symbol in trading.watcher.get_config().list_of_interest:
                 try:
                     std_call(
                         self.client.set_leverage,

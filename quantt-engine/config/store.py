@@ -14,6 +14,8 @@ from loguru import logger
 from pydantic import BaseModel
 
 from data.fetch import balance
+from persistance.connection import SessionLocal
+from persistance.models import Store
 
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
@@ -26,7 +28,7 @@ STORE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 # -------------- MODEL --------------- #
 
 
-class Store(BaseModel):
+class StorePYD(BaseModel):
     last_updated: datetime = datetime.now()
     balances: dict[str, float] = {"USDT": 0.0, "USDC": 0.0}
 
@@ -50,18 +52,18 @@ class ConfigWatcher:
                 f.write("")
             return logger.info(f"Created file: {fpath}")
 
-    def reload(self) -> Store:
+    def reload(self) -> StorePYD:
         """Force a reload from disk."""
         if not self.path.exists():
             # If file doesn't exist, save defaults to create it
-            default_sfg = Store()
+            default_sfg = StorePYD()
             save_store(default_sfg)
             return default_sfg
 
         self._last_mtime = self.path.stat().st_mtime
         return load_store()
 
-    def get_config(self) -> Store:
+    def get_config(self) -> StorePYD:
         current_mtime = self.path.stat().st_mtime
         if current_mtime > self._last_mtime:
             self.config = self.reload()
@@ -82,11 +84,11 @@ def _save(path: Path, instance: BaseModel) -> None:
 
 
 # Convenience accessors
-def load_store() -> Store:
-    return _load(STORE_CONFIG_PATH, Store)
+def load_store() -> StorePYD:
+    return _load(STORE_CONFIG_PATH, StorePYD)
 
 
-def save_store(sfg: Store) -> None:
+def save_store(sfg: StorePYD) -> None:
     _save(STORE_CONFIG_PATH, sfg)
 
 
@@ -127,7 +129,7 @@ def initialize():
 
     except FileNotFoundError:
         logger.warning("No store.json found. Creating initial file.")
-        initial_store = Store()
+        initial_store = StorePYD()
         save_store(initial_store)
         return initial_store
     except Exception as e:

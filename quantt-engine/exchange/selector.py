@@ -3,7 +3,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from config import settings
+from config import trading
 
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
@@ -22,7 +22,7 @@ if ENV_PATH.stat().st_size == 0:
     )
 
 
-def get_exchange_client(exchange_name: str = settings.watcher.get_config().exchange):
+def get_exchange_client(exchange_name: str = trading.watcher.get_config().exchange):
 
     ##         CEXs         ##
 

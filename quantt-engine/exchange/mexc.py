@@ -4,7 +4,7 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config import settings
+from config import trading
 from exchange.awm import ENV_PATH
 from utils.rate_lim import std_call
 
@@ -29,7 +29,7 @@ def create_client():
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
-                "defaultType": settings.watcher.get_config().future_spot,
+                "defaultType": trading.watcher.get_config().future_spot,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,

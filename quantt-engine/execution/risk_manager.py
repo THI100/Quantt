@@ -3,10 +3,10 @@ import math
 from loguru import logger
 
 import data.fetch as fetch
-from config import risk, settings
+from config import risk, trading
 
 r = risk.watcher.get_config()
-s = settings.watcher.get_config()
+s = trading.watcher.get_config()
 
 
 def smart_amount(market: str):

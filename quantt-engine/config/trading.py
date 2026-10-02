@@ -13,6 +13,9 @@ from typing import Literal
 from loguru import logger
 from pydantic import BaseModel, Field
 
+from persistance.connection import SessionLocal
+from persistance.models import TradingConfig
+
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
 else:
@@ -24,7 +27,7 @@ TRADING_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 # ── Model ─────────────────────────────────────────────────────────────────────
 
 
-class TradingConfig(BaseModel):
+class TradingConfigPYD(BaseModel):
     is_demo_enabled: bool = True
     timeframe: str = "15m"
     exchange: Literal[
@@ -69,18 +72,18 @@ class ConfigWatcher:
                 f.write("")
             return logger.info(f"Created file: {fpath}")
 
-    def reload(self) -> TradingConfig:
+    def reload(self) -> TradingConfigPYD:
         """Force a reload from disk."""
         if not self.path.exists():
             # If file doesn't exist, save defaults to create it
-            default_cfg = TradingConfig()
+            default_cfg = TradingConfigPYD()
             save_trading_config(default_cfg)
             return default_cfg
 
         self._last_mtime = self.path.stat().st_mtime
         return load_trading_config()
 
-    def get_config(self) -> TradingConfig:
+    def get_config(self) -> TradingConfigPYD:
         """Returns the config, reloading it only if the file was modified."""
         current_mtime = self.path.stat().st_mtime
         if current_mtime > self._last_mtime:
@@ -100,11 +103,11 @@ def _save(path: Path, instance: BaseModel) -> None:
     path.write_text(instance.model_dump_json(indent=2))
 
 
-def load_trading_config() -> TradingConfig:
-    return _load(TRADING_CONFIG_PATH, TradingConfig)
+def load_trading_config() -> TradingConfigPYD:
+    return _load(TRADING_CONFIG_PATH, TradingConfigPYD)
 
 
-def save_trading_config(cfg: TradingConfig) -> None:
+def save_trading_config(cfg: TradingConfigPYD) -> None:
     _save(TRADING_CONFIG_PATH, cfg)
 
 

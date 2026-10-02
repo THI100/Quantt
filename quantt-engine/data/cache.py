@@ -2,7 +2,7 @@ import time
 from functools import wraps
 
 import data.fetch as fetch
-from config import settings
+from config import trading
 from utils import math
 
 
@@ -31,22 +31,22 @@ def ttl_cache(ttl_seconds: int):
     return decorator
 
 
-@ttl_cache(ttl_seconds=math.get_cache_timing(settings.watcher.get_config().timeframe))
+@ttl_cache(ttl_seconds=math.get_cache_timing(trading.watcher.get_config().timeframe))
 def cached_p42(market: str):
     return fetch.get_OHLCV(
-        symbol=market, timeframe=settings.watcher.get_config().timeframe, limit=42
+        symbol=market, timeframe=trading.watcher.get_config().timeframe, limit=42
     )
 
 
-@ttl_cache(ttl_seconds=math.get_cache_timing(settings.watcher.get_config().timeframe))
+@ttl_cache(ttl_seconds=math.get_cache_timing(trading.watcher.get_config().timeframe))
 def cached_p14(market: str):
     return fetch.get_OHLCV(
-        symbol=market, timeframe=settings.watcher.get_config().timeframe, limit=14
+        symbol=market, timeframe=trading.watcher.get_config().timeframe, limit=14
     )
 
 
-@ttl_cache(ttl_seconds=math.get_cache_timing(settings.watcher.get_config().timeframe))
+@ttl_cache(ttl_seconds=math.get_cache_timing(trading.watcher.get_config().timeframe))
 def cached_p28(market: str):
     return fetch.get_OHLCV(
-        symbol=market, timeframe=settings.watcher.get_config().timeframe, limit=28
+        symbol=market, timeframe=trading.watcher.get_config().timeframe, limit=28
     )

@@ -13,6 +13,9 @@ from typing import Literal
 from loguru import logger
 from pydantic import BaseModel, Field
 
+from persistance.connection import SessionLocal
+from persistance.models import RiskConfig
+
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
 else:
@@ -24,7 +27,7 @@ RISK_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 # ── Models ─────────────────────────────────────────────────────────────────────
 
 
-class RiskConfig(BaseModel):
+class RiskConfigPYD(BaseModel):
     risk_reward_ratio: float = Field(default=2.0, ge=0, le=10)
     acceptable_confidence: int = Field(default=40, ge=0, le=100)
     atr_multiplier: float = 0.4
@@ -55,18 +58,18 @@ class ConfigWatcher:
                 f.write("")
             return logger.info(f"Created file: {fpath}")
 
-    def reload(self) -> RiskConfig:
+    def reload(self) -> RiskConfigPYD:
         """Force a reload from disk."""
         if not self.path.exists():
             # If file doesn't exist, save defaults to create it
-            default_cfg = RiskConfig()
+            default_cfg = RiskConfigPYD()
             save_risk_config(default_cfg)
             return default_cfg
 
         self._last_mtime = self.path.stat().st_mtime
         return load_risk_config()
 
-    def get_config(self) -> RiskConfig:
+    def get_config(self) -> RiskConfigPYD:
         """Returns the config, reloading it only if the file was modified."""
         current_mtime = self.path.stat().st_mtime
         if current_mtime > self._last_mtime:
@@ -91,11 +94,11 @@ def _save(path: Path, instance: BaseModel) -> None:
 
 
 # Convenience accessors
-def load_risk_config() -> RiskConfig:
-    return _load(RISK_CONFIG_PATH, RiskConfig)
+def load_risk_config() -> RiskConfigPYD:
+    return _load(RISK_CONFIG_PATH, RiskConfigPYD)
 
 
-def save_risk_config(cfg: RiskConfig) -> None:
+def save_risk_config(cfg: RiskConfigPYD) -> None:
     _save(RISK_CONFIG_PATH, cfg)
 
 

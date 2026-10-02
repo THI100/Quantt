@@ -1,7 +1,7 @@
 from loguru import logger
 from sqlalchemy import desc, select
 
-from config import settings
+from config import trading
 from data import fetch
 from execution import risk_manager as rm
 from persistance.connection import SessionLocal
@@ -18,7 +18,7 @@ def manage_open_symbols():
     # Using context manager for the entire loop to ensure session safety
     with SessionLocal() as session:
         try:
-            for symbol in settings.watcher.get_config().list_of_interest:
+            for symbol in trading.watcher.get_config().list_of_interest:
                 stmt = (
                     select(GeneralOrder)
                     .filter(GeneralOrder.symbol.like(f"{symbol}%"))
@@ -92,7 +92,7 @@ def manage_open_symbols():
 def manage_open_limit(client):
     typ = "limit"
 
-    for symbol in settings.watcher.get_config().list_of_interest:
+    for symbol in trading.watcher.get_config().list_of_interest:
         current_open = fetch.get_open_orders(symbol, 10)
 
         for x in current_open:

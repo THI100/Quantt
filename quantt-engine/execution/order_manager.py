@@ -3,7 +3,7 @@ from typing import Optional
 
 from loguru import logger
 
-from config import settings
+from config import trading
 from data import fetch
 from execution import risk_manager
 from persistance.connection import SessionLocal
@@ -12,7 +12,7 @@ from utils.rate_lim import std_call
 
 # --------------------- Helpers --------------------- #
 
-exchange = settings.watcher.get_config().exchange
+exchange = trading.watcher.get_config().exchange
 
 
 def _order_ice(
