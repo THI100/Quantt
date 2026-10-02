@@ -28,6 +28,7 @@ RISK_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 class RiskConfigPYD(BaseModel):
+    name: str = "base"
     risk_reward_ratio: float = Field(default=2.0, ge=0, le=10)
     acceptable_confidence: int = Field(default=40, ge=0, le=100)
     atr_multiplier: float = 0.4

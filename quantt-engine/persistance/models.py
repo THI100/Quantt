@@ -48,10 +48,10 @@ class TakeStopOrder(Base):
 class TradingConfig(Base):
     __tablename__ = "trading_config"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(32), primary_key=True)
     is_demo_enabled: Mapped[bool] = mapped_column(Boolean)
-    timeframe: Mapped[str] = mapped_column(String(6))
-    exchange: Mapped[str] = mapped_column(String(10))
+    timeframe: Mapped[str] = mapped_column(String(8))
+    exchange: Mapped[str] = mapped_column(String(16))
     execution_order: Mapped[str] = mapped_column(String(8))
     future_spot: Mapped[str] = mapped_column(String(8))
     list_of_interest: Mapped[list[str]] = mapped_column(JSON)
@@ -61,7 +61,7 @@ class TradingConfig(Base):
 class RiskConfig(Base):
     __tablename__ = "risk_config"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(32), primary_key=True)
     risk_reward_ratio: Mapped[float] = mapped_column(Float, default=2.0)
     acceptable_confidence: Mapped[int] = mapped_column(Integer, default=50)
     atr_multiplier: Mapped[float] = mapped_column(Float, default=2.0)
@@ -75,7 +75,7 @@ class RiskConfig(Base):
 class Store(Base):
     __tablename__ = "store"
 
-    exchange: Mapped[str] = mapped_column(String(10), primary_key=True)
+    exchange: Mapped[str] = mapped_column(String(16), primary_key=True)
     data: Mapped[datetime] = mapped_column(DateTime)
     balance_dt: Mapped[float] = mapped_column(Float, default=0.0)
     balance_dc: Mapped[float] = mapped_column(Float, default=0.0)

@@ -4,7 +4,7 @@ For this 0.1.1 version update: The plan is mainly to add support to the supposel
   2. Make optimizations on the API timing. (X)
     2.1. Usual keywords to optimize: time.sleep, .reset(), safe_exchange_call, client (X)
     2.2. Substitute with universal API timer gen_limiter.wait() from utils.rate_lim.py (X)
-  3. Optimization of .json system, fix on config and persistance folder
+  3. Optimization of .json system, fix on config and persistance folder and api/set.py checkup
   4. Add the profiles into the database, fix on persistance folder (X)
   5. Add DEXs to the app (dydx, lighter, aster, hyperliquid) (X)
   6. If a order is taken out by the user, this position is now open.

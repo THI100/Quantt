@@ -28,6 +28,7 @@ TRADING_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 class TradingConfigPYD(BaseModel):
+    name: str = "base"
     is_demo_enabled: bool = True
     timeframe: str = "15m"
     exchange: Literal[

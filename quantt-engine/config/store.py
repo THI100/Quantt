@@ -29,6 +29,7 @@ STORE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 class StorePYD(BaseModel):
+    exchange: str = "none"
     last_updated: datetime = datetime.now()
     balances: dict[str, float] = {"USDT": 0.0, "USDC": 0.0}
 

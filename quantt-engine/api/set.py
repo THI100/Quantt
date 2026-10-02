@@ -22,7 +22,7 @@ class APIConfig(BaseModel):
 # ------------------------------------------------------------------ #
 
 
-@s_route.get("/config/trading", response_model=trading.TradingConfig)
+@s_route.get("/config/trading", response_model=trading.TradingConfigPYD)
 def get_trading_config():
     """Return the current trading configuration."""
     try:
@@ -31,14 +31,14 @@ def get_trading_config():
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@s_route.put("/config/trading", response_model=trading.TradingConfig)
-def update_trading_config(new_cfg: trading.TradingConfig):
+@s_route.put("/config/trading", response_model=trading.TradingConfigPYD)
+def update_trading_config(new_cfg: trading.TradingConfigPYD):
     """Overwrite the entire trading configuration."""
     trading.save_trading_config(new_cfg)
     return new_cfg
 
 
-@s_route.patch("/config/trading", response_model=trading.TradingConfig)
+@s_route.patch("/config/trading", response_model=trading.TradingConfigPYD)
 def patch_trading_config(partial: dict):
     """Partially update the trading configuration (only provided fields change)."""
     current = trading.load_trading_config()
@@ -52,7 +52,7 @@ def patch_trading_config(partial: dict):
 # ------------------------------------------------------------------ #
 
 
-@s_route.get("/config/risk", response_model=risk.RiskConfig)
+@s_route.get("/config/risk", response_model=risk.RiskConfigPYD)
 def get_risk_config():
     """Return the current risk configuration."""
     try:
@@ -61,14 +61,14 @@ def get_risk_config():
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@s_route.put("/config/risk", response_model=risk.RiskConfig)
-def update_risk_config(new_cfg: risk.RiskConfig):
+@s_route.put("/config/risk", response_model=risk.RiskConfigPYD)
+def update_risk_config(new_cfg: risk.RiskConfigPYD):
     """Overwrite the entire risk configuration."""
     risk.save_risk_config(new_cfg)
     return new_cfg
 
 
-@s_route.patch("/config/risk", response_model=risk.RiskConfig)
+@s_route.patch("/config/risk", response_model=risk.RiskConfigPYD)
 def patch_risk_config(partial: dict):
     """Partially update the risk configuration (only provided fields change)."""
     current = risk.load_risk_config()
