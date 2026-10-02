@@ -3,17 +3,13 @@ config_models.py
 Pydantic models for trading configuration files + FastAPI routes to read/update them via API.
 """
 
-import os
-
-# ── Paths ──────────────────────────────────────────────────────────────────────
 import sys
 from pathlib import Path
 from typing import Literal
 
-from loguru import logger
 from pydantic import BaseModel, Field
 
-from persistance.connection import SessionLocal
+from persistance.connection import SessionLocal, init_db
 from persistance.models import RiskConfig
 
 if getattr(sys, "frozen", False):
@@ -28,6 +24,8 @@ RISK_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 class RiskConfigPYD(BaseModel):
+    model_config = {"from_attributes": True}
+
     name: str = "base"
     risk_reward_ratio: float = Field(default=2.0, ge=0, le=10)
     acceptable_confidence: int = Field(default=40, ge=0, le=100)
@@ -51,31 +49,22 @@ class ConfigWatcher:
         self.config = self.reload()
         self.ensure_json_file()
 
-    def ensure_json_file(self, fpath=RISK_CONFIG_PATH):
-        fpath.parent.mkdir(parents=True, exist_ok=True)
-
-        if not os.path.exists(fpath):
-            with open(fpath, "w") as f:
-                f.write("")
-            return logger.info(f"Created file: {fpath}")
+    def ensure_json_file(self):
+        init_db()
 
     def reload(self) -> RiskConfigPYD:
         """Force a reload from disk."""
-        if not self.path.exists():
-            # If file doesn't exist, save defaults to create it
+        init_db()
+        try:
+            return load_risk_config()
+        except FileNotFoundError:
             default_cfg = RiskConfigPYD()
             save_risk_config(default_cfg)
             return default_cfg
 
-        self._last_mtime = self.path.stat().st_mtime
-        return load_risk_config()
-
     def get_config(self) -> RiskConfigPYD:
         """Returns the config, reloading it only if the file was modified."""
-        current_mtime = self.path.stat().st_mtime
-        if current_mtime > self._last_mtime:
-            logger.debug(f"Config change detected! Reloading {self.path.name}...")
-            self.config = self.reload()
+        self.config = self.reload()
         return self.config
 
 
@@ -96,11 +85,27 @@ def _save(path: Path, instance: BaseModel) -> None:
 
 # Convenience accessors
 def load_risk_config() -> RiskConfigPYD:
-    return _load(RISK_CONFIG_PATH, RiskConfigPYD)
+    init_db()
+    with SessionLocal() as session:
+        row = session.get(RiskConfig, "base")
+        if row is None:
+            # One-time migration for installations that still have the legacy JSON.
+            if RISK_CONFIG_PATH.exists() and RISK_CONFIG_PATH.stat().st_size:
+                legacy = _load(RISK_CONFIG_PATH, RiskConfigPYD)
+                session.close()
+                save_risk_config(legacy)
+                return legacy
+            raise FileNotFoundError("Risk configuration not found in database")
+        return RiskConfigPYD.model_validate(row, from_attributes=True)
 
 
 def save_risk_config(cfg: RiskConfigPYD) -> None:
-    _save(RISK_CONFIG_PATH, cfg)
+    init_db()
+    with SessionLocal.begin() as session:
+        row = session.get(RiskConfig, cfg.name) or RiskConfig(name=cfg.name)
+        for key, value in cfg.model_dump().items():
+            setattr(row, key, value)
+        session.add(row)
 
 
 # ── Usage ──────────────────────────────────────────────────────────────────────

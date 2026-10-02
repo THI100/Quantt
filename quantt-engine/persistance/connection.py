@@ -34,3 +34,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     pass
+
+
+def init_db() -> None:
+    """Create the SQLite schema when it is first needed."""
+    # Imported lazily to avoid the Base/models import cycle.
+    from . import models  # noqa: F401
+
+    Base.metadata.create_all(bind=engine)

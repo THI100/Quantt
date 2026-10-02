@@ -3,9 +3,6 @@ store.py
 Pydantic model for Storing misc variables.
 """
 
-import os
-
-# -------------- PATHS --------------- #
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +11,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from data.fetch import balance
-from persistance.connection import SessionLocal
+from persistance.connection import SessionLocal, init_db
 from persistance.models import Store
 
 if getattr(sys, "frozen", False):
@@ -42,33 +39,24 @@ class ConfigWatcher:
 
     def __init__(self, path: Path):
         self.path = path
-        self._last_mtime = 0
         self.config = self.reload()
         self.ensure_json_file()
 
-    def ensure_json_file(self, fpath=STORE_CONFIG_PATH):
-        fpath.parent.mkdir(parents=True, exist_ok=True)
-        if not os.path.exists(fpath):
-            with open(fpath, "w") as f:
-                f.write("")
-            return logger.info(f"Created file: {fpath}")
+    def ensure_json_file(self):
+        init_db()
 
     def reload(self) -> StorePYD:
         """Force a reload from disk."""
-        if not self.path.exists():
-            # If file doesn't exist, save defaults to create it
+        init_db()
+        try:
+            return load_store()
+        except FileNotFoundError:
             default_sfg = StorePYD()
             save_store(default_sfg)
             return default_sfg
 
-        self._last_mtime = self.path.stat().st_mtime
-        return load_store()
-
     def get_config(self) -> StorePYD:
-        current_mtime = self.path.stat().st_mtime
-        if current_mtime > self._last_mtime:
-            self.config = self.reload()
-
+        self.config = self.reload()
         return self.config
 
 
@@ -86,11 +74,31 @@ def _save(path: Path, instance: BaseModel) -> None:
 
 # Convenience accessors
 def load_store() -> StorePYD:
-    return _load(STORE_CONFIG_PATH, StorePYD)
+    init_db()
+    with SessionLocal() as session:
+        row = session.get(Store, "none")
+        if row is None:
+            if STORE_CONFIG_PATH.exists() and STORE_CONFIG_PATH.stat().st_size:
+                legacy = _load(STORE_CONFIG_PATH, StorePYD)
+                session.close()
+                save_store(legacy)
+                return legacy
+            raise FileNotFoundError("Store configuration not found in database")
+        return StorePYD(
+            exchange=row.exchange,
+            last_updated=row.data,
+            balances={"USDT": row.balance_dt, "USDC": row.balance_dc},
+        )
 
 
 def save_store(sfg: StorePYD) -> None:
-    _save(STORE_CONFIG_PATH, sfg)
+    init_db()
+    with SessionLocal.begin() as session:
+        row = session.get(Store, sfg.exchange) or Store(exchange=sfg.exchange)
+        row.data = sfg.last_updated
+        row.balance_dt = sfg.balances.get("USDT", 0.0)
+        row.balance_dc = sfg.balances.get("USDC", 0.0)
+        session.add(row)
 
 
 watcher = ConfigWatcher(STORE_CONFIG_PATH)
