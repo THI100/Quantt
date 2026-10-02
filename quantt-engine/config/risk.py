@@ -3,29 +3,17 @@ config_models.py
 Pydantic models for trading configuration files + FastAPI routes to read/update them via API.
 """
 
-import sys
-from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from persistance.connection import SessionLocal, init_db
+from persistance.connection import SessionLocal
 from persistance.models import RiskConfig
-
-if getattr(sys, "frozen", False):
-    DIR = Path(sys.executable).parent
-else:
-    DIR = Path(__file__).resolve().parent.parent
-
-RISK_CONFIG_PATH = DIR / "qdata" / "risk_config.json"
-RISK_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # ── Models ─────────────────────────────────────────────────────────────────────
 
 
 class RiskConfigPYD(BaseModel):
-    model_config = {"from_attributes": True}
-
     name: str = "base"
     risk_reward_ratio: float = Field(default=2.0, ge=0, le=10)
     acceptable_confidence: int = Field(default=40, ge=0, le=100)
@@ -41,20 +29,14 @@ class RiskConfigPYD(BaseModel):
 
 
 class ConfigWatcher:
-    """Detects file changes and reloads configuration automatically."""
+    """Reads the latest configuration from SQLite."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path=None):
         self.path = path
-        self._last_mtime = 0
         self.config = self.reload()
-        self.ensure_json_file()
-
-    def ensure_json_file(self):
-        init_db()
 
     def reload(self) -> RiskConfigPYD:
-        """Force a reload from disk."""
-        init_db()
+        """Reload the configuration from SQLite."""
         try:
             return load_risk_config()
         except FileNotFoundError:
@@ -63,7 +45,7 @@ class ConfigWatcher:
             return default_cfg
 
     def get_config(self) -> RiskConfigPYD:
-        """Returns the config, reloading it only if the file was modified."""
+        """Return the latest configuration stored in SQLite."""
         self.config = self.reload()
         return self.config
 
@@ -71,36 +53,16 @@ class ConfigWatcher:
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-def _load(path: Path, model: type[BaseModel]) -> BaseModel:
-    """Load a JSON file into a Pydantic model."""
-    if not path.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    return model.model_validate_json(path.read_text())
-
-
-def _save(path: Path, instance: BaseModel) -> None:
-    """Persist a Pydantic model back to its JSON file."""
-    path.write_text(instance.model_dump_json(indent=2))
-
-
 # Convenience accessors
 def load_risk_config() -> RiskConfigPYD:
-    init_db()
     with SessionLocal() as session:
         row = session.get(RiskConfig, "base")
         if row is None:
-            # One-time migration for installations that still have the legacy JSON.
-            if RISK_CONFIG_PATH.exists() and RISK_CONFIG_PATH.stat().st_size:
-                legacy = _load(RISK_CONFIG_PATH, RiskConfigPYD)
-                session.close()
-                save_risk_config(legacy)
-                return legacy
             raise FileNotFoundError("Risk configuration not found in database")
         return RiskConfigPYD.model_validate(row, from_attributes=True)
 
 
 def save_risk_config(cfg: RiskConfigPYD) -> None:
-    init_db()
     with SessionLocal.begin() as session:
         row = session.get(RiskConfig, cfg.name) or RiskConfig(name=cfg.name)
         for key, value in cfg.model_dump().items():
@@ -111,6 +73,6 @@ def save_risk_config(cfg: RiskConfigPYD) -> None:
 # ── Usage ──────────────────────────────────────────────────────────────────────
 
 # Initialize the watcher once
-watcher = ConfigWatcher(RISK_CONFIG_PATH)
+watcher = ConfigWatcher()
 
 # You should call watcher.get_config()

@@ -33,10 +33,10 @@ class TradingBot:
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         if os.path.exists(self.DB_PATH):
-            logger.info("Database already exists.")
+            logger.info("Database already exists. Ensuring schema is current.")
         else:
             logger.info("Initializing database...")
-            Base.metadata.create_all(bind=engine)
+        Base.metadata.create_all(bind=engine)
 
         try:
             std_call(self.client.load_markets)

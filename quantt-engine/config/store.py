@@ -3,24 +3,14 @@ store.py
 Pydantic model for Storing misc variables.
 """
 
-import sys
 from datetime import datetime
-from pathlib import Path
 
 from loguru import logger
 from pydantic import BaseModel
 
 from data.fetch import balance
-from persistance.connection import SessionLocal, init_db
+from persistance.connection import SessionLocal
 from persistance.models import Store
-
-if getattr(sys, "frozen", False):
-    DIR = Path(sys.executable).parent
-else:
-    DIR = Path(__file__).resolve().parent.parent
-
-STORE_CONFIG_PATH = DIR / "qdata" / "store_config.json"
-STORE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 # -------------- MODEL --------------- #
 
@@ -35,19 +25,14 @@ class StorePYD(BaseModel):
 
 
 class ConfigWatcher:
-    """Detects file changes and reloads configuration automatically."""
+    """Reads the latest configuration from SQLite."""
 
-    def __init__(self, path: Path):
+    def __init__(self, path=None):
         self.path = path
         self.config = self.reload()
-        self.ensure_json_file()
-
-    def ensure_json_file(self):
-        init_db()
 
     def reload(self) -> StorePYD:
-        """Force a reload from disk."""
-        init_db()
+        """Reload the configuration from SQLite."""
         try:
             return load_store()
         except FileNotFoundError:
@@ -56,33 +41,16 @@ class ConfigWatcher:
             return default_sfg
 
     def get_config(self) -> StorePYD:
+        """Return the latest configuration stored in SQLite."""
         self.config = self.reload()
         return self.config
 
 
-def _load(path: Path, model: type[BaseModel]) -> BaseModel:
-    """Load a JSON file into a Pydantic model."""
-    if not path.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    return model.model_validate_json(path.read_text())
-
-
-def _save(path: Path, instance: BaseModel) -> None:
-    """Persist a Pydantic model back to its JSON file."""
-    path.write_text(instance.model_dump_json(indent=2))
-
-
 # Convenience accessors
 def load_store() -> StorePYD:
-    init_db()
     with SessionLocal() as session:
         row = session.get(Store, "none")
         if row is None:
-            if STORE_CONFIG_PATH.exists() and STORE_CONFIG_PATH.stat().st_size:
-                legacy = _load(STORE_CONFIG_PATH, StorePYD)
-                session.close()
-                save_store(legacy)
-                return legacy
             raise FileNotFoundError("Store configuration not found in database")
         return StorePYD(
             exchange=row.exchange,
@@ -92,7 +60,6 @@ def load_store() -> StorePYD:
 
 
 def save_store(sfg: StorePYD) -> None:
-    init_db()
     with SessionLocal.begin() as session:
         row = session.get(Store, sfg.exchange) or Store(exchange=sfg.exchange)
         row.data = sfg.last_updated
@@ -101,7 +68,7 @@ def save_store(sfg: StorePYD) -> None:
         session.add(row)
 
 
-watcher = ConfigWatcher(STORE_CONFIG_PATH)
+watcher = ConfigWatcher()
 
 
 # ------------ SAVE BALANCE ------------ #
@@ -137,7 +104,7 @@ def initialize():
         return current_store
 
     except FileNotFoundError:
-        logger.warning("No store.json found. Creating initial file.")
+        logger.warning("No store configuration found. Creating a database record.")
         initial_store = StorePYD()
         save_store(initial_store)
         return initial_store
