@@ -6,6 +6,7 @@ Pydantic models for trading configuration files + FastAPI routes to read/update 
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from persistance.connection import SessionLocal
 from persistance.models import RiskConfig
@@ -104,6 +105,17 @@ def delete_risk_config(profile_name: str) -> str | None:
     except Exception as exc:
         session.rollback()
         return f"Failed to delete risk configuration profile '{profile_name}': {exc}"
+    finally:
+        session.close()
+
+
+def list_risk_profiles() -> list[str]:
+    session = SessionLocal()
+    try:
+        return list(session.scalars(select(RiskConfig.name).order_by(RiskConfig.name)))
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(f"Failed to list risk profiles: {exc}") from exc
     finally:
         session.close()
 

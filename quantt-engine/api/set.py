@@ -33,6 +33,14 @@ def get_trading_config(profile_name: str = "base"):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@s_route.get("/config/trading/profiles", response_model=list[str])
+def get_trading_profiles():
+    try:
+        return trading.list_trading_profiles()
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @s_route.put("/config/trading", response_model=trading.TradingConfigPYD)
 def update_trading_config(new_cfg: trading.TradingConfigPYD):
     """Create or update the profile named in the request body."""
@@ -78,6 +86,22 @@ def get_risk_config(profile_name: str = "base"):
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@s_route.get("/config/risk/profiles", response_model=list[str])
+def get_risk_profiles():
+    try:
+        return risk.list_risk_profiles()
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# @s_route.get("/config/store/profiles", response_model=list[str])
+# def get_store_profiles():
+#     try:
+#         return store.list_store_profiles()
+#     except RuntimeError as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 @s_route.put("/config/risk", response_model=risk.RiskConfigPYD)

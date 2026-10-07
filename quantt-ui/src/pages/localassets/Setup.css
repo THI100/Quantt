@@ -46,6 +46,36 @@
     gap: 20px;
 }
 
+.profile-controls,
+.profile-actions,
+.profile-delete {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: end;
+    gap: 12px;
+}
+
+.profile-delete {
+    grid-template-columns: 1fr auto;
+    padding-top: 16px;
+    border-top: 1px solid #2a2a2a;
+}
+
+.profile-delete .control-btn {
+    min-height: 40px;
+}
+
+.profile-actions .control-btn {
+    min-height: 42px;
+}
+
+.setup-message {
+    margin-top: 16px;
+    color: #c8f04a;
+    font-family: "DM Mono", monospace;
+    font-size: 13px;
+}
+
 .input-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -178,6 +208,11 @@
     }
 
     .input-row {
+        grid-template-columns: 1fr;
+    }
+
+    .profile-controls,
+    .profile-actions {
         grid-template-columns: 1fr;
     }
 }

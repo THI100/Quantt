@@ -7,6 +7,7 @@ from datetime import datetime
 
 from loguru import logger
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from data.fetch import balance
 from persistance.connection import SessionLocal
@@ -98,6 +99,17 @@ def delete_store(profile_name: str) -> str | None:
     except Exception as exc:
         session.rollback()
         return f"Failed to delete store profile '{profile_name}': {exc}"
+    finally:
+        session.close()
+
+
+def list_store_profiles() -> list[str]:
+    session = SessionLocal()
+    try:
+        return list(session.scalars(select(Store.exchange).order_by(Store.exchange)))
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(f"Failed to list store profiles: {exc}") from exc
     finally:
         session.close()
 

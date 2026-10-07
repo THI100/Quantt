@@ -6,6 +6,7 @@ Pydantic model for trading configuration files with Hot-Reloading
 from typing import Literal
 
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from persistance.connection import SessionLocal
 from persistance.models import TradingConfig
@@ -117,6 +118,19 @@ def delete_trading_config(profile_name: str) -> str | None:
     except Exception as exc:
         session.rollback()
         return f"Failed to delete trading configuration profile '{profile_name}': {exc}"
+    finally:
+        session.close()
+
+
+def list_trading_profiles() -> list[str]:
+    session = SessionLocal()
+    try:
+        return list(
+            session.scalars(select(TradingConfig.name).order_by(TradingConfig.name))
+        )
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(f"Failed to list trading profiles: {exc}") from exc
     finally:
         session.close()
 
