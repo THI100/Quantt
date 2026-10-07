@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from persistance.connection import SessionLocal
+from persistance.connection import SessionLocal, ensure_config_schema
 from persistance.models import TradingConfig
 
 # ── Model ─────────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ class ConfigWatcher:
 
     def __init__(self, profile_name: str = "base"):
         self.profile_name = profile_name
-        self.config = self.reload()
+        self.config = TradingConfigPYD(name=profile_name)
 
     def reload(self) -> TradingConfigPYD:
         """Reload the configuration from SQLite."""
@@ -71,6 +71,7 @@ class ConfigWatcher:
 
 
 def load_trading_config(profile_name: str = "base") -> TradingConfigPYD:
+    ensure_config_schema()
     session = SessionLocal()
     try:
         row = session.get(TradingConfig, profile_name)
@@ -91,6 +92,10 @@ def load_trading_config(profile_name: str = "base") -> TradingConfigPYD:
 
 
 def save_trading_config(cfg: TradingConfigPYD) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare trading configuration schema: {exc}"
     session = SessionLocal()
     try:
         row = session.get(TradingConfig, cfg.name) or TradingConfig(name=cfg.name)
@@ -107,6 +112,10 @@ def save_trading_config(cfg: TradingConfigPYD) -> str | None:
 
 
 def delete_trading_config(profile_name: str) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare trading configuration schema: {exc}"
     session = SessionLocal()
     try:
         row = session.get(TradingConfig, profile_name)
@@ -123,6 +132,7 @@ def delete_trading_config(profile_name: str) -> str | None:
 
 
 def list_trading_profiles() -> list[str]:
+    ensure_config_schema()
     session = SessionLocal()
     try:
         return list(

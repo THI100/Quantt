@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 
 from data.fetch import balance
-from persistance.connection import SessionLocal
+from persistance.connection import SessionLocal, ensure_config_schema
 from persistance.models import Store
 
 # -------------- MODEL --------------- #
@@ -30,7 +30,7 @@ class ConfigWatcher:
 
     def __init__(self, profile_name: str = "none"):
         self.profile_name = profile_name
-        self.config = self.reload()
+        self.config = StorePYD(exchange=profile_name)
 
     def reload(self) -> StorePYD:
         """Reload the configuration from SQLite."""
@@ -51,6 +51,7 @@ class ConfigWatcher:
 
 # Convenience accessors
 def load_store(profile_name: str = "none") -> StorePYD:
+    ensure_config_schema()
     session = SessionLocal()
     try:
         row = session.get(Store, profile_name)
@@ -71,6 +72,10 @@ def load_store(profile_name: str = "none") -> StorePYD:
 
 
 def save_store(sfg: StorePYD) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare store schema: {exc}"
     session = SessionLocal()
     try:
         row = session.get(Store, sfg.exchange) or Store(exchange=sfg.exchange)
@@ -88,6 +93,10 @@ def save_store(sfg: StorePYD) -> str | None:
 
 
 def delete_store(profile_name: str) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare store schema: {exc}"
     session = SessionLocal()
     try:
         row = session.get(Store, profile_name)
@@ -104,6 +113,7 @@ def delete_store(profile_name: str) -> str | None:
 
 
 def list_store_profiles() -> list[str]:
+    ensure_config_schema()
     session = SessionLocal()
     try:
         return list(session.scalars(select(Store.exchange).order_by(Store.exchange)))

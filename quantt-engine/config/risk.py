@@ -8,7 +8,7 @@ from typing import Literal
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from persistance.connection import SessionLocal
+from persistance.connection import SessionLocal, ensure_config_schema
 from persistance.models import RiskConfig
 
 # ── Models ─────────────────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ class ConfigWatcher:
 
     def __init__(self, profile_name: str = "base"):
         self.profile_name = profile_name
-        self.config = self.reload()
+        self.config = RiskConfigPYD(name=profile_name)
 
     def reload(self) -> RiskConfigPYD:
         """Reload the configuration from SQLite."""
@@ -58,6 +58,7 @@ class ConfigWatcher:
 
 # Convenience accessors
 def load_risk_config(profile_name: str = "base") -> RiskConfigPYD:
+    ensure_config_schema()
     session = SessionLocal()
     try:
         row = session.get(RiskConfig, profile_name)
@@ -78,6 +79,10 @@ def load_risk_config(profile_name: str = "base") -> RiskConfigPYD:
 
 
 def save_risk_config(cfg: RiskConfigPYD) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare risk configuration schema: {exc}"
     session = SessionLocal()
     try:
         row = session.get(RiskConfig, cfg.name) or RiskConfig(name=cfg.name)
@@ -94,6 +99,10 @@ def save_risk_config(cfg: RiskConfigPYD) -> str | None:
 
 
 def delete_risk_config(profile_name: str) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare risk configuration schema: {exc}"
     session = SessionLocal()
     try:
         row = session.get(RiskConfig, profile_name)
@@ -110,6 +119,7 @@ def delete_risk_config(profile_name: str) -> str | None:
 
 
 def list_risk_profiles() -> list[str]:
+    ensure_config_schema()
     session = SessionLocal()
     try:
         return list(session.scalars(select(RiskConfig.name).order_by(RiskConfig.name)))
