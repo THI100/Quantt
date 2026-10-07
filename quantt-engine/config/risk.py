@@ -31,17 +31,19 @@ class RiskConfigPYD(BaseModel):
 class ConfigWatcher:
     """Reads the latest configuration from SQLite."""
 
-    def __init__(self, path=None):
-        self.path = path
+    def __init__(self, profile_name: str = "base"):
+        self.profile_name = profile_name
         self.config = self.reload()
 
     def reload(self) -> RiskConfigPYD:
         """Reload the configuration from SQLite."""
         try:
-            return load_risk_config()
+            return load_risk_config(self.profile_name)
         except FileNotFoundError:
-            default_cfg = RiskConfigPYD()
-            save_risk_config(default_cfg)
+            default_cfg = RiskConfigPYD(name=self.profile_name)
+            error = save_risk_config(default_cfg)
+            if error:
+                raise RuntimeError(error)
             return default_cfg
 
     def get_config(self) -> RiskConfigPYD:
@@ -54,20 +56,56 @@ class ConfigWatcher:
 
 
 # Convenience accessors
-def load_risk_config() -> RiskConfigPYD:
-    with SessionLocal() as session:
-        row = session.get(RiskConfig, "base")
+def load_risk_config(profile_name: str = "base") -> RiskConfigPYD:
+    session = SessionLocal()
+    try:
+        row = session.get(RiskConfig, profile_name)
         if row is None:
-            raise FileNotFoundError("Risk configuration not found in database")
+            raise FileNotFoundError(
+                f"Risk configuration profile '{profile_name}' not found"
+            )
         return RiskConfigPYD.model_validate(row, from_attributes=True)
+    except FileNotFoundError:
+        raise
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(
+            f"Failed to load risk configuration profile '{profile_name}': {exc}"
+        ) from exc
+    finally:
+        session.close()
 
 
-def save_risk_config(cfg: RiskConfigPYD) -> None:
-    with SessionLocal.begin() as session:
+def save_risk_config(cfg: RiskConfigPYD) -> str | None:
+    session = SessionLocal()
+    try:
         row = session.get(RiskConfig, cfg.name) or RiskConfig(name=cfg.name)
         for key, value in cfg.model_dump().items():
             setattr(row, key, value)
         session.add(row)
+        session.commit()
+        return None
+    except Exception as exc:
+        session.rollback()
+        return f"Failed to save risk configuration profile '{cfg.name}': {exc}"
+    finally:
+        session.close()
+
+
+def delete_risk_config(profile_name: str) -> str | None:
+    session = SessionLocal()
+    try:
+        row = session.get(RiskConfig, profile_name)
+        if row is None:
+            return f"Risk configuration profile '{profile_name}' not found"
+        session.delete(row)
+        session.commit()
+        return None
+    except Exception as exc:
+        session.rollback()
+        return f"Failed to delete risk configuration profile '{profile_name}': {exc}"
+    finally:
+        session.close()
 
 
 # ── Usage ──────────────────────────────────────────────────────────────────────

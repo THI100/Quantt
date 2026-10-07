@@ -45,17 +45,19 @@ class TradingConfigPYD(BaseModel):
 class ConfigWatcher:
     """Reads the latest configuration from SQLite."""
 
-    def __init__(self, path=None):
-        self.path = path
+    def __init__(self, profile_name: str = "base"):
+        self.profile_name = profile_name
         self.config = self.reload()
 
     def reload(self) -> TradingConfigPYD:
         """Reload the configuration from SQLite."""
         try:
-            return load_trading_config()
+            return load_trading_config(self.profile_name)
         except FileNotFoundError:
-            default_cfg = TradingConfigPYD()
-            save_trading_config(default_cfg)
+            default_cfg = TradingConfigPYD(name=self.profile_name)
+            error = save_trading_config(default_cfg)
+            if error:
+                raise RuntimeError(error)
             return default_cfg
 
     def get_config(self) -> TradingConfigPYD:
@@ -67,20 +69,56 @@ class ConfigWatcher:
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
-def load_trading_config() -> TradingConfigPYD:
-    with SessionLocal() as session:
-        row = session.get(TradingConfig, "base")
+def load_trading_config(profile_name: str = "base") -> TradingConfigPYD:
+    session = SessionLocal()
+    try:
+        row = session.get(TradingConfig, profile_name)
         if row is None:
-            raise FileNotFoundError("Trading configuration not found in database")
+            raise FileNotFoundError(
+                f"Trading configuration profile '{profile_name}' not found"
+            )
         return TradingConfigPYD.model_validate(row, from_attributes=True)
+    except FileNotFoundError:
+        raise
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(
+            f"Failed to load trading configuration profile '{profile_name}': {exc}"
+        ) from exc
+    finally:
+        session.close()
 
 
-def save_trading_config(cfg: TradingConfigPYD) -> None:
-    with SessionLocal.begin() as session:
+def save_trading_config(cfg: TradingConfigPYD) -> str | None:
+    session = SessionLocal()
+    try:
         row = session.get(TradingConfig, cfg.name) or TradingConfig(name=cfg.name)
         for key, value in cfg.model_dump().items():
             setattr(row, key, value)
         session.add(row)
+        session.commit()
+        return None
+    except Exception as exc:
+        session.rollback()
+        return f"Failed to save trading configuration profile '{cfg.name}': {exc}"
+    finally:
+        session.close()
+
+
+def delete_trading_config(profile_name: str) -> str | None:
+    session = SessionLocal()
+    try:
+        row = session.get(TradingConfig, profile_name)
+        if row is None:
+            return f"Trading configuration profile '{profile_name}' not found"
+        session.delete(row)
+        session.commit()
+        return None
+    except Exception as exc:
+        session.rollback()
+        return f"Failed to delete trading configuration profile '{profile_name}': {exc}"
+    finally:
+        session.close()
 
 
 # ── Usage ──────────────────────────────────────────────────────────────────────

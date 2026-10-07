@@ -23,28 +23,45 @@ class APIConfig(BaseModel):
 
 
 @s_route.get("/config/trading", response_model=trading.TradingConfigPYD)
-def get_trading_config():
-    """Return the current trading configuration."""
+def get_trading_config(profile_name: str = "base"):
+    """Return a trading configuration profile."""
     try:
-        return trading.load_trading_config()
+        return trading.load_trading_config(profile_name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @s_route.put("/config/trading", response_model=trading.TradingConfigPYD)
 def update_trading_config(new_cfg: trading.TradingConfigPYD):
-    """Overwrite the entire trading configuration."""
-    trading.save_trading_config(new_cfg)
+    """Create or update the profile named in the request body."""
+    error = trading.save_trading_config(new_cfg)
+    if error:
+        raise HTTPException(status_code=500, detail=error)
     return new_cfg
 
 
 @s_route.patch("/config/trading", response_model=trading.TradingConfigPYD)
-def patch_trading_config(partial: dict):
+def patch_trading_config(partial: dict, profile_name: str = "base"):
     """Partially update the trading configuration (only provided fields change)."""
-    current = trading.load_trading_config()
+    current = trading.load_trading_config(profile_name)
+    if "name" in partial and partial["name"] != profile_name:
+        raise HTTPException(status_code=400, detail="Profile name cannot be changed")
     updated = current.model_copy(update=partial)
-    trading.save_trading_config(updated)
+    error = trading.save_trading_config(updated)
+    if error:
+        raise HTTPException(status_code=500, detail=error)
     return updated
+
+
+@s_route.delete("/config/trading/{profile_name}")
+def delete_trading_config(profile_name: str):
+    error = trading.delete_trading_config(profile_name)
+    if error:
+        status = 404 if "not found" in error.lower() else 500
+        raise HTTPException(status_code=status, detail=error)
+    return {"message": f"Trading profile '{profile_name}' deleted"}
 
 
 # ------------------------------------------------------------------ #
@@ -53,28 +70,45 @@ def patch_trading_config(partial: dict):
 
 
 @s_route.get("/config/risk", response_model=risk.RiskConfigPYD)
-def get_risk_config():
-    """Return the current risk configuration."""
+def get_risk_config(profile_name: str = "base"):
+    """Return a risk configuration profile."""
     try:
-        return risk.load_risk_config()
+        return risk.load_risk_config(profile_name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @s_route.put("/config/risk", response_model=risk.RiskConfigPYD)
 def update_risk_config(new_cfg: risk.RiskConfigPYD):
-    """Overwrite the entire risk configuration."""
-    risk.save_risk_config(new_cfg)
+    """Create or update the profile named in the request body."""
+    error = risk.save_risk_config(new_cfg)
+    if error:
+        raise HTTPException(status_code=500, detail=error)
     return new_cfg
 
 
 @s_route.patch("/config/risk", response_model=risk.RiskConfigPYD)
-def patch_risk_config(partial: dict):
+def patch_risk_config(partial: dict, profile_name: str = "base"):
     """Partially update the risk configuration (only provided fields change)."""
-    current = risk.load_risk_config()
+    current = risk.load_risk_config(profile_name)
+    if "name" in partial and partial["name"] != profile_name:
+        raise HTTPException(status_code=400, detail="Profile name cannot be changed")
     updated = current.model_copy(update=partial)
-    risk.save_risk_config(updated)
+    error = risk.save_risk_config(updated)
+    if error:
+        raise HTTPException(status_code=500, detail=error)
     return updated
+
+
+@s_route.delete("/config/risk/{profile_name}")
+def delete_risk_config(profile_name: str):
+    error = risk.delete_risk_config(profile_name)
+    if error:
+        status = 404 if "not found" in error.lower() else 500
+        raise HTTPException(status_code=status, detail=error)
+    return {"message": f"Risk profile '{profile_name}' deleted"}
 
 
 @s_route.get("/config/risk/limits")
