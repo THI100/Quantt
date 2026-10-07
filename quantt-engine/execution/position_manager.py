@@ -86,6 +86,9 @@ def manage_open_symbols():
                 f"Error syncing {symbol if 'symbol' in locals() else 'unknown'}: {e}"
             )
 
+        finally:
+            session.close()
+
     return symbol_status
 
 
@@ -157,3 +160,6 @@ def manage_open_limit(client):
                 except Exception as e:
                     session.rollback()
                     logger.error(f"Failed to manage order {order_id}: {e}")
+
+                finally:
+                    session.close()

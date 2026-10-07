@@ -110,6 +110,8 @@ def _place_linked_order(
             except Exception as e:
                 session.rollback()
                 logger.error(f"DB Error saving {order_type}: {e}")
+            finally:
+                session.close()
 
     except Exception as e:
         logger.error(f"{order_type} API Failure: {e}")
@@ -169,6 +171,8 @@ def order(
         except Exception as e:
             session.rollback()
             logger.error(f"Database error saving Entry: {e}")
+        finally:
+            session.close()
 
     # Set stop loss and take profit type:
     if active_exchange == "binance":
@@ -272,6 +276,8 @@ def execute_iceberg(
                 except Exception as db_e:
                     session.rollback()
                     logger.error(f"Iceberg DB Error: {db_e}")
+                finally:
+                    session.close()
 
             # 4. Attach Protection (SL/TP)
             _order_ice(client, market, current_slice, normalized_side, tp, sl, order_id)
