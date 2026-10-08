@@ -68,7 +68,29 @@ def get_orders(symbol: str, limit: Optional[int] = None):
     try:
         client = cached_client()
 
-        return std_call(client.fetch_orders, symbol=symbol, limit=limit)
+        main = std_call(client.fetch_orders, symbol=symbol, limit=limit)
+
+        try:
+            canceled = std_call(
+                client.fetch_canceled_orders, symbol=symbol, limit=limit
+            )
+        except Exception as e:
+            logger.debug(f"Endpoint not supported or failed: {e}")
+            canceled = []
+
+        try:
+            cc = std_call(
+                client.fetch_canceled_and_closed_orders, symbol=symbol, limit=limit
+            )
+        except Exception as e:
+            logger.debug(f"Endpoint not supported or failed: {e}")
+            cc = []
+
+        iterador = itertools.chain(main, canceled, cc)
+
+        final = list({order.get("id"): order for order in iterador}.values())
+
+        return final
 
     except Exception as err:
         logger.error(f"following cause the orders fetch to fail: {err}")
