@@ -19,8 +19,16 @@ class TradingConfigPYD(BaseModel):
     is_demo_enabled: bool = True
     timeframe: str = "15m"
     exchange: Literal[
-        "binance", "bybit", "okx", "mexc", "aster", "dydx", "hyperliquid", "lighter"
-    ] = "binance"
+        "binance",
+        "bybit",
+        "okx",
+        "mexc",
+        "aster",
+        "dydx",
+        "hyperliquid",
+        "lighter",
+        "NULL",
+    ] = "NULL"
     execution_order: Literal["market", "limit"] = "limit"
     future_spot: Literal["future", "spot"] = "spot"
     list_of_interest: list[str] = Field(

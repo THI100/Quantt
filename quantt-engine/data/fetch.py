@@ -1,3 +1,4 @@
+import itertools
 from typing import Optional
 
 from loguru import logger
@@ -68,6 +69,29 @@ def get_orders(symbol: str, limit: Optional[int] = None):
         client = cached_client()
 
         return std_call(client.fetch_orders, symbol=symbol, limit=limit)
+
+    except Exception as err:
+        logger.error(f"following cause the orders fetch to fail: {err}")
+
+
+def get_generalized(symbol: str, limit: Optional[int] = None):
+    try:
+        client = cached_client()
+
+        open = std_call(client.fetch_open_orders, symbol=symbol, limit=limit)
+        canceled = std_call(client.fetch_canceled_orders, symbol=symbol, limit=limit)
+        closed = std_call(client.fetch_closed_orders, symbol=symbol, limit=limit)
+        cc = std_call(
+            client.fetch_canceled_and_closed_orders, symbol=symbol, limit=limit
+        )
+
+        # Chain all iterables together
+        iterador = itertools.chain(open, canceled, closed, cc)
+
+        # Deduplicate based on 'id' while keeping insertion order
+        final = list({order.get("id"): order for order in iterador}.values())
+
+        return final
 
     except Exception as err:
         logger.error(f"following cause the orders fetch to fail: {err}")

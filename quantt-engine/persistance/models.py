@@ -26,9 +26,13 @@ class GeneralOrder(Base):
     stop_id: Mapped[Optional[str]] = mapped_column(
         String(32), ForeignKey("take_stop_orders.id")
     )
+    exchange: Mapped[str] = mapped_column(
+        String(16), ForeignKey("trading_config.exchange")
+    )
     # Relationships
     take_order: Mapped[Optional["TakeStopOrder"]] = relationship(foreign_keys=[take_id])
     stop_order: Mapped[Optional["TakeStopOrder"]] = relationship(foreign_keys=[stop_id])
+    exchange_origin: Mapped["TradingConfig"] = relationship(foreign_keys=[exchange])
 
 
 class TakeStopOrder(Base):

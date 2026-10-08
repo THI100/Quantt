@@ -30,7 +30,14 @@ def manage_open_symbols():
                     symbol_status[symbol] = "open"
                     continue
 
-                exchange_trades = fetch.get_orders(symbol, limit=5)
+                try:
+                    exchange_trades = fetch.get_orders(symbol)
+                except Exception as err:
+                    logger.warning(
+                        f"Due to the following error: {err}, it is needed to make the usage of a slower method."
+                    )
+                    exchange_trades = fetch.get_generalized(symbol)
+
                 is_now_closed_on_exchange = False
 
                 for trade in exchange_trades:
