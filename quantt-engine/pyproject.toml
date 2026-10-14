@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "quantt-engine"
-version = "0.1.0-set"
+version = "0.1.1"
 description = "Algorithmic trading engine for crypto markets"
 readme = "README.md"
 requires-python = ">=3.10"

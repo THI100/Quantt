@@ -5,7 +5,7 @@
   "description": "A trading algorithm for Crypto markets, automated and custom methods, utilizing CCXT for multi-plataform usage.",
   "author": "THI100 <thiagocas100@gmail.com>",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
