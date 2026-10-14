@@ -15,7 +15,7 @@ function startPythonBackend() {
   if (!app.isPackaged) {
     // 1. In Development: Run your local python entry script
     // Adjust this path to wherever your backend main.py lives relative to main.js
-    pyBinaryPath = path.join(__dirname, "../backend/main.py");
+    pyBinaryPath = path.join(__dirname, "../quantt-engine/main.py");
     pyProc = spawn("python", [pyBinaryPath]);
     console.log("Spawned development Python process.");
   } else {

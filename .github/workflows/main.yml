@@ -1,34 +1,138 @@
-name: Generalized launch - Quantt
+name: Build and Release Quantt
 
 on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  test:
-    name: pre-test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download repository code
-        uses: actions/checkout@v4
-
   build:
-    name: Build on ${{ matrix.os }}
+    name: Build (${{ matrix.platform }})
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-latest
+        include:
+          - os: windows-latest
+            platform: windows
+            electron_target: win
+          - os: ubuntu-latest
+            platform: linux
+            electron_target: linux
+          - os: macos-latest
+            platform: macos
+            electron_target: mac
 
     steps:
-      - name: Download repository code
+      - name: Checkout UI repository
         uses: actions/checkout@v4
+        with:
+          path: quantt-ui
+
+      - name: Checkout Python engine repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.ENGINE_REPOSITORY }}
+          token: ${{ secrets.ENGINE_REPO_TOKEN }}
+          path: quantt-engine
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: quantt-ui/package-lock.json
+
+      - name: Install Python dependencies
+        working-directory: quantt-engine
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+
+          python -m pip install .
+
+          python -m pip install pyinstaller
+
+      - name: Install UI dependencies
+        working-directory: quantt-ui
+        run: npm ci
+
+      - name: Build Python engine
+        working-directory: quantt-engine
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            python -m PyInstaller \
+              --noconfirm \
+              --clean \
+              --onedir \
+              --windowed \
+              --icon ./build/qi.ico \
+              --noupx \
+              --name QuanttEngine \
+              main.py
+          else
+            python -m PyInstaller \
+              --noconfirm \
+              --clean \
+              --onedir \
+              --noupx \
+              --name QuanttEngine \
+              main.py
+          fi
+
+      - name: Build Vite frontend
+        working-directory: quantt-ui
+        run: npm run build_ft
+
+      - name: Package Electron application
+        working-directory: quantt-ui
+        run: >
+          npm run build_electron --
+          --${{ matrix.electron_target }}
+          --publish never
+
+      - name: Upload packaged application
+        uses: actions/upload-artifact@v4
+        with:
+          name: Quantt-${{ matrix.platform }}
+          path: quantt-ui/e_dist/*
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/**/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
