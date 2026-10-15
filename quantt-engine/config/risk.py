@@ -36,10 +36,10 @@ class ConfigWatcher:
         self.profile_name = profile_name
         self.config = RiskConfigPYD(name=profile_name)
 
-    def reload(self) -> RiskConfigPYD:
+    def reload(self, pn: str) -> RiskConfigPYD:
         """Reload the configuration from SQLite."""
         try:
-            return load_risk_config(self.profile_name)
+            return load_risk_config(pn)
         except FileNotFoundError:
             default_cfg = RiskConfigPYD(name=self.profile_name)
             error = save_risk_config(default_cfg)
@@ -47,9 +47,9 @@ class ConfigWatcher:
                 raise RuntimeError(error)
             return default_cfg
 
-    def get_config(self) -> RiskConfigPYD:
+    def get_config(self, pn: str) -> RiskConfigPYD:
         """Return the latest configuration stored in SQLite."""
-        self.config = self.reload()
+        self.config = self.reload(pn)
         return self.config
 
 

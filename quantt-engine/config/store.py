@@ -32,10 +32,10 @@ class ConfigWatcher:
         self.profile_name = profile_name
         self.config = StorePYD(exchange=profile_name)
 
-    def reload(self) -> StorePYD:
+    def reload(self, pn: str) -> StorePYD:
         """Reload the configuration from SQLite."""
         try:
-            return load_store(self.profile_name)
+            return load_store(pn)
         except FileNotFoundError:
             default_sfg = StorePYD(exchange=self.profile_name)
             error = save_store(default_sfg)
@@ -43,9 +43,9 @@ class ConfigWatcher:
                 raise RuntimeError(error)
             return default_sfg
 
-    def get_config(self) -> StorePYD:
+    def get_config(self, pn: str) -> StorePYD:
         """Return the latest configuration stored in SQLite."""
-        self.config = self.reload()
+        self.config = self.reload(pn)
         return self.config
 
 
@@ -66,7 +66,9 @@ def load_store(profile_name: str = "none") -> StorePYD:
         raise
     except Exception as exc:
         session.rollback()
-        raise RuntimeError(f"Failed to load store profile '{profile_name}': {exc}") from exc
+        raise RuntimeError(
+            f"Failed to load store profile '{profile_name}': {exc}"
+        ) from exc
     finally:
         session.close()
 

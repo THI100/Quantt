@@ -58,10 +58,10 @@ class ConfigWatcher:
         self.profile_name = profile_name
         self.config = TradingConfigPYD(name=profile_name)
 
-    def reload(self) -> TradingConfigPYD:
+    def reload(self, pn: str) -> TradingConfigPYD:
         """Reload the configuration from SQLite."""
         try:
-            return load_trading_config(self.profile_name)
+            return load_trading_config(pn)
         except FileNotFoundError:
             default_cfg = TradingConfigPYD(name=self.profile_name)
             error = save_trading_config(default_cfg)
@@ -69,9 +69,9 @@ class ConfigWatcher:
                 raise RuntimeError(error)
             return default_cfg
 
-    def get_config(self) -> TradingConfigPYD:
+    def get_config(self, pn: str) -> TradingConfigPYD:
         """Return the latest configuration stored in SQLite."""
-        self.config = self.reload()
+        self.config = self.reload(pn)
         return self.config
 
 

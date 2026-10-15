@@ -54,6 +54,8 @@ export default function Setup() {
   const [riskProfiles, setRiskProfiles] = useState<string[]>([]);
   const [selectedTradingProfile, setSelectedTradingProfile] = useState("base");
   const [selectedRiskProfile, setSelectedRiskProfile] = useState("base");
+  const [activeTradingProfile, setActiveTradingProfile] = useState("");
+  const [activeRiskProfile, setActiveRiskProfile] = useState("");
   const [deleteTradingProfile, setDeleteTradingProfile] = useState("");
   const [deleteRiskProfile, setDeleteRiskProfile] = useState("");
   const [message, setMessage] = useState("");
@@ -86,6 +88,20 @@ export default function Setup() {
     } catch (error) {
       console.error(`Error loading ${mode} profile:`, error);
       setMessage(`Could not load ${mode} profile.`);
+    }
+  };
+
+  const activateProfile = async (mode: "trading" | "risk", profile: string) => {
+    if (!profile) return;
+    try {
+      await api.post(`/config/${mode}/profiles`, { profile_name: profile });
+      if (mode === "trading") setActiveTradingProfile(profile);
+      else setActiveRiskProfile(profile);
+      await loadProfile(mode, profile);
+      setMessage(`${mode === "trading" ? "Trading" : "Risk"} profile '${profile}' is active.`);
+    } catch (error) {
+      console.error(`Error activating ${mode} profile:`, error);
+      setMessage(`Could not activate ${mode} profile. The API must support POST /config/${mode}/profiles.`);
     }
   };
 
@@ -194,6 +210,30 @@ export default function Setup() {
             <h3>Trading Engine</h3>
           </div>
           <form className="setup-form" onSubmit={(e) => e.preventDefault()}>
+            <div className="profile-controls profile-activation">
+              <div className="input-group active-profile-field">
+                <label htmlFor="active-trading-profile">Active trading profile</label>
+                <select
+                  id="active-trading-profile"
+                  className="terminal-input"
+                  value={activeTradingProfile}
+                  onChange={(e) => setActiveTradingProfile(e.target.value)}
+                >
+                  <option value="">Choose an active profile</option>
+                  {tradingProfiles.map((profile) => (
+                    <option key={profile} value={profile}>{profile}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                className="control-btn restart-btn"
+                disabled={!activeTradingProfile}
+                onClick={() => activateProfile("trading", activeTradingProfile)}
+              >
+                Confirm Active Profile
+              </button>
+            </div>
             <div className="profile-controls">
               <div className="input-group">
                 <label htmlFor="trading-profile">Trading profile</label>
@@ -405,6 +445,30 @@ export default function Setup() {
             <h3>Risk Parameters</h3>
           </div>
           <form className="setup-form" onSubmit={(e) => e.preventDefault()}>
+            <div className="profile-controls profile-activation">
+              <div className="input-group active-profile-field">
+                <label htmlFor="active-risk-profile">Active risk profile</label>
+                <select
+                  id="active-risk-profile"
+                  className="terminal-input"
+                  value={activeRiskProfile}
+                  onChange={(e) => setActiveRiskProfile(e.target.value)}
+                >
+                  <option value="">Choose an active profile</option>
+                  {riskProfiles.map((profile) => (
+                    <option key={profile} value={profile}>{profile}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                className="control-btn start-btn"
+                disabled={!activeRiskProfile}
+                onClick={() => activateProfile("risk", activeRiskProfile)}
+              >
+                Confirm Active Profile
+              </button>
+            </div>
             <div className="profile-controls">
               <div className="input-group">
                 <label htmlFor="risk-profile">Risk profile</label>
