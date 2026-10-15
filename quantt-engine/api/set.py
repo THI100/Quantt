@@ -6,9 +6,9 @@ import os
 import socket
 from typing import Optional
 
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from config import risk, trading
 from core.bot import TradingBot
@@ -20,6 +20,10 @@ bot = TradingBot()
 
 class APIConfig(BaseModel):
     encrypted_credentials: dict
+
+
+class ActiveProfileRequest(BaseModel):
+    profile_name: str
 
 
 def decrypt_api_credentials(envelope: dict) -> dict:
@@ -43,7 +47,9 @@ def decrypt_api_credentials(envelope: dict) -> dict:
         if ipv6_address not in ipv6_addresses:
             raise ValueError("Encryption IPv6 address does not belong to this device")
         if not username or not ipv6_address:
-            raise ValueError("Could not determine this device's username and IPv6 address")
+            raise ValueError(
+                "Could not determine this device's username and IPv6 address"
+            )
 
         salt = base64.b64decode(envelope["salt"], validate=True)
         iv = base64.b64decode(envelope["iv"], validate=True)
@@ -55,7 +61,9 @@ def decrypt_api_credentials(envelope: dict) -> dict:
         )
         return json.loads(AESGCM(key).decrypt(iv, ciphertext, None))
     except Exception as exc:
-        raise HTTPException(status_code=400, detail="Unable to decrypt API credentials") from exc
+        raise HTTPException(
+            status_code=400, detail="Unable to decrypt API credentials"
+        ) from exc
 
 
 # ------------------------------------------------------------------ #
@@ -80,6 +88,22 @@ def get_trading_profiles():
         return trading.list_trading_profiles()
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@s_route.post("/config/trading/profiles")
+def set_active_trading_profile(active_profile: ActiveProfileRequest):
+    try:
+        trading.load_trading_config(active_profile.profile_name)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    #contribute(active_profile)
+    return {
+        "profile_name": active_profile.profile_name,
+        "status": "handler_pending",
+    }
 
 
 @s_route.put("/config/trading", response_model=trading.TradingConfigPYD)
@@ -137,12 +161,20 @@ def get_risk_profiles():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# @s_route.get("/config/store/profiles", response_model=list[str])
-# def get_store_profiles():
-#     try:
-#         return store.list_store_profiles()
-#     except RuntimeError as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+@s_route.post("/config/risk/profiles")
+def set_active_risk_profile(active_profile: ActiveProfileRequest):
+    try:
+        risk.load_risk_config(active_profile.profile_name)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    #contribute(active_profile)
+    return {
+        "profile_name": active_profile.profile_name,
+        "status": "handler_pending",
+    }
 
 
 @s_route.put("/config/risk", response_model=risk.RiskConfigPYD)
