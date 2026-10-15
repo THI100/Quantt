@@ -37,7 +37,7 @@ class Base(DeclarativeBase):
 
 
 def ensure_config_schema() -> None:
-    """Create config tables and add profile columns to legacy SQLite tables."""
+    """Create config tables and migrate legacy SQLite schema columns."""
 
     config_columns = {
         "trading_config": [
@@ -134,5 +134,56 @@ def ensure_config_schema() -> None:
             connection.execute(
                 text(f'ALTER TABLE "{temp_table}" RENAME TO "{table_name}"')
             )
+
+        order_inspector = inspect(connection)
+        if order_inspector.has_table("general_orders"):
+            order_columns = {
+                column["name"]
+                for column in order_inspector.get_columns("general_orders")
+            }
+            if "exchange" not in order_columns:
+                connection.execute(
+                    text(
+                        'ALTER TABLE "general_orders" '
+                        'ADD COLUMN "exchange" VARCHAR(16)'
+                    )
+                )
+
+            active_exchange = None
+            if order_inspector.has_table("last"):
+                last_columns = {
+                    column["name"] for column in order_inspector.get_columns("last")
+                }
+                if {"nominal_key", "exchange"}.issubset(last_columns):
+                    active_exchange = connection.execute(
+                        text(
+                            'SELECT "exchange" FROM "last" '
+                            'WHERE "nominal_key" = :nominal_key'
+                        ),
+                        {"nominal_key": "last"},
+                    ).scalar_one_or_none()
+
+            if not active_exchange and order_inspector.has_table("trading_config"):
+                trading_columns = {
+                    column["name"]
+                    for column in order_inspector.get_columns("trading_config")
+                }
+                if {"name", "exchange"}.issubset(trading_columns):
+                    active_exchange = connection.execute(
+                        text(
+                            'SELECT "exchange" FROM "trading_config" '
+                            'WHERE "name" = :profile_name'
+                        ),
+                        {"profile_name": "base"},
+                    ).scalar_one_or_none()
+
+            if active_exchange:
+                connection.execute(
+                    text(
+                        'UPDATE "general_orders" SET "exchange" = :exchange '
+                        "WHERE \"exchange\" IS NULL OR \"exchange\" = ''"
+                    ),
+                    {"exchange": active_exchange},
+                )
 
     Base.metadata.create_all(bind=engine)

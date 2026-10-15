@@ -11,7 +11,7 @@ import core.engine as e
 from config import risk, trading
 from data.client import cached_client
 from execution.position_manager import manage_open_limit
-from persistance.connection import Base, engine
+from persistance.connection import ensure_config_schema
 from utils.math import scale_0_100
 from utils.rate_lim import std_call
 
@@ -23,9 +23,12 @@ else:
 
 class TradingBot:
     def __init__(self):
+        self.DB_PATH = DIR / "qdata" / "general.db"
+        self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ensure_config_schema()
+
         self.client = cached_client()
         self.is_running = False
-        self.DB_PATH = DIR / "qdata" / "general.db"
         self.stop_event = threading.Event()
 
     def setup_environment(self):
@@ -36,7 +39,7 @@ class TradingBot:
             logger.info("Database already exists. Ensuring schema is current.")
         else:
             logger.info("Initializing database...")
-        Base.metadata.create_all(bind=engine)
+        ensure_config_schema()
 
         try:
             std_call(self.client.load_markets)

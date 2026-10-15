@@ -45,9 +45,10 @@ class ConfigWatcher:
 
     def get_config(self, pn: str | None = None) -> StorePYD:
         """Return the latest configuration stored in SQLite."""
-        from utils.stance import last
+        if pn is None:
+            from utils.stance import last
 
-        pn = last.get_last()["exchange"]
+            pn = last.get_last()["trading_name"]
         self.config = self.reload(pn)
         return self.config
 

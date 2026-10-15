@@ -71,9 +71,10 @@ class ConfigWatcher:
 
     def get_config(self, pn: str | None = None) -> TradingConfigPYD:
         """Return the latest active configuration stored in SQLite."""
-        from utils.stance import last
+        if pn is None:
+            from utils.stance import last
 
-        pn = last.get_last()["trading_name"]
+            pn = last.get_last()["trading_name"]
         self.config = self.reload(pn)
         return self.config
 

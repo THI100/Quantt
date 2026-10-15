@@ -16,6 +16,9 @@ class LastConfigManager:
                 return self._as_dict(record)
 
         self._create_default_record()
+        # Re-run migrations now that the active row exists so legacy order
+        # records can be associated with its exchange.
+        ensure_config_schema()
 
         # Use a fresh session so callers always receive the persisted values.
         with SessionLocal() as session:

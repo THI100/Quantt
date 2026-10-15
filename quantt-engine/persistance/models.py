@@ -11,7 +11,7 @@ class GeneralOrder(Base):
     __tablename__ = "general_orders"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
-    exchange: Mapped[str] = mapped_column(String(16))
+    exchange: Mapped[str | None] = mapped_column(String(16), nullable=True)
     entrance_exit: Mapped[str] = mapped_column(String(10))
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
