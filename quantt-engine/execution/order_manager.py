@@ -156,6 +156,7 @@ def order(
         try:
             new_order = GeneralOrder(
                 id=general_id,
+                exchange=exchange,
                 price=entry_order.get("average")
                 if type == "market"
                 else entry_order.get("price"),
@@ -263,6 +264,7 @@ def execute_iceberg(
                 try:
                     new_order = GeneralOrder(
                         id=order_id,
+                        exchange=exchange,
                         price=order_resp.get("average", target_price),
                         entrance_exit="entrance",
                         amount=order_resp["amount"],

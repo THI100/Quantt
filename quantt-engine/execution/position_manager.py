@@ -9,11 +9,13 @@ from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
+from utils import stance
 from utils.rate_lim import std_call
 
 
 def manage_open_symbols():
     symbol_status = {}
+    active_exchange = stance.last.get_last()["exchange"]
 
     # Using context manager for the entire loop to ensure session safety
     with SessionLocal() as session:
@@ -22,6 +24,7 @@ def manage_open_symbols():
                 stmt = (
                     select(GeneralOrder)
                     .filter(GeneralOrder.symbol.like(f"{symbol}%"))
+                    .filter(GeneralOrder.exchange == active_exchange)
                     .order_by(desc(GeneralOrder.time))
                 )
                 last_record = session.execute(stmt).scalars().first()
@@ -41,7 +44,10 @@ def manage_open_symbols():
                 is_now_closed_on_exchange = False
 
                 for trade in exchange_trades:
-                    trade_id = str(trade["id"])
+                    api_trade_id = trade.get("id")
+                    if api_trade_id is None:
+                        continue
+                    trade_id = str(api_trade_id)
                     is_opposite_side = trade["side"].lower() != last_record.side.lower()
                     is_reduce_only = (
                         str(trade.get("info", {}).get("reduceOnly")).lower() == "true"
@@ -50,7 +56,12 @@ def manage_open_symbols():
 
                     if is_opposite_side and (is_reduce_only and is_after_entrance):
                         # Check if this SPECIFIC trade is already our exit record
-                        already_exists = session.get(GeneralOrder, trade_id)
+                        already_exists = session.execute(
+                            select(GeneralOrder.id).where(
+                                GeneralOrder.id == trade_id,
+                                GeneralOrder.exchange == active_exchange,
+                            )
+                        ).scalar_one_or_none()
                         if already_exists:
                             is_now_closed_on_exchange = True
                             break
@@ -67,6 +78,7 @@ def manage_open_symbols():
 
                         exit_order = GeneralOrder(
                             id=trade_id,
+                            exchange=active_exchange,
                             entrance_exit="exit",
                             price=trade["price"],
                             amount=trade["amount"],
@@ -101,6 +113,7 @@ def manage_open_symbols():
 
 def manage_open_limit(client):
     typ = "limit"
+    active_exchange = stance.last.get_last()["exchange"]
 
     for symbol in trading.watcher.get_config().list_of_interest:
         current_open = fetch.get_open_orders(symbol, 10)
@@ -109,10 +122,22 @@ def manage_open_limit(client):
             if x.get("reduceOnly") is True or x.get("status") == "filled":
                 continue
 
-            order_id = str(x.get("id"))
+            api_order_id = x.get("id")
+            if api_order_id is None:
+                continue
+            order_id = str(api_order_id)
 
             with SessionLocal() as session:
-                old_order = session.get(GeneralOrder, order_id)
+                old_order = (
+                    session.execute(
+                        select(GeneralOrder).where(
+                            GeneralOrder.id == order_id,
+                            GeneralOrder.exchange == active_exchange,
+                        )
+                    )
+                    .scalars()
+                    .first()
+                )
                 if not old_order:
                     continue
 
@@ -138,6 +163,7 @@ def manage_open_limit(client):
                     # 2. Create NEW parent first
                     new_order_record = GeneralOrder(
                         id=new_id,
+                        exchange=active_exchange,
                         price=new_exchange_order.get("price"),
                         entrance_exit="entrance",
                         amount=new_exchange_order.get("amount", amt),
