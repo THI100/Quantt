@@ -83,3 +83,12 @@ class Store(Base):
     data: Mapped[datetime] = mapped_column(DateTime)
     balance_dt: Mapped[float] = mapped_column(Float, default=0.0)
     balance_dc: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class Last(Base):
+    __tablename__ = "last"
+
+    nominal_key: Mapped[str] = mapped_column(String(4))
+    exchange: Mapped[str] = mapped_column(String(16))
+    trading_name: Mapped[str] = mapped_column(String(32))
+    risk_name: Mapped[str] = mapped_column(String(32))

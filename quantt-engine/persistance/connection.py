@@ -67,6 +67,12 @@ def ensure_config_schema() -> None:
             ("balance_dt", "FLOAT"),
             ("balance_dc", "FLOAT"),
         ],
+        "last": [
+            ("nominal_key", "VARCHAR(4)"),
+            ("exchange", "VARCHAR(16)"),
+            ("trading_name", "VARCHAR(32)"),
+            ("risk_name", "VARCHAR(16)"),
+        ],
     }
     with engine.begin() as connection:
         inspector = inspect(connection)
