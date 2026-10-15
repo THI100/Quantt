@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from config import risk, trading
 from core.bot import TradingBot
 from exchange.awm import ensure_env_file, remove_env_file, write_api_credentials
+from utils import stance
 
 s_route = APIRouter()
 bot = TradingBot()
@@ -93,16 +94,14 @@ def get_trading_profiles():
 @s_route.post("/config/trading/profiles")
 def set_active_trading_profile(active_profile: ActiveProfileRequest):
     try:
-        trading.load_trading_config(active_profile.profile_name)
+        current = stance.last.set_trading_profile(active_profile.profile_name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    #contribute(active_profile)
     return {
         "profile_name": active_profile.profile_name,
-        "status": "handler_pending",
+        "active": current,
     }
 
 
@@ -164,16 +163,14 @@ def get_risk_profiles():
 @s_route.post("/config/risk/profiles")
 def set_active_risk_profile(active_profile: ActiveProfileRequest):
     try:
-        risk.load_risk_config(active_profile.profile_name)
+        current = stance.last.set_risk_profile(active_profile.profile_name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-    #contribute(active_profile)
     return {
         "profile_name": active_profile.profile_name,
-        "status": "handler_pending",
+        "active": current,
     }
 
 

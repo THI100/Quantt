@@ -71,7 +71,7 @@ def ensure_config_schema() -> None:
             ("nominal_key", "VARCHAR(4)"),
             ("exchange", "VARCHAR(16)"),
             ("trading_name", "VARCHAR(32)"),
-            ("risk_name", "VARCHAR(16)"),
+            ("risk_name", "VARCHAR(32)"),
         ],
     }
     with engine.begin() as connection:
@@ -83,7 +83,13 @@ def ensure_config_schema() -> None:
             primary_keys = set(
                 inspector.get_pk_constraint(table_name).get("constrained_columns") or []
             )
-            key_name = "exchange" if table_name == "store" else "name"
+            key_name = (
+                "exchange"
+                if table_name == "store"
+                else "nominal_key"
+                if table_name == "last"
+                else "name"
+            )
             if key_name in existing and key_name in primary_keys:
                 continue
 
@@ -106,6 +112,7 @@ def ensure_config_schema() -> None:
             insert_sql = text(
                 f'INSERT INTO "{temp_table}" ({quoted_columns}) VALUES ({placeholders})'
             )
+            seen_keys: set[str] = set()
             for old_row in old_rows:
                 row = {}
                 for column in insert_columns:
@@ -113,9 +120,14 @@ def ensure_config_schema() -> None:
                     row[column] = (
                         old_row[source_column] if source_column in existing else None
                     )
-                row[key_name] = row[key_name] or (
-                    "none" if table_name == "store" else "base"
-                )
+                default_key = {
+                    "store": "none",
+                    "last": "last",
+                }.get(table_name, "base")
+                row[key_name] = row[key_name] or default_key
+                if row[key_name] in seen_keys:
+                    continue
+                seen_keys.add(row[key_name])
                 connection.execute(insert_sql, row)
 
             connection.execute(text(f'DROP TABLE "{table_name}"'))

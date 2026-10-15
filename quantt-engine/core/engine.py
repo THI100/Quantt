@@ -6,7 +6,7 @@ import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
-from config import risk, trading, store
+from config import risk, store, trading
 from data import fetch
 
 

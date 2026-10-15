@@ -88,7 +88,7 @@ class Store(Base):
 class Last(Base):
     __tablename__ = "last"
 
-    nominal_key: Mapped[str] = mapped_column(String(4))
+    nominal_key: Mapped[str] = mapped_column(String(4), primary_key=True)
     exchange: Mapped[str] = mapped_column(String(16))
     trading_name: Mapped[str] = mapped_column(String(32))
     risk_name: Mapped[str] = mapped_column(String(32))

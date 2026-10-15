@@ -69,8 +69,11 @@ class ConfigWatcher:
                 raise RuntimeError(error)
             return default_cfg
 
-    def get_config(self, pn: str) -> TradingConfigPYD:
-        """Return the latest configuration stored in SQLite."""
+    def get_config(self, pn: str | None = None) -> TradingConfigPYD:
+        """Return the latest active configuration stored in SQLite."""
+        from utils.stance import last
+
+        pn = last.get_last()["trading_name"]
         self.config = self.reload(pn)
         return self.config
 

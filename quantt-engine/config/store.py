@@ -43,8 +43,11 @@ class ConfigWatcher:
                 raise RuntimeError(error)
             return default_sfg
 
-    def get_config(self, pn: str) -> StorePYD:
+    def get_config(self, pn: str | None = None) -> StorePYD:
         """Return the latest configuration stored in SQLite."""
+        from utils.stance import last
+
+        pn = last.get_last()["exchange"]
         self.config = self.reload(pn)
         return self.config
 

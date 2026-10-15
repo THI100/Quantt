@@ -47,8 +47,11 @@ class ConfigWatcher:
                 raise RuntimeError(error)
             return default_cfg
 
-    def get_config(self, pn: str) -> RiskConfigPYD:
-        """Return the latest configuration stored in SQLite."""
+    def get_config(self) -> RiskConfigPYD:
+        """Return the latest active configuration stored in SQLite."""
+        from utils.stance import last
+
+        pn = last.get_last()["risk_name"]
         self.config = self.reload(pn)
         return self.config
 
