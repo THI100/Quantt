@@ -1,13 +1,22 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+import os from "node:os";
 import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let pyProc = null;
+
+ipcMain.handle("get-credential-encryption-identity", () => ({
+  username: process.env.USERNAME || process.env.USER || "",
+  ipv6Addresses: Object.values(os.networkInterfaces())
+    .flatMap((addresses) => addresses ?? [])
+    .filter((address) => address.family === "IPv6" && !address.internal)
+    .map((address) => address.address.split("%")[0]),
+}));
 
 function startPythonBackend() {
   let pyBinaryPath;

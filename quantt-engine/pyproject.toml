@@ -26,8 +26,9 @@ dependencies = [
     "pydantic>=2.6.0",
     "pydantic-settings>=2.2.0",
     "fastapi>=0.110.0",
-    "uvicorn[standard]>=0.29.0"
-    "pyinstaller>=6.19.0"
+    "uvicorn[standard]>=0.29.0",
+    "pyinstaller>=6.19.0",
+    "cryptography>=50.0.0"
 ]
 
 # Explicitly tell setuptools what to bundle

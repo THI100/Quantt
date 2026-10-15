@@ -15,7 +15,7 @@ For this 0.1.1 version update: The plan is mainly to add support to the supposel
   7. Update that MEXC doesnt have an demo trading mode on the UI. (X)
   8. Correct the usage of get_orders for the functionability of bybit, utilizing other methods to cover the function: manage_open_symbols, update is located in line 33, the update will be executed within data.fetch. (X)
   9. Update the link of new relationship of exchange order code to exchange within persistance.models, and make sure it is working.
-  10. Add cryptography to the API send and receive.
+  10. Add cryptography to the API send and receive. (X)
 
 Generalized goals:
 

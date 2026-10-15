@@ -1,7 +1,14 @@
+import base64
+import hashlib
+import ipaddress
+import json
+import os
+import socket
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from config import risk, trading
 from core.bot import TradingBot
@@ -12,9 +19,43 @@ bot = TradingBot()
 
 
 class APIConfig(BaseModel):
-    api_key: str
-    api_secret: str
-    exchange: str
+    encrypted_credentials: dict
+
+
+def decrypt_api_credentials(envelope: dict) -> dict:
+    """Decrypt credentials encrypted by the desktop UI's AES-GCM envelope."""
+    try:
+        if envelope.get("version") != 1 or envelope.get("kdf") != "PBKDF2-SHA256":
+            raise ValueError("Unsupported credential encryption format")
+        iterations = int(envelope["iterations"])
+        if iterations != 250000:
+            raise ValueError("Unsupported key derivation settings")
+
+        username = os.environ.get("USERNAME") or os.environ.get("USER") or ""
+        ipv6_address = str(ipaddress.IPv6Address(envelope["ipv6_address"]))
+        try:
+            records = socket.getaddrinfo(
+                socket.gethostname(), None, socket.AF_INET6, socket.SOCK_DGRAM
+            )
+            ipv6_addresses = {record[4][0].split("%")[0] for record in records}
+        except OSError:
+            ipv6_addresses = set()
+        if ipv6_address not in ipv6_addresses:
+            raise ValueError("Encryption IPv6 address does not belong to this device")
+        if not username or not ipv6_address:
+            raise ValueError("Could not determine this device's username and IPv6 address")
+
+        salt = base64.b64decode(envelope["salt"], validate=True)
+        iv = base64.b64decode(envelope["iv"], validate=True)
+        ciphertext = base64.b64decode(envelope["ciphertext"], validate=True)
+        if len(salt) != 16 or len(iv) != 12:
+            raise ValueError("Invalid credential encryption envelope")
+        key = hashlib.pbkdf2_hmac(
+            "sha256", f"{username}:{ipv6_address}".encode(), salt, iterations, dklen=32
+        )
+        return json.loads(AESGCM(key).decrypt(iv, ciphertext, None))
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Unable to decrypt API credentials") from exc
 
 
 # ------------------------------------------------------------------ #
@@ -202,7 +243,10 @@ def update_api(config: APIConfig):
     Updates or adds API key and secret for a specific exchange.
     """
     try:
-        return write_api_credentials(config.api_key, config.api_secret, config.exchange)
+        credentials = decrypt_api_credentials(config.encrypted_credentials)
+        return write_api_credentials(
+            credentials["api_key"], credentials["api_secret"], credentials["exchange"]
+        )
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to update API credentials: {str(e)}"

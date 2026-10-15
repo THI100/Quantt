@@ -3,6 +3,8 @@ import { contextBridge, ipcRenderer, shell } from "electron";
 contextBridge.exposeInMainWorld("electronAPI", {
   // 1. Function to get the app version or system info
   getPlatform: () => process.platform,
+  getCredentialEncryptionIdentity: () =>
+    ipcRenderer.invoke("get-credential-encryption-identity"),
 
   // 2. Send a message to the Main process
   sendMessage: (channel, data) => {
