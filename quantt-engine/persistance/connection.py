@@ -74,57 +74,57 @@ def ensure_config_schema() -> None:
             ("risk_name", "VARCHAR(32)"),
         ],
     }
+    primary_keys = {
+        "trading_config": "name",
+        "risk_config": "name",
+        "store": "exchange",
+        "last": "nominal_key",
+    }
+    defaults = {"store": "none", "last": "last"}
+
     with engine.begin() as connection:
         inspector = inspect(connection)
+        table_columns = {
+            table: {column["name"] for column in inspector.get_columns(table)}
+            for table in config_columns
+            if inspector.has_table(table)
+        }
+
         for table_name, columns in config_columns.items():
-            if not inspector.has_table(table_name):
+            if table_name not in table_columns:
                 continue
-            existing = {column["name"] for column in inspector.get_columns(table_name)}
-            primary_keys = set(
+            existing = table_columns[table_name]
+            key_name = primary_keys[table_name]
+            primary_key = set(
                 inspector.get_pk_constraint(table_name).get("constrained_columns") or []
             )
-            key_name = (
-                "exchange"
-                if table_name == "store"
-                else "nominal_key"
-                if table_name == "last"
-                else "name"
-            )
-            if key_name in existing and key_name in primary_keys:
+            if key_name in existing and key_name in primary_key:
                 continue
 
             temp_table = f"{table_name}_profile_migration"
-            columns_sql = ", ".join(f'"{column}" {kind}' for column, kind in columns)
+            insert_columns = [name for name, _ in columns]
+            columns_sql = ", ".join(f'"{name}" {kind}' for name, kind in columns)
+            quoted_columns = ", ".join(f'"{name}"' for name in insert_columns)
+            placeholders = ", ".join(f":{name}" for name in insert_columns)
+
             connection.execute(text(f'DROP TABLE IF EXISTS "{temp_table}"'))
             connection.execute(
                 text(
-                    f'CREATE TABLE "{temp_table}" '
-                    f'({columns_sql}, PRIMARY KEY ("{key_name}"))'
+                    f'CREATE TABLE "{temp_table}" ({columns_sql}, PRIMARY KEY ("{key_name}"))'
                 )
             )
-
-            old_rows = connection.execute(
-                text(f'SELECT * FROM "{table_name}"')
-            ).mappings()
-            insert_columns = [column for column, _ in columns]
-            placeholders = ", ".join(f":{column}" for column in insert_columns)
-            quoted_columns = ", ".join('"' + column + '"' for column in insert_columns)
             insert_sql = text(
                 f'INSERT INTO "{temp_table}" ({quoted_columns}) VALUES ({placeholders})'
             )
-            seen_keys: set[str] = set()
-            for old_row in old_rows:
-                row = {}
-                for column in insert_columns:
-                    source_column = column if column in existing else None
-                    row[column] = (
-                        old_row[source_column] if source_column in existing else None
-                    )
-                default_key = {
-                    "store": "none",
-                    "last": "last",
-                }.get(table_name, "base")
-                row[key_name] = row[key_name] or default_key
+            seen_keys = set()
+            for old_row in connection.execute(
+                text(f'SELECT * FROM "{table_name}"')
+            ).mappings():
+                row = {
+                    name: old_row[name] if name in existing else None
+                    for name in insert_columns
+                }
+                row[key_name] = row[key_name] or defaults.get(table_name, "base")
                 if row[key_name] in seen_keys:
                     continue
                 seen_keys.add(row[key_name])
@@ -134,92 +134,62 @@ def ensure_config_schema() -> None:
             connection.execute(
                 text(f'ALTER TABLE "{temp_table}" RENAME TO "{table_name}"')
             )
+            table_columns[table_name] = set(insert_columns)
 
-        schema_inspector = inspect(connection)
-        if schema_inspector.has_table("trading_config"):
-            trading_columns = {
-                column["name"]
-                for column in schema_inspector.get_columns("trading_config")
-            }
-            if {"name", "exchange"}.issubset(trading_columns):
-                connection.execute(
-                    text(
-                        'UPDATE "trading_config" SET "exchange" = :exchange '
-                        'WHERE "exchange" IS NULL OR upper("exchange") = :legacy_value'
-                    ),
-                    {"exchange": "binance", "legacy_value": "NULL"},
-                )
+        trading_columns = table_columns.get("trading_config", set())
+        last_columns = table_columns.get("last", set())
+        if {"name", "exchange"}.issubset(trading_columns):
+            connection.execute(
+                text(
+                    'UPDATE "trading_config" SET "exchange" = :exchange '
+                    'WHERE "exchange" IS NULL OR upper("exchange") = :legacy_value'
+                ),
+                {"exchange": "binance", "legacy_value": "NULL"},
+            )
 
-        if schema_inspector.has_table("last") and schema_inspector.has_table(
-            "trading_config"
-        ):
-            last_columns = {
-                column["name"] for column in schema_inspector.get_columns("last")
-            }
-            trading_columns = {
-                column["name"]
-                for column in schema_inspector.get_columns("trading_config")
-            }
-            if {"nominal_key", "exchange", "trading_name"}.issubset(
-                last_columns
-            ) and {"name", "exchange"}.issubset(trading_columns):
-                connection.execute(
-                    text(
-                        'UPDATE "last" SET "exchange" = COALESCE('
-                        '(SELECT "exchange" FROM "trading_config" '
-                        'WHERE "name" = "last"."trading_name"), :exchange) '
-                        'WHERE "exchange" IS NULL OR upper("exchange") = :legacy_value'
-                    ),
-                    {"exchange": "binance", "legacy_value": "NULL"},
-                )
+        if {"nominal_key", "exchange", "trading_name"}.issubset(last_columns) and {
+            "name",
+            "exchange",
+        }.issubset(trading_columns):
+            connection.execute(
+                text(
+                    'UPDATE "last" SET "exchange" = COALESCE('
+                    '(SELECT "exchange" FROM "trading_config" '
+                    'WHERE "name" = "last"."trading_name"), :exchange) '
+                    'WHERE "exchange" IS NULL OR upper("exchange") = :legacy_value'
+                ),
+                {"exchange": "binance", "legacy_value": "NULL"},
+            )
 
-        order_inspector = inspect(connection)
-        if order_inspector.has_table("general_orders"):
+        if inspector.has_table("general_orders"):
             order_columns = {
-                column["name"]
-                for column in order_inspector.get_columns("general_orders")
+                column["name"] for column in inspector.get_columns("general_orders")
             }
             if "exchange" not in order_columns:
                 connection.execute(
                     text(
-                        'ALTER TABLE "general_orders" '
-                        'ADD COLUMN "exchange" VARCHAR(16)'
+                        'ALTER TABLE "general_orders" ADD COLUMN "exchange" VARCHAR(16)'
                     )
                 )
 
             active_exchange = None
-            if order_inspector.has_table("last"):
-                last_columns = {
-                    column["name"] for column in order_inspector.get_columns("last")
-                }
-                if {"nominal_key", "exchange"}.issubset(last_columns):
-                    active_exchange = connection.execute(
-                        text(
-                            'SELECT "exchange" FROM "last" '
-                            'WHERE "nominal_key" = :nominal_key'
-                        ),
-                        {"nominal_key": "last"},
-                    ).scalar_one_or_none()
-
-            if not active_exchange and order_inspector.has_table("trading_config"):
-                trading_columns = {
-                    column["name"]
-                    for column in order_inspector.get_columns("trading_config")
-                }
-                if {"name", "exchange"}.issubset(trading_columns):
-                    active_exchange = connection.execute(
-                        text(
-                            'SELECT "exchange" FROM "trading_config" '
-                            'WHERE "name" = :profile_name'
-                        ),
-                        {"profile_name": "base"},
-                    ).scalar_one_or_none()
-
+            if {"nominal_key", "exchange"}.issubset(last_columns):
+                active_exchange = connection.execute(
+                    text('SELECT "exchange" FROM "last" WHERE "nominal_key" = :key'),
+                    {"key": "last"},
+                ).scalar_one_or_none()
+            if not active_exchange and {"name", "exchange"}.issubset(trading_columns):
+                active_exchange = connection.execute(
+                    text(
+                        'SELECT "exchange" FROM "trading_config" WHERE "name" = :name'
+                    ),
+                    {"name": "base"},
+                ).scalar_one_or_none()
             if active_exchange:
                 connection.execute(
                     text(
                         'UPDATE "general_orders" SET "exchange" = :exchange '
-                        "WHERE \"exchange\" IS NULL OR \"exchange\" = ''"
+                        'WHERE "exchange" IS NULL OR "exchange" = \'\''
                     ),
                     {"exchange": active_exchange},
                 )
