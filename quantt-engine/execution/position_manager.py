@@ -9,13 +9,13 @@ from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
-from utils import stance
 from utils.rate_lim import std_call
+
+active_exchange = trading.watcher.get_config().exchange
 
 
 def manage_open_symbols():
     symbol_status = {}
-    active_exchange = stance.last.get_last()["exchange"]
 
     # Using context manager for the entire loop to ensure session safety
     with SessionLocal() as session:
@@ -113,7 +113,6 @@ def manage_open_symbols():
 
 def manage_open_limit(client):
     typ = "limit"
-    active_exchange = stance.last.get_last()["exchange"]
 
     for symbol in trading.watcher.get_config().list_of_interest:
         current_open = fetch.get_open_orders(symbol, 10)

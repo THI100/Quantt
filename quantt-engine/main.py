@@ -2,6 +2,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# Register all ORM models and create/migrate the database before importing API
+# modules, which may initialize configuration and exchange clients at import time.
+from persistance.connection import ensure_config_schema
+
+ensure_config_schema()
+
 from api import principal, report, set
 from config import store
 from core.bot import TradingBot

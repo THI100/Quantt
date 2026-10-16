@@ -27,8 +27,7 @@ class TradingConfigPYD(BaseModel):
         "dydx",
         "hyperliquid",
         "lighter",
-        "NULL",
-    ] = "NULL"
+    ] = "binance"
     execution_order: Literal["market", "limit"] = "limit"
     future_spot: Literal["future", "spot"] = "spot"
     list_of_interest: list[str] = Field(
@@ -71,10 +70,11 @@ class ConfigWatcher:
 
     def get_config(self, pn: str | None = None) -> TradingConfigPYD:
         """Return the latest active configuration stored in SQLite."""
-        if pn is None:
-            from utils.stance import last
+        from utils.stance import last
 
-            pn = last.get_last()["trading_name"]
+        active = last.get_last()
+        if pn is None:
+            pn = active["trading_name"]
         self.config = self.reload(pn)
         return self.config
 

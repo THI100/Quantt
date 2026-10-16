@@ -49,10 +49,11 @@ class ConfigWatcher:
 
     def get_config(self, pn: str | None = None) -> RiskConfigPYD:
         """Return the latest active configuration stored in SQLite."""
-        if pn is None:
-            from utils.stance import last
+        from utils.stance import last
 
-            pn = last.get_last()["risk_name"]
+        active = last.get_last()
+        if pn is None:
+            pn = active["risk_name"]
         self.config = self.reload(pn)
         return self.config
 

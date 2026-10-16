@@ -135,6 +135,44 @@ def ensure_config_schema() -> None:
                 text(f'ALTER TABLE "{temp_table}" RENAME TO "{table_name}"')
             )
 
+        schema_inspector = inspect(connection)
+        if schema_inspector.has_table("trading_config"):
+            trading_columns = {
+                column["name"]
+                for column in schema_inspector.get_columns("trading_config")
+            }
+            if {"name", "exchange"}.issubset(trading_columns):
+                connection.execute(
+                    text(
+                        'UPDATE "trading_config" SET "exchange" = :exchange '
+                        'WHERE "exchange" IS NULL OR upper("exchange") = :legacy_value'
+                    ),
+                    {"exchange": "binance", "legacy_value": "NULL"},
+                )
+
+        if schema_inspector.has_table("last") and schema_inspector.has_table(
+            "trading_config"
+        ):
+            last_columns = {
+                column["name"] for column in schema_inspector.get_columns("last")
+            }
+            trading_columns = {
+                column["name"]
+                for column in schema_inspector.get_columns("trading_config")
+            }
+            if {"nominal_key", "exchange", "trading_name"}.issubset(
+                last_columns
+            ) and {"name", "exchange"}.issubset(trading_columns):
+                connection.execute(
+                    text(
+                        'UPDATE "last" SET "exchange" = COALESCE('
+                        '(SELECT "exchange" FROM "trading_config" '
+                        'WHERE "name" = "last"."trading_name"), :exchange) '
+                        'WHERE "exchange" IS NULL OR upper("exchange") = :legacy_value'
+                    ),
+                    {"exchange": "binance", "legacy_value": "NULL"},
+                )
+
         order_inspector = inspect(connection)
         if order_inspector.has_table("general_orders"):
             order_columns = {
