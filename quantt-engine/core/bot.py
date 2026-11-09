@@ -1,4 +1,3 @@
-import os
 import sys
 import threading
 import time
@@ -25,6 +24,10 @@ class TradingBot:
     def __init__(self):
         self.DB_PATH = DIR / "qdata" / "general.db"
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if self.DB_PATH.is_file():
+            logger.info("Database already exists. Ensuring schema is current.")
+        else:
+            logger.info("Initializing database...")
         ensure_config_schema()
 
         self.client = cached_client()
@@ -34,11 +37,6 @@ class TradingBot:
     def setup_environment(self):
         """Initializes database and exchange settings."""
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-        if os.path.exists(self.DB_PATH):
-            logger.info("Database already exists. Ensuring schema is current.")
-        else:
-            logger.info("Initializing database...")
         ensure_config_schema()
 
         try:

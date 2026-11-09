@@ -12,8 +12,6 @@ from utils.rate_lim import std_call
 
 # --------------------- Helpers --------------------- #
 
-exchange = trading.watcher.get_config().exchange
-
 
 def _order_ice(
     client,
@@ -23,6 +21,7 @@ def _order_ice(
     tp: Optional[float],
     sl: Optional[float],
     order_id: str,
+    exchange_name: str,
 ):
     """Sets Stop Loss and Take Profit for a specific iceberg slice."""
     exit_side = "sell" if side.lower() == "buy" else "buy"
@@ -32,11 +31,12 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "market" if exchange != "binance" else "STOP_LOSS",
+            "market" if exchange_name != "binance" else "STOP_LOSS",
             exit_side,
             total_amount,
             sl,
             order_id,
+            exchange_name,
             "stop_id",
             SessionLocal,
         )
@@ -46,11 +46,12 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "market" if exchange != "binance" else "TAKE_PROFIT",
+            "market" if exchange_name != "binance" else "TAKE_PROFIT",
             exit_side,
             total_amount,
             tp,
             order_id,
+            exchange_name,
             "take_id",
             SessionLocal,
         )
@@ -64,6 +65,7 @@ def _place_linked_order(
     amount,
     trigger_price,
     parent_id,
+    exchange_name,
     id_field,
     session_factory,
 ):
@@ -90,14 +92,14 @@ def _place_linked_order(
 
         with session_factory() as session:
             try:
-                parent = session.get(GeneralOrder, (parent_id, exchange))
+                parent = session.get(GeneralOrder, (parent_id, exchange_name))
                 if parent:
                     setattr(parent, id_field, order_data["id"])
 
                 # Create Linked Order Record
                 new_linked = TakeStopOrder(
                     id=order_data["id"],
-                    exchange=exchange,
+                    exchange=exchange_name,
                     parent_order_id=parent_id,
                     price=order_data.get("triggerPrice", trigger_price),
                     amount=order_data["amount"],
@@ -131,6 +133,10 @@ def order(
     stop_loss: Optional[float] = None,
     take_profit: Optional[float] = None,
 ):
+    trading_config = trading.watcher.get_config()
+    active_exchange = trading_config.exchange
+    active_type = type.lower()
+
     # 1. Determine Sides
     entry_side = sell_buy.lower()
     exit_side = "sell" if entry_side == "buy" else "buy"
@@ -157,7 +163,7 @@ def order(
         try:
             new_order = GeneralOrder(
                 id=general_id,
-                exchange=exchange,
+                exchange=active_exchange,
                 price=entry_order.get("average")
                 if type == "market"
                 else entry_order.get("price"),
@@ -203,6 +209,7 @@ def order(
             amount,
             stop_loss,
             general_id,
+            active_exchange,
             "stop_id",
             session_factory=SessionLocal,
         )
@@ -217,6 +224,7 @@ def order(
             amount,
             take_profit,
             general_id,
+            active_exchange,
             "take_id",
             session_factory=SessionLocal,
         )
@@ -228,6 +236,7 @@ def order(
 def execute_iceberg(
     client, market: str, total_amount: float, side: str, tp: float, sl: float
 ):
+    active_exchange = trading.watcher.get_config().exchange
     remaining_amount = total_amount
     chunk_size = total_amount * 0.1
 
@@ -265,7 +274,7 @@ def execute_iceberg(
                 try:
                     new_order = GeneralOrder(
                         id=order_id,
-                        exchange=exchange,
+                        exchange=active_exchange,
                         price=order_resp.get("average", target_price),
                         entrance_exit="entrance",
                         amount=order_resp["amount"],
@@ -283,7 +292,16 @@ def execute_iceberg(
                     session.close()
 
             # 4. Attach Protection (SL/TP)
-            _order_ice(client, market, current_slice, normalized_side, tp, sl, order_id)
+            _order_ice(
+                client,
+                market,
+                current_slice,
+                normalized_side,
+                tp,
+                sl,
+                order_id,
+                active_exchange,
+            )
 
             # 5. Wait for fill (Iceberg logic)
             time.sleep(30)

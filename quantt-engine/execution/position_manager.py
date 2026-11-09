@@ -113,9 +113,11 @@ def manage_open_symbols():
 
 def manage_open_limit(client):
     typ = "limit"
+    trading_config = trading.watcher.get_config()
+    active_exchange = trading_config.exchange
 
-    for symbol in trading.watcher.get_config().list_of_interest:
-        current_open = fetch.get_open_orders(symbol, 10)
+    for symbol in trading_config.list_of_interest:
+        current_open = fetch.get_open_orders(symbol)
 
         for x in current_open:
             if x.get("reduceOnly") is True or x.get("status") == "filled":
@@ -140,21 +142,77 @@ def manage_open_limit(client):
                 if not old_order:
                     continue
 
-                s = x.get("side").lower()
-                amt = x.get("amount")
-                p = rm.blp(symbol, s, amt)
+                s = x.get("side", "").lower()
+                info = x.get("info") or {}
+                amount_value = x.get("amount")
+                if amount_value is None:
+                    amount_value = info.get("origQty")
+                try:
+                    order_amount = float(amount_value)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        f"Skipping order {order_id}: invalid amount {amount_value!r}"
+                    )
+                    continue
+
+                executed_value = x.get("filled")
+                if executed_value is None:
+                    executed_value = x.get("executedQty")
+                if executed_value is None:
+                    executed_value = info.get("executedQty")
+                if executed_value is None and x.get("remaining") is not None:
+                    try:
+                        executed_value = order_amount - float(x["remaining"])
+                    except (TypeError, ValueError):
+                        executed_value = 0
+                try:
+                    executed_amount = float(executed_value or 0)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        f"Skipping order {order_id}: invalid executed quantity "
+                        f"{executed_value!r}"
+                    )
+                    continue
+
+                remaining_amount = max(order_amount - executed_amount, 0.0)
+                if remaining_amount <= 0:
+                    continue
 
                 try:
                     # 1. Exchange Action
+                    cancel_result = std_call(
+                        client.cancel_order, id=order_id, symbol=symbol
+                    )
 
-                    std_call(client.cancel_order, id=order_id, symbol=symbol)
+                    # The order may fill more while cancellation is in flight.
+                    cancel_info = (
+                        cancel_result.get("info") or {}
+                        if isinstance(cancel_result, dict)
+                        else {}
+                    )
+                    cancel_filled = (
+                        cancel_result.get("filled")
+                        if isinstance(cancel_result, dict)
+                        else None
+                    )
+                    if cancel_filled is None and isinstance(cancel_result, dict):
+                        cancel_filled = cancel_result.get("executedQty")
+                    if cancel_filled is None:
+                        cancel_filled = cancel_info.get("executedQty")
+                    if cancel_filled is not None:
+                        executed_amount = max(executed_amount, float(cancel_filled))
+                        remaining_amount = max(order_amount - executed_amount, 0.0)
+                    if remaining_amount <= 0:
+                        continue
+
+                    p = rm.blp(symbol, s, remaining_amount)
 
                     new_exchange_order = std_call(
                         client.create_order,
                         symbol=symbol,
                         type=typ,
                         side=s,
-                        amount=amt,
+                        amount=remaining_amount,
                         price=p,
                     )
                     new_id = str(new_exchange_order["id"])
@@ -165,7 +223,10 @@ def manage_open_limit(client):
                         exchange=active_exchange,
                         price=new_exchange_order.get("price"),
                         entrance_exit="entrance",
-                        amount=new_exchange_order.get("amount", amt),
+                        # Preserve the original total quantity on the logical
+                        # order; the replacement exchange order is only the
+                        # still-unfilled quantity.
+                        amount=old_order.amount,
                         side=new_exchange_order.get("side"),
                         symbol=symbol,
                         order_type=typ,
@@ -178,7 +239,7 @@ def manage_open_limit(client):
                     # 3. Re-link children to the NEW ID
                     children = (
                         session.query(TakeStopOrder)
-                        .filter_by(parent_order_id=order_id)
+                        .filter_by(parent_order_id=order_id, exchange=active_exchange)
                         .all()
                     )
                     for child in children:
