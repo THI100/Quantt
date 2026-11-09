@@ -165,8 +165,8 @@ export default function Settings() {
       <div className="control-bar">
         <div className="control-status">
           <div className="status-indicator highlight-silver-bg"></div>
-          <span className="status-text silver-text">
-            Storage: <strong>Zustand → LocalStorage (bot-settings)</strong>
+            <span className="status-text silver-text">
+            Storage: <strong>Zustand → LocalStorage (store)</strong>
           </span>
         </div>
       </div>
