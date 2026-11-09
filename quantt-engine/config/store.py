@@ -89,7 +89,7 @@ def save_store(sfg: StorePYD) -> str | None:
         row.data = sfg.last_updated
         row.balance_dt = sfg.balances.get("USDT", 0.0)
         row.balance_dc = sfg.balances.get("USDC", 0.0)
-        session.add(row)
+        session.merge(row)
         session.commit()
         return None
     except Exception as exc:

@@ -1,8 +1,16 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import JSON, Boolean, DateTime, Float, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKeyConstraint,
+    Integer,
+    String,
+)
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .connection import Base
 
@@ -11,7 +19,7 @@ class GeneralOrder(Base):
     __tablename__ = "general_orders"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
-    exchange: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    exchange: Mapped[str] = mapped_column(String(16), primary_key=True)
     entrance_exit: Mapped[str] = mapped_column(String(10))
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
@@ -20,23 +28,26 @@ class GeneralOrder(Base):
     order_type: Mapped[str] = mapped_column(String(20))
     time: Mapped[str] = mapped_column(String(32))
     previous_time: Mapped[str] = mapped_column(String(32), nullable=True)
-    # Foreign Keys to TakeStopOrders
-    take_id: Mapped[Optional[str]] = mapped_column(
-        String(32), ForeignKey("take_stop_orders.id")
-    )
-    stop_id: Mapped[Optional[str]] = mapped_column(
-        String(32), ForeignKey("take_stop_orders.id")
-    )
-    # Relationships
-    take_order: Mapped[Optional["TakeStopOrder"]] = relationship(foreign_keys=[take_id])
-    stop_order: Mapped[Optional["TakeStopOrder"]] = relationship(foreign_keys=[stop_id])
+    # Exchange order IDs are only unique within an exchange. Keep these as
+    # lookup values rather than foreign keys; the linked order stores the
+    # authoritative composite reference back to this order.
+    take_id: Mapped[Optional[str]] = mapped_column(String(32))
+    stop_id: Mapped[Optional[str]] = mapped_column(String(32))
 
 
 class TakeStopOrder(Base):
     __tablename__ = "take_stop_orders"
 
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["parent_order_id", "exchange"],
+            ["general_orders.id", "general_orders.exchange"],
+        ),
+    )
+
     id: Mapped[str] = mapped_column(String(32), primary_key=True)
-    parent_order_id: Mapped[int] = mapped_column(ForeignKey("general_orders.id"))
+    exchange: Mapped[str] = mapped_column(String(16), primary_key=True)
+    parent_order_id: Mapped[str] = mapped_column(String(32), nullable=False)
     price: Mapped[float] = mapped_column(Float, nullable=False)
     amount: Mapped[float] = mapped_column(Float, nullable=False)
     side: Mapped[str] = mapped_column(String(10))

@@ -15,7 +15,7 @@ class LastConfigManager:
         with SessionLocal() as session:
             record = session.get(LastRecord, self.nominal_key)
             if record is None:
-                session.add(LastRecord(nominal_key=self.nominal_key, **defaults))
+                session.merge(LastRecord(nominal_key=self.nominal_key, **defaults))
                 session.commit()
                 created = True
 
@@ -56,7 +56,7 @@ class LastConfigManager:
 
             for key, value in values.items():
                 setattr(record, key, value)
-            session.add(record)
+            session.merge(record)
             session.commit()
 
         return self.get_last()

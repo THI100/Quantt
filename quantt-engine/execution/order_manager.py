@@ -90,13 +90,14 @@ def _place_linked_order(
 
         with session_factory() as session:
             try:
-                parent = session.get(GeneralOrder, parent_id)
+                parent = session.get(GeneralOrder, (parent_id, exchange))
                 if parent:
                     setattr(parent, id_field, order_data["id"])
 
                 # Create Linked Order Record
                 new_linked = TakeStopOrder(
                     id=order_data["id"],
+                    exchange=exchange,
                     parent_order_id=parent_id,
                     price=order_data.get("triggerPrice", trigger_price),
                     amount=order_data["amount"],

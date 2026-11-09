@@ -17,7 +17,7 @@ from persistance.models import RiskConfig
 class RiskConfigPYD(BaseModel):
     name: str = "base"
     risk_reward_ratio: float = Field(default=2.0, ge=0, le=10)
-    acceptable_confidence: int = Field(default=40, ge=0, le=100)
+    acceptable_confidence: int = Field(default=65, ge=0, le=100)
     atr_multiplier: float = 0.4
     maximum_loss: float = Field(default=0.15, gt=0, le=1)  # Still
     percentage_of_capital_per_trade: float = Field(default=0.02, gt=0, le=1)
@@ -93,7 +93,7 @@ def save_risk_config(cfg: RiskConfigPYD) -> str | None:
         row = session.get(RiskConfig, cfg.name) or RiskConfig(name=cfg.name)
         for key, value in cfg.model_dump().items():
             setattr(row, key, value)
-        session.add(row)
+        session.merge(row)
         session.commit()
         return None
     except Exception as exc:

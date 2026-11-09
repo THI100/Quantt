@@ -29,7 +29,7 @@ class TradingConfigPYD(BaseModel):
         "lighter",
     ] = "binance"
     execution_order: Literal["market", "limit"] = "limit"
-    future_spot: Literal["future", "spot"] = "spot"
+    future_spot: Literal["future", "spot"] = "future"
     list_of_interest: list[str] = Field(
         default_factory=lambda: [
             "BTC/USDT",
@@ -113,7 +113,7 @@ def save_trading_config(cfg: TradingConfigPYD) -> str | None:
         row = session.get(TradingConfig, cfg.name) or TradingConfig(name=cfg.name)
         for key, value in cfg.model_dump().items():
             setattr(row, key, value)
-        session.add(row)
+        session.merge(row)
         session.commit()
         return None
     except Exception as exc:
