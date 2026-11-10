@@ -172,13 +172,10 @@ export default function Topbar({
   };
 
   useEffect(() => {
-    onStatusClick();
-    handleExchange();
-
     const interval = setInterval(() => {
       onStatusClick();
       handleExchange();
-    }, { "500ms": 500, "1s": 1000, "5s": 5000 }[refreshRate]);
+    }, { "500ms": 500, "1s": 1000, "5s": 5000, "10s": 10000, "30s": 30000 }[refreshRate]);
     return () => clearInterval(interval);
   }, [onStatusClick, handleExchange, refreshRate]);
 

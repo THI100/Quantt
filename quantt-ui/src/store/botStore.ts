@@ -1,14 +1,12 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 
-const aHasRun = false;
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface UISettings {
   darkMode: boolean;
   compactMode: boolean;
-  refreshRate: "500ms" | "1s" | "5s";
+  refreshRate: "500ms" | "1s" | "5s" | "10s" | "30s";
   showNotifications: boolean;
 }
 
@@ -38,7 +36,7 @@ export interface BotStoreState {
 const DEFAULT_UI: UISettings = {
   darkMode: true,
   compactMode: false,
-  refreshRate: "1s",
+  refreshRate: "30s",
   showNotifications: true,
 };
 

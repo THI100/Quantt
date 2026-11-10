@@ -66,11 +66,15 @@ def manage_open_symbols():
                             is_now_closed_on_exchange = True
                             break
 
-                        tp_price = (
-                            last_record.take_order.price
-                            if last_record.take_order
+                        take_order = (
+                            session.get(
+                                TakeStopOrder,
+                                (last_record.take_id, last_record.exchange),
+                            )
+                            if last_record.take_id
                             else None
                         )
+                        tp_price = take_order.price if take_order else None
                         is_tp_hit = (
                             tp_price
                             and abs(trade["price"] - tp_price) / tp_price < 0.0005

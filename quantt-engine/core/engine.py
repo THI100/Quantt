@@ -10,6 +10,12 @@ from config import risk, store, trading
 from data import fetch
 
 
+def _safe_divide(numerator, denominator):
+    if denominator == 0:
+        return None
+    return numerator / denominator
+
+
 def avaliation_and_place(client):
     # 1. Initialize data
     trading_config = trading.watcher.get_config()
@@ -90,8 +96,13 @@ def avaliation_and_place(client):
         act_price = act_price.get("last")
 
         # 7.1. Minimum Structural Distance Check
-        risk_percent_act = abs(act_price - sl) / act_price
-        risk_percent = abs(entry_price - sl) / entry_price
+        risk_percent_act = _safe_divide(abs(act_price - sl), act_price)
+        risk_percent = _safe_divide(abs(entry_price - sl), entry_price)
+        if risk_percent_act is None or risk_percent is None:
+            logger.warning(
+                f"Skipping {symbol}: Cannot calculate stop risk with a zero price."
+            )
+            continue
         min_dist = 0.003
 
         if risk_percent and risk_percent_act < min_dist:
@@ -101,8 +112,13 @@ def avaliation_and_place(client):
             continue
 
         # 7.2. Risk/Reward Check
-        current_rrr_act = abs(tp - act_price) / abs(act_price - sl)
-        current_rrr = abs(tp - entry_price) / abs(entry_price - sl)
+        current_rrr_act = _safe_divide(abs(tp - act_price), abs(act_price - sl))
+        current_rrr = _safe_divide(abs(tp - entry_price), abs(entry_price - sl))
+        if current_rrr_act is None or current_rrr is None:
+            logger.warning(
+                f"Skipping {symbol}: Cannot calculate risk/reward with a zero stop distance."
+            )
+            continue
         if current_rrr and current_rrr_act < 1.5:
             logger.warning(f"Skipping {symbol}: Poor RR Ratio ({current_rrr:.2f}).")
             continue
