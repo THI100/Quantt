@@ -34,17 +34,8 @@ jobs:
             electron_target: mac
 
     steps:
-      - name: Checkout UI repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: quantt-ui
-
-      - name: Checkout Python engine repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ vars.ENGINE_REPOSITORY }}
-          token: ${{ secrets.ENGINE_REPO_TOKEN }}
-          path: quantt-engine
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -54,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
           cache-dependency-path: quantt-ui/package-lock.json
 
@@ -146,10 +137,8 @@ jobs:
             executable: QuanttEngine
 
     steps:
-      - name: Checkout UI repository
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: quantt-ui
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
