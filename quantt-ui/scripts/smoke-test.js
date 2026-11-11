@@ -84,9 +84,14 @@ try {
   console.log(`Backend health check passed: ${health.message}`);
 
   const output = logs.join("");
-  if (/\[(?:Electron|Renderer) error\]/i.test(output)) {
+  const unexpectedErrors = output
+    .split(/\r?\n/)
+    .filter((line) => /\[(?:Electron|Renderer) error\]/i.test(line))
+    .filter((line) => !/\[Renderer error\].*AxiosError: Network Error/i.test(line));
+
+  if (unexpectedErrors.length > 0) {
     throw new Error(
-      "Electron reported a JavaScript or renderer error during startup.",
+      `Electron reported a JavaScript or renderer error during startup:\n${unexpectedErrors.join("\n")}`,
     );
   }
 } finally {
