@@ -21,7 +21,11 @@ ipcMain.handle("get-credential-encryption-identity", () => ({
 function startPythonBackend() {
   let pyBinaryPath;
 
-  if (!app.isPackaged) {
+  if (process.env.QUANTT_ENGINE_EXECUTABLE) {
+    pyBinaryPath = process.env.QUANTT_ENGINE_EXECUTABLE;
+    pyProc = spawn(pyBinaryPath);
+    console.log("Spawned configured Python executable.");
+  } else if (!app.isPackaged) {
     // 1. In Development: Run your local python entry script
     // Adjust this path to wherever your backend main.py lives relative to main.js
     pyBinaryPath = path.join(__dirname, "../quantt-engine/main.py");
@@ -46,6 +50,9 @@ function startPythonBackend() {
   // Log Python outputs to Electron terminal for debugging
   pyProc.stdout.on("data", (data) => console.log(`[Python stdout]: ${data}`));
   pyProc.stderr.on("data", (data) => console.error(`[Python stderr]: ${data}`));
+  pyProc.on("error", (error) => {
+    console.error("[Electron error] Failed to start Python backend:", error);
+  });
 
   pyProc.on("close", (code) => {
     console.log(`Python process exited with code ${code}`);
@@ -64,7 +71,19 @@ function createWindow() {
     },
   });
 
-  if (app.isPackaged) {
+  win.webContents.on("console-message", (_event, details) => {
+    if (details.level === 2) {
+      console.error(`[Renderer error] ${details.message}`);
+    }
+  });
+  win.webContents.on("render-process-gone", (_event, details) => {
+    console.error(`[Electron error] Renderer exited: ${details.reason}`);
+  });
+  win.webContents.on("did-fail-load", (_event, code, description, url) => {
+    console.error(`[Electron error] Failed to load ${url}: ${description} (${code})`);
+  });
+
+  if (app.isPackaged || process.env.QUANTT_TEST_MODE) {
     const indexPath = path.join(app.getAppPath(), "dist", "index.html");
 
     console.log("Loading production frontend:", indexPath);
@@ -75,6 +94,16 @@ function createWindow() {
     win.loadURL("http://localhost:5173");
   }
 }
+
+process.on("uncaughtException", (error) => {
+  console.error("[Electron error] Uncaught exception:", error);
+  app.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  console.error("[Electron error] Unhandled rejection:", reason);
+  app.exit(1);
+});
 
 // Start Backend and open the window
 app.whenReady().then(() => {

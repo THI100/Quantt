@@ -2,7 +2,7 @@ import threading
 import time
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from loguru import logger
 
 from config import store
@@ -72,6 +72,19 @@ def get_status():
     if not bot.is_running:
         return {"status": "Offline"}
     return {"status": "Online"}
+
+
+@route.get("/test")
+def test_server():
+    """Report that the API process is healthy and able to serve requests."""
+    try:
+        return {"status": "running", "message": "Server is running."}
+    except Exception as e:
+        logger.exception("Health check failed")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": f"Server error: {e}"},
+        )
 
 
 @route.get("/bot/logging")
