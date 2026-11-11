@@ -261,7 +261,7 @@ def ema(candles: List[List[float]], period: int = 20):
 # ---------- ATR-indicator ----------#
 
 
-def atr(candles: List[List[float]], period: int = 14) -> Tuple[float, float, list]:
+def atr(candles: List[List[float]], period: int = 14) -> tuple[float, float, list]:
     """
     Returns:
         atr_value: float    # last ATR value
@@ -334,7 +334,7 @@ def roc(candles: List[List[float]], period: int = 12):
 
 def supertrend(
     candles: List[List[float]], period: int = 10, multiplier: float = 3.0
-) -> Tuple[float, str, list]:
+) -> tuple[float, str, list]:
     """
     Returns:
         last_st: float      # Latest SuperTrend value
