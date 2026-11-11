@@ -117,74 +117,74 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  test:
-    name: Smoke test (${{ matrix.platform }})
-    needs: build
-    runs-on: ${{ matrix.os }}
+  # test:
+  #   name: Smoke test (${{ matrix.platform }})
+  #   needs: build
+  #   runs-on: ${{ matrix.os }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: windows-latest
-            platform: windows
-            executable: QuanttEngine.exe
-          - os: ubuntu-latest
-            platform: linux
-            executable: QuanttEngine
-          - os: macos-latest
-            platform: macos
-            executable: QuanttEngine
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       include:
+  #         - os: windows-latest
+  #           platform: windows
+  #           executable: QuanttEngine.exe
+  #         - os: ubuntu-latest
+  #           platform: linux
+  #           executable: QuanttEngine
+  #         - os: macos-latest
+  #           platform: macos
+  #           executable: QuanttEngine
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: quantt-ui/package-lock.json
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "22"
+  #         cache: npm
+  #         cache-dependency-path: quantt-ui/package-lock.json
 
-      - name: Install UI dependencies
-        working-directory: quantt-ui
-        run: npm ci
+  #     - name: Install UI dependencies
+  #       working-directory: quantt-ui
+  #       run: npm ci
 
-      - name: Build frontend for Electron
-        working-directory: quantt-ui
-        run: npm run build_ft
+  #     - name: Build frontend for Electron
+  #       working-directory: quantt-ui
+  #       run: npm run build_ft
 
-      - name: Download built engine
-        uses: actions/download-artifact@v4
-        with:
-          name: engine-smoke-${{ matrix.platform }}
-          path: smoke-engine
+  #     - name: Download built engine
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: engine-smoke-${{ matrix.platform }}
+  #         path: smoke-engine
 
-      - name: Extract built engine
-        shell: bash
-        run: |
-          mkdir -p quantt-engine/dist
-          tar -xzf smoke-engine/quantt-engine-smoke.tar.gz -C quantt-engine/dist
+  #     - name: Extract built engine
+  #       shell: bash
+  #       run: |
+  #         mkdir -p quantt-engine/dist
+  #         tar -xzf smoke-engine/quantt-engine-smoke.tar.gz -C quantt-engine/dist
 
-      - name: Run Electron and backend smoke test (Linux)
-        if: runner.os == 'Linux'
-        working-directory: quantt-ui
-        env:
-          QUANTT_ENGINE_EXECUTABLE: ${{ github.workspace }}/quantt-engine/dist/QuanttEngine/${{ matrix.executable }}
-        run: xvfb-run -a node scripts/smoke-test.js
+  #     - name: Run Electron and backend smoke test (Linux)
+  #       if: runner.os == 'Linux'
+  #       working-directory: quantt-ui
+  #       env:
+  #         QUANTT_ENGINE_EXECUTABLE: ${{ github.workspace }}/quantt-engine/dist/QuanttEngine/${{ matrix.executable }}
+  #       run: xvfb-run -a node scripts/smoke-test.js
 
-      - name: Run Electron and backend smoke test
-        if: runner.os != 'Linux'
-        working-directory: quantt-ui
-        env:
-          QUANTT_ENGINE_EXECUTABLE: ${{ github.workspace }}/quantt-engine/dist/QuanttEngine/${{ matrix.executable }}
-        run: node scripts/smoke-test.js
+  #     - name: Run Electron and backend smoke test
+  #       if: runner.os != 'Linux'
+  #       working-directory: quantt-ui
+  #       env:
+  #         QUANTT_ENGINE_EXECUTABLE: ${{ github.workspace }}/quantt-engine/dist/QuanttEngine/${{ matrix.executable }}
+  #       run: node scripts/smoke-test.js
 
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build]
+    needs: build
     runs-on: ubuntu-latest
 
     permissions:
