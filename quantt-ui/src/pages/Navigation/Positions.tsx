@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import api from "../../../api/axiosInstance.js";
 import "../localassets/Positions.css";
+import { useBotStore } from "../../store/botStore";
+
+const POLL_INTERVAL_MS_BY_RATE = {
+  "500ms": 500,
+  "1s": 1000,
+  "5s": 5000,
+  "10s": 10000,
+  "30s": 30000,
+} as const;
 
 export default function Positions() {
+  const refreshRate = useBotStore((state) => state.ui.refreshRate);
+  const pollIntervalMs = POLL_INTERVAL_MS_BY_RATE[refreshRate];
   const [deleteForm, setDeleteForm] = useState({ id: "", symbol: "" });
   const [selectForm, setSelectForm] = useState({ symbol: "" });
+  const [activeSymbol, setActiveSymbol] = useState("");
   const [positions, setPositions] = useState([]);
 
   // Pagination & Loading States
@@ -46,10 +58,13 @@ export default function Positions() {
   }, []);
 
   useEffect(() => {
-    fetchPositions(1);
-    const interval = setInterval(fetchPositions, 5000);
+    fetchPositions(1, activeSymbol);
+    const interval = setInterval(
+      () => fetchPositions(1, activeSymbol),
+      pollIntervalMs,
+    );
     return () => clearInterval(interval);
-  }, [fetchPositions]);
+  }, [fetchPositions, activeSymbol, pollIntervalMs]);
 
   /**
    * Infinite Scroll Logic
@@ -62,7 +77,7 @@ export default function Positions() {
     if (isNearBottom && hasMore && !loading) {
       const nextPage = page + 1;
       setPage(nextPage);
-      fetchPositions(nextPage, selectForm.symbol);
+      fetchPositions(nextPage, activeSymbol);
     }
   };
 
@@ -97,7 +112,7 @@ export default function Positions() {
     e.preventDefault();
     setPage(1);
     setHasMore(true);
-    fetchPositions(1, selectForm.symbol);
+    setActiveSymbol(selectForm.symbol);
   };
 
   return (
@@ -146,6 +161,9 @@ export default function Positions() {
 
       <div className="section-header">
         <h2 className="section-title">Historical Positions</h2>
+        <span className="activity-count">
+          Polling · {pollIntervalMs / 1000}s
+        </span>
         {/* Fixed: changed onSubmit to handleSelection and corrected the onChange target */}
         <form className="delete-inline-form" onSubmit={handleSelection}>
           <div className="input-field">

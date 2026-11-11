@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, shell } from "electron";
+const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("electronAPI", {
   // 1. Function to get the app version or system info
@@ -22,6 +22,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
     }
   },
 
-  // 4. Open external links in the default browser
-  openLink: (url) => shell.openExternal(url),
+  // 4. Open external links in the default browser via the main process
+  openLink: (url) => ipcRenderer.invoke("open-external-link", url),
 });

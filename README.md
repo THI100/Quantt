@@ -264,8 +264,11 @@ cd quantt-ui
 npm install
 
 npm run electron
-npm run vite
 ```
+
+The Electron development command starts Vite automatically. The backend uses
+`quantt-engine/.venv` (or `quantt-engine/venv`) when available; set
+`QUANTT_PYTHON_EXECUTABLE` to use a different Python interpreter.
 
 ---
 

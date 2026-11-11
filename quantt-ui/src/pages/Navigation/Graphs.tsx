@@ -6,6 +6,7 @@ import EquityCurveChart from "../../components/charts/EquityCurve";
 import DailyPnlChart from "../../components/charts/DailyPnl";
 import DrawdownChart from "../../components/charts/Drawdown";
 import DailyTradeCountChart from "../../components/charts/DailyTradeCount";
+import { useBotStore } from "../../store/botStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,7 +54,13 @@ interface GraphState<T> {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_INTERVAL_MS_BY_RATE = {
+  "500ms": 500,
+  "1s": 1000,
+  "5s": 5000,
+  "10s": 10000,
+  "30s": 30000,
+} as const;
 
 // ─── Small helpers ────────────────────────────────────────────────────────────
 
@@ -140,6 +147,9 @@ function GraphCard({
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function Graphs() {
+  const refreshRate = useBotStore((state) => state.ui.refreshRate);
+  const pollIntervalMs = POLL_INTERVAL_MS_BY_RATE[refreshRate];
+
   // Per-endpoint state
   const [equity, setEquity] = useState<GraphState<EquityPoint>>({
     data: [],
@@ -252,9 +262,9 @@ export default function Graphs() {
     pollAll();
     fetchTrades(currentPage);
 
-    const interval = setInterval(pollAll, POLL_INTERVAL_MS);
+    const interval = setInterval(pollAll, pollIntervalMs);
     return () => clearInterval(interval);
-  }, [pollAll, fetchTrades, currentPage]);
+  }, [pollAll, fetchTrades, currentPage, pollIntervalMs]);
 
   // Re-fetch trades whenever page changes
   useEffect(() => {
@@ -278,7 +288,7 @@ export default function Graphs() {
       <div className="section-header">
         <h2 className="section-title">Visual Analytics</h2>
         <div className="activity-count">
-          Polling · {POLL_INTERVAL_MS / 1000}s
+          Polling · {pollIntervalMs / 1000}s
         </div>
       </div>
 
@@ -467,7 +477,7 @@ export default function Graphs() {
 
         <div className="loading-trigger">
           <span className="status-indicator pulse highlight-silver-bg" />
-          <p>Polling · next refresh in {POLL_INTERVAL_MS / 1000}s</p>
+          <p>Polling · next refresh in {pollIntervalMs / 1000}s</p>
         </div>
       </div>
 
