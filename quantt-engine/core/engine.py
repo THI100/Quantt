@@ -1,5 +1,4 @@
 import math
-import time
 
 from loguru import logger
 
@@ -7,20 +6,25 @@ import execution.order_manager as order_manager
 import execution.position_manager as pm
 import execution.risk_manager as risk_manager
 import strategy.signal_generator as sg
-from config import risk, settings, store
+from config import risk, store, trading
 from data import fetch
+
+
+def _safe_divide(numerator, denominator):
+    if denominator == 0:
+        return None
+    return numerator / denominator
 
 
 def avaliation_and_place(client):
     # 1. Initialize data
-    trading_config = settings.watcher.get_config()
+    trading_config = trading.watcher.get_config()
     risk_cfg = risk.watcher.get_config()
     store_cfg = store.watcher.get_config()
 
     max_loss_amt_t = store_cfg.balances.get("USDT", 0.0) * risk_cfg.maximum_loss
     max_loss_amt_c = store_cfg.balances.get("USDC", 0.0) * risk_cfg.maximum_loss
 
-    time.sleep(0.5)
     actual = fetch.balance()
     actual_t = actual.get("USDT", {}).get("total", 0.0)
     actual_c = actual.get("USDC", {}).get("total", 0.0)
@@ -46,8 +50,6 @@ def avaliation_and_place(client):
     for symbol, status in open_closed.items():
         if status != "open":
             continue
-
-        time.sleep(1)
 
         # 4. Market Evaluation
         data = sg.avaliation_of_market(symbol, trading_config.list_of_parameters)
@@ -90,13 +92,17 @@ def avaliation_and_place(client):
         # 6. Entry Price Calculation
         entry_price = risk_manager.blp(symbol, side, nn)
 
-        time.sleep(0.5)
         act_price = fetch.get_ticker(symbol)
         act_price = act_price.get("last")
 
         # 7.1. Minimum Structural Distance Check
-        risk_percent_act = abs(act_price - sl) / act_price
-        risk_percent = abs(entry_price - sl) / entry_price
+        risk_percent_act = _safe_divide(abs(act_price - sl), act_price)
+        risk_percent = _safe_divide(abs(entry_price - sl), entry_price)
+        if risk_percent_act is None or risk_percent is None:
+            logger.warning(
+                f"Skipping {symbol}: Cannot calculate stop risk with a zero price."
+            )
+            continue
         min_dist = 0.003
 
         if risk_percent and risk_percent_act < min_dist:
@@ -106,8 +112,13 @@ def avaliation_and_place(client):
             continue
 
         # 7.2. Risk/Reward Check
-        current_rrr_act = abs(tp - act_price) / abs(act_price - sl)
-        current_rrr = abs(tp - entry_price) / abs(entry_price - sl)
+        current_rrr_act = _safe_divide(abs(tp - act_price), abs(act_price - sl))
+        current_rrr = _safe_divide(abs(tp - entry_price), abs(entry_price - sl))
+        if current_rrr_act is None or current_rrr is None:
+            logger.warning(
+                f"Skipping {symbol}: Cannot calculate risk/reward with a zero stop distance."
+            )
+            continue
         if current_rrr and current_rrr_act < 1.5:
             logger.warning(f"Skipping {symbol}: Poor RR Ratio ({current_rrr:.2f}).")
             continue
@@ -128,7 +139,7 @@ def avaliation_and_place(client):
                     f"Placing {side} order for {symbol} | Conf: {conf_score:.1f}% | Regime: {data['regime']}, | TP: {tp} | SL: {sl} | Amount: {nn}"
                 )
                 order_manager.execute_iceberg(client, symbol, nn, side, tp, sl)
-                time.sleep(1)
+
             except Exception as e:
                 logger.error(f"Critical failure executing order for {symbol}: {e}")
         else:
@@ -146,7 +157,7 @@ def avaliation_and_place(client):
                     sl,
                     tp,
                 )
-                time.sleep(1)
+
             except Exception as e:
                 logger.error(f"Critical failure executing order for {symbol}: {e}")
 

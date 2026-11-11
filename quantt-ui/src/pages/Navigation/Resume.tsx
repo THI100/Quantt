@@ -2,6 +2,15 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import "../localassets/Resume.css";
 import { getSummary } from "../../../api/services/Info";
 import { getPositions } from "../../../api/services/Positions";
+import { useBotStore } from "../../store/botStore";
+
+const POLL_INTERVAL_MS_BY_RATE = {
+  "500ms": 500,
+  "1s": 1000,
+  "5s": 5000,
+  "10s": 10000,
+  "30s": 30000,
+} as const;
 
 interface Data {
   summary: { totalTrades: number; netProfit: number };
@@ -14,6 +23,9 @@ interface Data {
 }
 
 export default function Resume() {
+  const refreshRate = useBotStore((state) => state.ui.refreshRate);
+  const pollIntervalMs = POLL_INTERVAL_MS_BY_RATE[refreshRate];
+
   const [data, setData] = useState<Data>({
     summary: { totalTrades: 0, netProfit: 0 },
     bestWorst: { best: 0, worst: 0 },
@@ -75,9 +87,9 @@ export default function Resume() {
   useEffect(() => {
     handleRefresh();
 
-    const interval = setInterval(handleRefresh, 5000);
+    const interval = setInterval(handleRefresh, pollIntervalMs);
     return () => clearInterval(interval);
-  }, [handleRefresh]);
+  }, [handleRefresh, pollIntervalMs]);
 
   return (
     <div className="home-container">
@@ -85,6 +97,9 @@ export default function Resume() {
         <div className="section-header">
           <h2 className="section-title">Performance Resume</h2>
           <span className="activity-count">ID: REPORT_2026_A</span>
+          <span className="activity-count">
+            Polling · {pollIntervalMs / 1000}s
+          </span>
         </div>
 
         {/* Primary Overview */}

@@ -3,30 +3,21 @@ store.py
 Pydantic model for Storing misc variables.
 """
 
-import os
-
-# -------------- PATHS --------------- #
-import sys
 from datetime import datetime
-from pathlib import Path
 
 from loguru import logger
 from pydantic import BaseModel
+from sqlalchemy import select
 
 from data.fetch import balance
-
-if getattr(sys, "frozen", False):
-    DIR = Path(sys.executable).parent
-else:
-    DIR = Path(__file__).resolve().parent.parent
-
-STORE_CONFIG_PATH = DIR / "qdata" / "store_config.json"
-STORE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+from persistance.connection import SessionLocal, ensure_config_schema
+from persistance.models import Store
 
 # -------------- MODEL --------------- #
 
 
-class Store(BaseModel):
+class StorePYD(BaseModel):
+    exchange: str = "none"
     last_updated: datetime = datetime.now()
     balances: dict[str, float] = {"USDT": 0.0, "USDC": 0.0}
 
@@ -35,62 +26,112 @@ class Store(BaseModel):
 
 
 class ConfigWatcher:
-    """Detects file changes and reloads configuration automatically."""
+    """Reads the latest configuration from SQLite."""
 
-    def __init__(self, path: Path):
-        self.path = path
-        self._last_mtime = 0
-        self.config = self.reload()
-        self.ensure_json_file()
+    def __init__(self, profile_name: str = "none"):
+        self.profile_name = profile_name
+        self.config = StorePYD(exchange=profile_name)
 
-    def ensure_json_file(self, fpath=STORE_CONFIG_PATH):
-        fpath.parent.mkdir(parents=True, exist_ok=True)
-        if not os.path.exists(fpath):
-            with open(fpath, "w") as f:
-                f.write("")
-            return logger.info(f"Created file: {fpath}")
-
-    def reload(self) -> Store:
-        """Force a reload from disk."""
-        if not self.path.exists():
-            # If file doesn't exist, save defaults to create it
-            default_sfg = Store()
-            save_store(default_sfg)
+    def reload(self, pn: str) -> StorePYD:
+        """Reload the configuration from SQLite."""
+        try:
+            return load_store(pn)
+        except FileNotFoundError:
+            default_sfg = StorePYD(exchange=self.profile_name)
+            error = save_store(default_sfg)
+            if error:
+                raise RuntimeError(error)
             return default_sfg
 
-        self._last_mtime = self.path.stat().st_mtime
-        return load_store()
+    def get_config(self, pn: str | None = None) -> StorePYD:
+        """Return the latest configuration stored in SQLite."""
+        from utils.stance import last
 
-    def get_config(self) -> Store:
-        current_mtime = self.path.stat().st_mtime
-        if current_mtime > self._last_mtime:
-            self.config = self.reload()
-
+        active = last.get_last()
+        if pn is None:
+            pn = active["exchange"]
+        self.config = self.reload(pn)
         return self.config
 
 
-def _load(path: Path, model: type[BaseModel]) -> BaseModel:
-    """Load a JSON file into a Pydantic model."""
-    if not path.exists():
-        raise FileNotFoundError(f"Config file not found: {path}")
-    return model.model_validate_json(path.read_text())
-
-
-def _save(path: Path, instance: BaseModel) -> None:
-    """Persist a Pydantic model back to its JSON file."""
-    path.write_text(instance.model_dump_json(indent=2))
-
-
 # Convenience accessors
-def load_store() -> Store:
-    return _load(STORE_CONFIG_PATH, Store)
+def load_store(profile_name: str = "none") -> StorePYD:
+    ensure_config_schema()
+    session = SessionLocal()
+    try:
+        row = session.get(Store, profile_name)
+        if row is None:
+            raise FileNotFoundError(f"Store profile '{profile_name}' not found")
+        return StorePYD(
+            exchange=row.exchange,
+            last_updated=row.data,
+            balances={"USDT": row.balance_dt, "USDC": row.balance_dc},
+        )
+    except FileNotFoundError:
+        raise
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(
+            f"Failed to load store profile '{profile_name}': {exc}"
+        ) from exc
+    finally:
+        session.close()
 
 
-def save_store(sfg: Store) -> None:
-    _save(STORE_CONFIG_PATH, sfg)
+def save_store(sfg: StorePYD) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare store schema: {exc}"
+    session = SessionLocal()
+    try:
+        row = session.get(Store, sfg.exchange) or Store(exchange=sfg.exchange)
+        row.data = sfg.last_updated
+        row.balance_dt = sfg.balances.get("USDT", 0.0)
+        row.balance_dc = sfg.balances.get("USDC", 0.0)
+        session.merge(row)
+        session.commit()
+        return None
+    except Exception as exc:
+        session.rollback()
+        return f"Failed to save store profile '{sfg.exchange}': {exc}"
+    finally:
+        session.close()
 
 
-watcher = ConfigWatcher(STORE_CONFIG_PATH)
+def delete_store(profile_name: str) -> str | None:
+    try:
+        ensure_config_schema()
+    except Exception as exc:
+        return f"Failed to prepare store schema: {exc}"
+    session = SessionLocal()
+    try:
+        row = session.get(Store, profile_name)
+        if row is None:
+            return f"Store profile '{profile_name}' not found"
+        session.delete(row)
+        session.commit()
+        return None
+    except Exception as exc:
+        session.rollback()
+        return f"Failed to delete store profile '{profile_name}': {exc}"
+    finally:
+        session.close()
+
+
+def list_store_profiles() -> list[str]:
+    ensure_config_schema()
+    session = SessionLocal()
+    try:
+        return list(session.scalars(select(Store.exchange).order_by(Store.exchange)))
+    except Exception as exc:
+        session.rollback()
+        raise RuntimeError(f"Failed to list store profiles: {exc}") from exc
+    finally:
+        session.close()
+
+
+watcher = ConfigWatcher()
 
 
 # ------------ SAVE BALANCE ------------ #
@@ -122,13 +163,19 @@ def initialize():
         current_store.balances = {"USDT": usdt_total, "USDC": usdc_total}
         current_store.last_updated = datetime.now()
 
-        save_store(current_store)
+        error = save_store(current_store)
+        if error:
+            logger.error(error)
+            return None
         return current_store
 
     except FileNotFoundError:
-        logger.warning("No store.json found. Creating initial file.")
-        initial_store = Store()
-        save_store(initial_store)
+        logger.warning("No store configuration found. Creating a database record.")
+        initial_store = StorePYD(exchange=watcher.profile_name)
+        error = save_store(initial_store)
+        if error:
+            logger.error(error)
+            return None
         return initial_store
     except Exception as e:
         logger.error(f"Initialization error: {e}")

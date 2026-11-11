@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../localassets/Topbar.css";
 import Sidebar from "./Sidebar.tsx";
 import api from "../../../api/axiosInstance.js";
+import { useBotStore } from "../../store/botStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -128,6 +129,7 @@ export default function Topbar({
   const [botStatus, setBotStatus] = useState<BotStatus>(initialBotStatus);
   const [activeExchange, setActiveExchange] =
     useState<ActiveExchange>(initialExchange);
+  const refreshRate = useBotStore((state) => state.ui.refreshRate);
 
   const now = useTime();
 
@@ -170,15 +172,12 @@ export default function Topbar({
   };
 
   useEffect(() => {
-    onStatusClick();
-    handleExchange();
-
     const interval = setInterval(() => {
       onStatusClick();
       handleExchange();
-    }, 5000);
+    }, { "500ms": 500, "1s": 1000, "5s": 5000, "10s": 10000, "30s": 30000 }[refreshRate]);
     return () => clearInterval(interval);
-  }, [onStatusClick, handleExchange]);
+  }, [onStatusClick, handleExchange, refreshRate]);
 
   return (
     <header className="topbar">

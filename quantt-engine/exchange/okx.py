@@ -4,15 +4,22 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config import settings
+from config import trading
 from exchange.awm import ENV_PATH
+from utils.rate_lim import std_call
 
 
 def create_client():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    api_key = os.getenv("API_KEY_OKX")
-    api_secret = os.getenv("API_SECRET_OKX")
+    demo_enabled = trading.watcher.get_config().is_demo_enabled
+
+    if demo_enabled:
+        api_key = os.getenv("API_KEY_OKX_DEMO")
+        api_secret = os.getenv("API_SECRET_OKX_DEMO")
+    else:
+        api_key = os.getenv("API_KEY_OKX")
+        api_secret = os.getenv("API_SECRET_OKX")
 
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
@@ -36,7 +43,7 @@ def create_client():
         }
     )
 
-    client.set_sandbox_mode(settings.watcher.get_config().is_demo_enabled)
+    std_call(client.enable_demo_trading, enable=demo_enabled)
 
     return client
 

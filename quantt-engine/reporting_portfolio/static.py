@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from loguru import logger
 from sqlalchemy.orm import Session
 
-from config import store
+from config import store, trading
 from data import fetch
 from persistance.models import GeneralOrder, TakeStopOrder
 
@@ -14,6 +14,7 @@ from persistance.models import GeneralOrder, TakeStopOrder
 # ================================================================== #
 
 store_cfg = store.watcher.get_config()
+exchange = trading.watcher.get_config().exchange
 
 # ================================================================== #
 #  Helpers                                                           #
@@ -61,7 +62,7 @@ def get_closed_trades(session: Session) -> tuple[float, list[dict]]:
 
     # Alive PnL, No need for trades
     store_t = store_cfg.balances.get("USDT", 0.0)
-    time.sleep(1)
+
     actual = fetch.balance()
     actual_t = actual.get("USDT", {}).get("total", 0.0)
     alive_pnl = actual_t - store_t
@@ -78,11 +79,11 @@ def get_closed_trades(session: Session) -> tuple[float, list[dict]]:
 
         # Fees, some exchanges doesnt share this
         if exit_order.take_id:
-            take = session.get(TakeStopOrder, exit_order.take_id)
+            take = session.get(TakeStopOrder, (exit_order.take_id, exchange))
             if take:
                 fees += take.fees
         if exit_order.stop_id:
-            stop = session.get(TakeStopOrder, exit_order.stop_id)
+            stop = session.get(TakeStopOrder, (exit_order.stop_id, exchange))
             if stop:
                 fees += stop.fees
 

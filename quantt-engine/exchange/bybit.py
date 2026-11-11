@@ -4,14 +4,15 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config import settings
+from config import trading
 from exchange.awm import ENV_PATH
+from utils.rate_lim import std_call
 
 
 def create_client():
     load_dotenv(dotenv_path=ENV_PATH, override=True)
 
-    demo_enabled = settings.watcher.get_config().is_demo_enabled
+    demo_enabled = trading.watcher.get_config().is_demo_enabled
 
     if demo_enabled:
         api_key = os.getenv("API_KEY_BYBIT_DEMO")
@@ -34,7 +35,7 @@ def create_client():
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
-                "defaultType": settings.watcher.get_config().future_spot,
+                "defaultType": trading.watcher.get_config().future_spot,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
@@ -43,7 +44,7 @@ def create_client():
         }
     )
 
-    client.enable_demo_trading(demo_enabled)
+    std_call(client.enable_demo_trading, enable=demo_enabled)
 
     return client
 

@@ -1,4 +1,3 @@
-import os
 import sys
 import threading
 import time
@@ -8,11 +7,12 @@ from typing import Optional
 from loguru import logger
 
 import core.engine as e
-from config import risk, settings
+from config import risk, trading
 from data.client import cached_client
 from execution.position_manager import manage_open_limit
-from persistance.connection import Base, engine
+from persistance.connection import ensure_config_schema
 from utils.math import scale_0_100
+from utils.rate_lim import std_call
 
 if getattr(sys, "frozen", False):
     DIR = Path(sys.executable).parent
@@ -22,48 +22,39 @@ else:
 
 class TradingBot:
     def __init__(self):
+        self.DB_PATH = DIR / "qdata" / "general.db"
+        self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if self.DB_PATH.is_file():
+            logger.info("Database already exists. Ensuring schema is current.")
+        else:
+            logger.info("Initializing database...")
+        ensure_config_schema()
+
         self.client = cached_client()
         self.is_running = False
-        self.DB_PATH = DIR / "qdata" / "general.db"
         self.stop_event = threading.Event()
-
-    def refresh_client(self):
-        cached_client.reset()
-        self.client = cached_client()
-
-        try:
-            self.client.load_markets()
-        except Exception as err:
-            logger.error(f"Failed to reload markets: {err}")
-
-    def safe_client_call(self, func, *args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-
-        except Exception as err:
-            logger.warning(f"Client error detected: {err}")
-            logger.info("Refreshing exchange client...")
-
-            self.refresh_client()
-
-            return func(*args, **kwargs)
 
     def setup_environment(self):
         """Initializes database and exchange settings."""
         self.DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        ensure_config_schema()
 
-        if os.path.exists(self.DB_PATH):
-            logger.info("Database already exists.")
-        else:
-            logger.info("Initializing database...")
-            Base.metadata.create_all(bind=engine)
+        try:
+            std_call(self.client.load_markets)
+        except Exception as err:
+            logger.error(
+                f"Due to critical error: {err}, it wasnt possible to load the markets and initialize"
+            )
+            raise
 
-        self.safe_client_call(self.client.load_markets)
-
-        if settings.watcher.get_config().future_spot == "future":
-            for symbol in settings.watcher.get_config().list_of_interest:
+        if trading.watcher.get_config().future_spot == "future":
+            for symbol in trading.watcher.get_config().list_of_interest:
                 try:
-                    self.client.set_leverage(risk.watcher.get_config().leverage, symbol)
+                    std_call(
+                        self.client.set_leverage,
+                        leverage=risk.watcher.get_config().leverage,
+                        symbol=symbol,
+                    )
                     logger.debug(f"Leverage set for {symbol}")
                 except Exception as err:
                     logger.error(f"Error occured, when setting Leverage: {err}")
@@ -93,7 +84,11 @@ class TradingBot:
             self.is_running = False
 
     def check_bal(self):
-        bal = self.safe_client_call(self.client.fetch_balance)
+        try:
+            bal = std_call(self.client.fetch_balance)
+        except Exception as err:
+            logger.error(f"Due to {err}, it wasnt possible to fetch balance")
+            return []
         ut = bal.get("USDT")
         uc = bal.get("USDC")
         ut.update({"coin": "USDT"})
@@ -116,8 +111,8 @@ class TradingBot:
 
     def close_order(self, symbol: str, id: str):
         try:
-            self.safe_client_call(self.client.cancel_order, id, symbol)
-            logger.info(f"Successfully cancelled order {order_id} for {symbol}")
+            std_call(self.client.cancel_order, id=id, symbol=symbol)
+            logger.info(f"Successfully cancelled order {id} for {symbol}")
         except Exception as err:
             logger.error(
                 f"Due to {err}, it wasnt possible to close/cancel order: {id}, {symbol}"
@@ -126,7 +121,7 @@ class TradingBot:
     def fet_order(self, symbol: str, id: Optional[str] = None):
         if id:
             try:
-                return self.safe_client_call(self.client.fetch_order, id, symbol)
+                return std_call(self.client.fetch_order, id=id, symbol=symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open order: {id}, {symbol}"
@@ -134,7 +129,7 @@ class TradingBot:
                 return []
         else:
             try:
-                return self.safe_client_call(self.client.fetch_orders, symbol)
+                return std_call(self.client.fetch_orders, symbol=symbol)
             except Exception as err:
                 logger.error(
                     f"Due to {err}, it wasnt possible to fetch open orders of {symbol}"

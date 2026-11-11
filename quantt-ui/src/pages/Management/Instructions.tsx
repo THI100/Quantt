@@ -5,7 +5,7 @@ export default function Instructions() {
     <div className="home-container">
       <div className="section-header">
         <h2 className="section-title silver-text">System Documentation</h2>
-        <span className="activity-count">Rev: 0.1.0-set</span>
+        <span className="activity-count">Rev: 0.1.1</span>
       </div>
 
       <div className="docs-wrapper">
@@ -50,7 +50,7 @@ export default function Instructions() {
             <h3 className="doc-h3">01. Overview</h3>
             <p className="doc-p">
               Welcome to the trading bot documentation. This software is
-              currently in pre-release (<strong>v0.1.0-set</strong>), meaning
+              currently in pre-release (<strong>v0.1.1</strong>), meaning
               certain features may be incomplete, hidden, or subject to change
               between versions. Some pages may be empty — this is expected.
             </p>

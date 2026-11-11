@@ -97,13 +97,16 @@ export default function Settings() {
                 value={ui.refreshRate}
                 onChange={(e) =>
                   setUISettings({
-                    refreshRate: e.target.value as "500ms" | "1s" | "5s",
+                    refreshRate: e.target.value as
+                      "500ms" | "1s" | "5s" | "10s" | "30s",
                   })
                 }
               >
                 <option value="500ms">Real-time (500ms)</option>
                 <option value="1s">Standard (1s)</option>
-                <option value="5s">Lazy (5s)</option>
+                <option value="5s">Low span (5s)</option>
+                <option value="10s">Lazy (10s)</option>
+                <option value="30s">Lazy (30s)</option>
               </select>
             </div>
           </div>
@@ -166,7 +169,7 @@ export default function Settings() {
         <div className="control-status">
           <div className="status-indicator highlight-silver-bg"></div>
           <span className="status-text silver-text">
-            Storage: <strong>Zustand → LocalStorage (bot-settings)</strong>
+            Storage: <strong>Zustand → LocalStorage (store)</strong>
           </span>
         </div>
       </div>

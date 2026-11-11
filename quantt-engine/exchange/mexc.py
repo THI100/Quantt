@@ -4,8 +4,9 @@ import ccxt
 from dotenv import load_dotenv
 from loguru import logger
 
-from config import settings
+from config import trading
 from exchange.awm import ENV_PATH
+from utils.rate_lim import std_call
 
 
 def create_client():
@@ -17,7 +18,7 @@ def create_client():
     if not api_key or not api_secret:
         logger.error("Missing API credentials")
 
-    client = ccxt.bybit(
+    client = ccxt.mexc(
         {
             "apiKey": api_key,
             "secret": api_secret,
@@ -28,7 +29,7 @@ def create_client():
             # Precision safety
             "precisionMode": ccxt.TICK_SIZE,
             "options": {
-                "defaultType": settings.watcher.get_config().future_spot,
+                "defaultType": trading.watcher.get_config().future_spot,
                 "adjustForTimeDifference": True,
                 "recvWindow": 10000,
                 "warnOnFetchOpenOrdersWithoutSymbol": False,
@@ -36,8 +37,6 @@ def create_client():
             },
         }
     )
-
-    client.set_sandbox_mode(settings.watcher.get_config().is_demo_enabled)
 
     return client
 

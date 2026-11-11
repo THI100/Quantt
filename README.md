@@ -3,7 +3,7 @@
 > Local-first algorithmic cryptocurrency trading platform focused on execution, analytics, and extensibility.
 
 ![Status](https://img.shields.io/badge/status-active%20development-orange)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.11+-informational)
 ![Node](https://img.shields.io/badge/node.js-25+-informational)
@@ -264,8 +264,11 @@ cd quantt-ui
 npm install
 
 npm run electron
-npm run vite
 ```
+
+The Electron development command starts Vite automatically. The backend uses
+`quantt-engine/.venv` (or `quantt-engine/venv`) when available; set
+`QUANTT_PYTHON_EXECUTABLE` to use a different Python interpreter.
 
 ---
 

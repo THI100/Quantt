@@ -1,34 +1,17 @@
 from loguru import logger
 from sqlalchemy import desc, select
 
-import data.fetch as fetch
-from config import settings
-from data.client import cached_client
+from config import trading
+from data import fetch
 from execution import risk_manager as rm
 from persistance.connection import SessionLocal
 from persistance.models import (
     GeneralOrder,
     TakeStopOrder,
 )
+from utils.rate_lim import std_call
 
-# ------------------- Safe Helper ------------------- #
-
-
-def safe_exchange_call(func, *args, **kwargs):
-    try:
-        return func(*args, **kwargs)
-
-    except Exception as err:
-        logger.warning(f"Exchange error, recreating client: {err}")
-
-        cached_client.reset()
-
-        client = cached_client()
-
-        # retry using refreshed client
-        new_func = getattr(client, func.__name__)
-
-        return new_func(*args, **kwargs)
+active_exchange = trading.watcher.get_config().exchange
 
 
 def manage_open_symbols():
@@ -37,10 +20,11 @@ def manage_open_symbols():
     # Using context manager for the entire loop to ensure session safety
     with SessionLocal() as session:
         try:
-            for symbol in settings.watcher.get_config().list_of_interest:
+            for symbol in trading.watcher.get_config().list_of_interest:
                 stmt = (
                     select(GeneralOrder)
                     .filter(GeneralOrder.symbol.like(f"{symbol}%"))
+                    .filter(GeneralOrder.exchange == active_exchange)
                     .order_by(desc(GeneralOrder.time))
                 )
                 last_record = session.execute(stmt).scalars().first()
@@ -49,11 +33,21 @@ def manage_open_symbols():
                     symbol_status[symbol] = "open"
                     continue
 
-                exchange_trades = fetch.get_orders(symbol, limit=5)
+                try:
+                    exchange_trades = fetch.get_orders(symbol)
+                except Exception as err:
+                    logger.warning(
+                        f"Due to the following error: {err}, it is needed to make the usage of a slower method."
+                    )
+                    exchange_trades = fetch.get_generalized(symbol)
+
                 is_now_closed_on_exchange = False
 
                 for trade in exchange_trades:
-                    trade_id = str(trade["id"])
+                    api_trade_id = trade.get("id")
+                    if api_trade_id is None:
+                        continue
+                    trade_id = str(api_trade_id)
                     is_opposite_side = trade["side"].lower() != last_record.side.lower()
                     is_reduce_only = (
                         str(trade.get("info", {}).get("reduceOnly")).lower() == "true"
@@ -62,16 +56,25 @@ def manage_open_symbols():
 
                     if is_opposite_side and (is_reduce_only and is_after_entrance):
                         # Check if this SPECIFIC trade is already our exit record
-                        already_exists = session.get(GeneralOrder, trade_id)
+                        already_exists = session.execute(
+                            select(GeneralOrder.id).where(
+                                GeneralOrder.id == trade_id,
+                                GeneralOrder.exchange == active_exchange,
+                            )
+                        ).scalar_one_or_none()
                         if already_exists:
                             is_now_closed_on_exchange = True
                             break
 
-                        tp_price = (
-                            last_record.take_order.price
-                            if last_record.take_order
+                        take_order = (
+                            session.get(
+                                TakeStopOrder,
+                                (last_record.take_id, last_record.exchange),
+                            )
+                            if last_record.take_id
                             else None
                         )
+                        tp_price = take_order.price if take_order else None
                         is_tp_hit = (
                             tp_price
                             and abs(trade["price"] - tp_price) / tp_price < 0.0005
@@ -79,6 +82,7 @@ def manage_open_symbols():
 
                         exit_order = GeneralOrder(
                             id=trade_id,
+                            exchange=active_exchange,
                             entrance_exit="exit",
                             price=trade["price"],
                             amount=trade["amount"],
@@ -105,44 +109,128 @@ def manage_open_symbols():
                 f"Error syncing {symbol if 'symbol' in locals() else 'unknown'}: {e}"
             )
 
+        finally:
+            session.close()
+
     return symbol_status
 
 
 def manage_open_limit(client):
     typ = "limit"
+    trading_config = trading.watcher.get_config()
+    active_exchange = trading_config.exchange
 
-    for symbol in settings.watcher.get_config().list_of_interest:
-        current_open = fetch.get_open_orders(symbol, 10)
+    for symbol in trading_config.list_of_interest:
+        current_open = fetch.get_open_orders(symbol)
 
         for x in current_open:
             if x.get("reduceOnly") is True or x.get("status") == "filled":
                 continue
 
-            order_id = str(x.get("id"))
+            api_order_id = x.get("id")
+            if api_order_id is None:
+                continue
+            order_id = str(api_order_id)
 
             with SessionLocal() as session:
-                old_order = session.get(GeneralOrder, order_id)
+                old_order = (
+                    session.execute(
+                        select(GeneralOrder).where(
+                            GeneralOrder.id == order_id,
+                            GeneralOrder.exchange == active_exchange,
+                        )
+                    )
+                    .scalars()
+                    .first()
+                )
                 if not old_order:
                     continue
 
-                s = x.get("side").lower()
-                amt = x.get("amount")
-                p = rm.blp(symbol, s, amt)
+                s = x.get("side", "").lower()
+                info = x.get("info") or {}
+                amount_value = x.get("amount")
+                if amount_value is None:
+                    amount_value = info.get("origQty")
+                try:
+                    order_amount = float(amount_value)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        f"Skipping order {order_id}: invalid amount {amount_value!r}"
+                    )
+                    continue
+
+                executed_value = x.get("filled")
+                if executed_value is None:
+                    executed_value = x.get("executedQty")
+                if executed_value is None:
+                    executed_value = info.get("executedQty")
+                if executed_value is None and x.get("remaining") is not None:
+                    try:
+                        executed_value = order_amount - float(x["remaining"])
+                    except (TypeError, ValueError):
+                        executed_value = 0
+                try:
+                    executed_amount = float(executed_value or 0)
+                except (TypeError, ValueError):
+                    logger.warning(
+                        f"Skipping order {order_id}: invalid executed quantity "
+                        f"{executed_value!r}"
+                    )
+                    continue
+
+                remaining_amount = max(order_amount - executed_amount, 0.0)
+                if remaining_amount <= 0:
+                    continue
 
                 try:
                     # 1. Exchange Action
-                    safe_exchange_call(client.cancel_order, order_id, symbol)
-                    new_exchange_order = safe_exchange_call(
-                        client.create_order, symbol, typ, s, amt, p
+                    cancel_result = std_call(
+                        client.cancel_order, id=order_id, symbol=symbol
+                    )
+
+                    # The order may fill more while cancellation is in flight.
+                    cancel_info = (
+                        cancel_result.get("info") or {}
+                        if isinstance(cancel_result, dict)
+                        else {}
+                    )
+                    cancel_filled = (
+                        cancel_result.get("filled")
+                        if isinstance(cancel_result, dict)
+                        else None
+                    )
+                    if cancel_filled is None and isinstance(cancel_result, dict):
+                        cancel_filled = cancel_result.get("executedQty")
+                    if cancel_filled is None:
+                        cancel_filled = cancel_info.get("executedQty")
+                    if cancel_filled is not None:
+                        executed_amount = max(executed_amount, float(cancel_filled))
+                        remaining_amount = max(order_amount - executed_amount, 0.0)
+                    if remaining_amount <= 0:
+                        continue
+
+                    p = rm.blp(symbol, s, remaining_amount)
+
+                    new_exchange_order = std_call(
+                        client.create_order,
+                        symbol=symbol,
+                        type=typ,
+                        side=s,
+                        amount=remaining_amount,
+                        price=p,
                     )
                     new_id = str(new_exchange_order["id"])
 
                     # 2. Create NEW parent first
                     new_order_record = GeneralOrder(
                         id=new_id,
+                        exchange=active_exchange,
                         price=new_exchange_order.get("price"),
                         entrance_exit="entrance",
-                        amount=new_exchange_order.get("amount", amt),
+                        # Preserve the original total quantity on the logical
+                        # order; the replacement exchange order is only the
+                        # still-unfilled quantity.
+                        amount=old_order.amount,
                         side=new_exchange_order.get("side"),
                         symbol=symbol,
                         order_type=typ,
@@ -155,7 +243,7 @@ def manage_open_limit(client):
                     # 3. Re-link children to the NEW ID
                     children = (
                         session.query(TakeStopOrder)
-                        .filter_by(parent_order_id=order_id)
+                        .filter_by(parent_order_id=order_id, exchange=active_exchange)
                         .all()
                     )
                     for child in children:
@@ -169,3 +257,6 @@ def manage_open_limit(client):
                 except Exception as e:
                     session.rollback()
                     logger.error(f"Failed to manage order {order_id}: {e}")
+
+                finally:
+                    session.close()

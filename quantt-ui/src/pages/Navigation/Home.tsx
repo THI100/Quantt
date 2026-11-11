@@ -11,6 +11,7 @@ import {
 import api from "../../../api/axiosInstance.js";
 import { getSummary } from "../../../api/services/Info.ts";
 import { getPositions } from "../../../api/services/Positions.ts";
+import { useBotStore } from "../../store/botStore";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ function Home() {
   ]);
 
   const hasRun = useRef(false);
+  const refreshRate = useBotStore((state) => state.ui.refreshRate);
 
   // ─── Inner-Helpers ────────────────────────────────────────────────────────────────────
 
@@ -205,7 +207,7 @@ function Home() {
     const interval = setInterval(() => {
       handleStatus();
       settingData();
-    }, 5000);
+    }, { "500ms": 500, "1s": 1000, "5s": 5000, "10s": 10000, "30s": 30000 }[refreshRate]);
     return () => clearInterval(interval);
   }, [settingData, handleStatus]);
 

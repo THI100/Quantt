@@ -2,6 +2,57 @@ import React, { useState, useEffect, useRef } from "react";
 import "../localassets/Api.css";
 import api from "../../../api/axiosInstance.js";
 
+const encoder = new TextEncoder();
+
+function toBase64(bytes) {
+  return btoa(String.fromCharCode(...new Uint8Array(bytes)));
+}
+
+async function encryptCredentials(credentials) {
+  if (!window.electronAPI?.getCredentialEncryptionIdentity) {
+    throw new Error("Credential encryption is available only in the desktop app");
+  }
+
+  const { username, ipv6Addresses } =
+    await window.electronAPI.getCredentialEncryptionIdentity();
+  const ipv6Address = ipv6Addresses?.[0];
+  if (!username || !ipv6Address) {
+    throw new Error("Could not determine this device's username and IPv6 address");
+  }
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const material = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(`${username}:${ipv6Address}`),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 250000, hash: "SHA-256" },
+    material,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"],
+  );
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv, tagLength: 128 },
+    key,
+    encoder.encode(JSON.stringify(credentials)),
+  );
+
+  return {
+    version: 1,
+    kdf: "PBKDF2-SHA256",
+    iterations: 250000,
+    ipv6_address: ipv6Address,
+    salt: toBase64(salt),
+    iv: toBase64(iv),
+    ciphertext: toBase64(ciphertext),
+  };
+}
+
 export default function Api() {
   const [apiData, setApiData] = useState({
     exchange: "",
@@ -24,9 +75,11 @@ export default function Api() {
 
       // We map camelCase (frontend) to snake_case (backend Pydantic model)
       const payload = {
-        api_key: apiData.apiKey,
-        api_secret: apiData.apiSecret,
-        exchange: apiData.exchange,
+        encrypted_credentials: await encryptCredentials({
+          api_key: apiData.apiKey,
+          api_secret: apiData.apiSecret,
+          exchange: apiData.exchange,
+        }),
       };
 
       const response = await api.patch("/config/api", payload);

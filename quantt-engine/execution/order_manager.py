@@ -2,33 +2,13 @@ import time
 from typing import Optional
 
 from loguru import logger
-from sqlalchemy.sql import False_
 
-import data.fetch as fetch
-from data.client import cached_client
+from config import trading
+from data import fetch
 from execution import risk_manager
 from persistance.connection import SessionLocal
 from persistance.models import GeneralOrder, TakeStopOrder
-
-# ------------------- Safe Helper ------------------- #
-
-
-def safe_exchange_call(func, *args, **kwargs):
-    try:
-        return func(*args, **kwargs)
-
-    except Exception as err:
-        logger.warning(f"Exchange error, recreating client: {err}")
-
-        cached_client.reset()
-
-        client = cached_client()
-
-        # retry using refreshed client
-        new_func = getattr(client, func.__name__)
-
-        return new_func(*args, **kwargs)
-
+from utils.rate_lim import std_call
 
 # --------------------- Helpers --------------------- #
 
@@ -41,6 +21,7 @@ def _order_ice(
     tp: Optional[float],
     sl: Optional[float],
     order_id: str,
+    exchange_name: str,
 ):
     """Sets Stop Loss and Take Profit for a specific iceberg slice."""
     exit_side = "sell" if side.lower() == "buy" else "buy"
@@ -50,11 +31,12 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "STOP_MARKET",
+            "market" if exchange_name != "binance" else "STOP_LOSS",
             exit_side,
             total_amount,
             sl,
             order_id,
+            exchange_name,
             "stop_id",
             SessionLocal,
         )
@@ -64,11 +46,12 @@ def _order_ice(
         _place_linked_order(
             client,
             market,
-            "TAKE_PROFIT_MARKET",
+            "market" if exchange_name != "binance" else "TAKE_PROFIT",
             exit_side,
             total_amount,
             tp,
             order_id,
+            exchange_name,
             "take_id",
             SessionLocal,
         )
@@ -82,6 +65,7 @@ def _place_linked_order(
     amount,
     trigger_price,
     parent_id,
+    exchange_name,
     id_field,
     session_factory,
 ):
@@ -90,9 +74,7 @@ def _place_linked_order(
     to avoid UnboundLocalErrors and code duplication.
     """
     try:
-        time.sleep(0.5)
-
-        order_data = safe_exchange_call(
+        order_data = std_call(
             client.create_order,
             symbol=market,
             type=order_type,
@@ -110,13 +92,14 @@ def _place_linked_order(
 
         with session_factory() as session:
             try:
-                parent = session.get(GeneralOrder, parent_id)
+                parent = session.get(GeneralOrder, (parent_id, exchange_name))
                 if parent:
                     setattr(parent, id_field, order_data["id"])
 
                 # Create Linked Order Record
                 new_linked = TakeStopOrder(
                     id=order_data["id"],
+                    exchange=exchange_name,
                     parent_order_id=parent_id,
                     price=order_data.get("triggerPrice", trigger_price),
                     amount=order_data["amount"],
@@ -130,6 +113,8 @@ def _place_linked_order(
             except Exception as e:
                 session.rollback()
                 logger.error(f"DB Error saving {order_type}: {e}")
+            finally:
+                session.close()
 
     except Exception as e:
         logger.error(f"{order_type} API Failure: {e}")
@@ -148,20 +133,24 @@ def order(
     stop_loss: Optional[float] = None,
     take_profit: Optional[float] = None,
 ):
+    trading_config = trading.watcher.get_config()
+    active_exchange = trading_config.exchange
+    active_type = type.lower()
+
     # 1. Determine Sides
     entry_side = sell_buy.lower()
     exit_side = "sell" if entry_side == "buy" else "buy"
 
     # 2. Place Main Entry Order
     try:
-        entry_order = safe_exchange_call(
+        entry_order = std_call(
             client.create_order,
-            market,
-            type,
-            entry_side,
-            amount,
-            price,
-            {"postOnly": True} if type == "limit" else False,
+            symbol=market,
+            type=type,
+            side=entry_side,
+            amount=amount,
+            price=price,
+            params={"postOnly": True} if type == "limit" else False,
         )
         general_id = entry_order["id"]
         logger.info(f"Created entry: {general_id}")
@@ -174,6 +163,7 @@ def order(
         try:
             new_order = GeneralOrder(
                 id=general_id,
+                exchange=active_exchange,
                 price=entry_order.get("average")
                 if type == "market"
                 else entry_order.get("price"),
@@ -189,17 +179,37 @@ def order(
         except Exception as e:
             session.rollback()
             logger.error(f"Database error saving Entry: {e}")
+        finally:
+            session.close()
+
+    # Set stop loss and take profit type:
+    if active_exchange == "binance":
+        if active_type == "limit":
+            tp_type, sl_type = "TAKE_PROFIT", "STOP"
+        elif active_type == "market":
+            tp_type, sl_type = "TAKE_PROFIT_MARKET", "STOP_MARKET"
+        else:
+            raise ValueError(f"Invalid active_type: {active_type}")
+
+    else:
+        if active_type == "limit":
+            tp_type = sl_type = "limit"
+        elif active_type == "market":
+            tp_type = sl_type = "market"
+        else:
+            raise ValueError(f"Invalid active_type: {active_type}")
 
     # 4. Place Stop Loss
     if stop_loss:
         _place_linked_order(
             client,
             market,
-            "STOP_MARKET",
+            sl_type,
             exit_side,
             amount,
             stop_loss,
             general_id,
+            active_exchange,
             "stop_id",
             session_factory=SessionLocal,
         )
@@ -209,11 +219,12 @@ def order(
         _place_linked_order(
             client,
             market,
-            "TAKE_PROFIT_MARKET",
+            tp_type,
             exit_side,
             amount,
             take_profit,
             general_id,
+            active_exchange,
             "take_id",
             session_factory=SessionLocal,
         )
@@ -225,6 +236,7 @@ def order(
 def execute_iceberg(
     client, market: str, total_amount: float, side: str, tp: float, sl: float
 ):
+    active_exchange = trading.watcher.get_config().exchange
     remaining_amount = total_amount
     chunk_size = total_amount * 0.1
 
@@ -246,14 +258,14 @@ def execute_iceberg(
 
         try:
             # 2. Create the Entry Order
-            order_resp = safe_exchange_call(
+            order_resp = std_call(
                 client.create_order,
-                market,
-                "limit",
-                normalized_side,
-                current_slice,
-                target_price,
-                {"postOnly": True},
+                symbol=market,
+                type="limit",
+                side=normalized_side,
+                amount=current_slice,
+                price=target_price,
+                params={"postOnly": True},
             )
             order_id = order_resp["id"]
 
@@ -262,6 +274,7 @@ def execute_iceberg(
                 try:
                     new_order = GeneralOrder(
                         id=order_id,
+                        exchange=active_exchange,
                         price=order_resp.get("average", target_price),
                         entrance_exit="entrance",
                         amount=order_resp["amount"],
@@ -275,9 +288,20 @@ def execute_iceberg(
                 except Exception as db_e:
                     session.rollback()
                     logger.error(f"Iceberg DB Error: {db_e}")
+                finally:
+                    session.close()
 
             # 4. Attach Protection (SL/TP)
-            _order_ice(client, market, current_slice, normalized_side, tp, sl, order_id)
+            _order_ice(
+                client,
+                market,
+                current_slice,
+                normalized_side,
+                tp,
+                sl,
+                order_id,
+                active_exchange,
+            )
 
             # 5. Wait for fill (Iceberg logic)
             time.sleep(30)
@@ -290,7 +314,7 @@ def execute_iceberg(
             if order_status["status"] != "closed":
                 logger.info(f"Slice partially filled ({filled}). Canceling remainder.")
                 try:
-                    safe_exchange_call(client.cancel_order, order_id, market)
+                    std_call(client.cancel_order, id=order_id, symbol=market)
                 except Exception as e:
                     logger.warning(f"Could not cancel order {order_id}: {e}")
 
