@@ -15,7 +15,7 @@ DB_PATH = DIR / "qdata" / "general.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-DB_URL = f"sqlite:///./{DB_PATH.absolute()}"
+DB_URL = f"sqlite:///{DB_PATH.as_posix()}"
 
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 
