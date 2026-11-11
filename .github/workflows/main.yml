@@ -162,7 +162,10 @@ jobs:
           path: smoke-engine
 
       - name: Extract built engine
-        run: tar -xzf smoke-engine/quantt-engine-smoke.tar.gz -C quantt-engine/dist
+        shell: bash
+        run: |
+          mkdir -p quantt-engine/dist
+          tar -xzf smoke-engine/quantt-engine-smoke.tar.gz -C quantt-engine/dist
 
       - name: Run Electron and backend smoke test (Linux)
         if: runner.os == 'Linux'
