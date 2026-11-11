@@ -3,6 +3,7 @@
   "main": "electron/main.js",
   "productName": "Quantt",
   "description": "A trading algorithm for Crypto markets, automated and custom methods, utilizing CCXT for multi-plataform usage.",
+  "homepage": "https://github.com/THI100/Quantt",
   "author": "THI100 <thiagocas100@gmail.com>",
   "private": true,
   "version": "0.1.1",
