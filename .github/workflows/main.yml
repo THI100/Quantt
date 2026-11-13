@@ -102,7 +102,11 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Quantt-${{ matrix.platform }}
-          path: quantt-ui/e_dist/Quantt_*.*
+          path: |
+            quantt-ui/e_dist/Quantt_Setup_*.exe
+            quantt-ui/e_dist/Quantt_Setup_*.AppImage
+            quantt-ui/e_dist/Quantt_Setup_*.deb
+            quantt-ui/e_dist/Quantt_Mac_*.dmg
           if-no-files-found: error
           retention-days: 14
 
@@ -201,6 +205,10 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/Quantt_*.*
+          files: |
+            release-assets/*.exe
+            release-assets/*.AppImage
+            release-assets/*.deb
+            release-assets/*.dmg
           fail_on_unmatched_files: true
           generate_release_notes: true
