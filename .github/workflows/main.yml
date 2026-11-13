@@ -102,20 +102,20 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Quantt-${{ matrix.platform }}
-          path: quantt-ui/e_dist/*
+          path: quantt-ui/e_dist/Quantt_*.*
           if-no-files-found: error
           retention-days: 14
 
-      - name: Archive built engine for smoke test
-        run: tar -czf quantt-engine-smoke.tar.gz -C quantt-engine/dist QuanttEngine
+      # - name: Archive built engine for smoke test
+      #   run: tar -czf quantt-engine-smoke.tar.gz -C quantt-engine/dist QuanttEngine
 
-      - name: Upload built engine for smoke test
-        uses: actions/upload-artifact@v4
-        with:
-          name: engine-smoke-${{ matrix.platform }}
-          path: quantt-engine-smoke.tar.gz
-          if-no-files-found: error
-          retention-days: 1
+      # - name: Upload built engine for smoke test
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: engine-smoke-${{ matrix.platform }}
+      #     path: quantt-engine-smoke.tar.gz
+      #     if-no-files-found: error
+      #     retention-days: 1
 
   # test:
   #   name: Smoke test (${{ matrix.platform }})
@@ -201,6 +201,6 @@ jobs:
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/**/*
+          files: release-assets/Quantt_*.*
           fail_on_unmatched_files: true
           generate_release_notes: true
